@@ -45,13 +45,14 @@ describe("parseJascPalette", () => {
   });
 });
 
+// skipIf still runs this callback to collect the tests, so files are read
+// inside the tests, never at describe level.
 describe.skipIf(!hasSources)("sprite conversion", () => {
-  const front = readFileSync(path.join(GRAPHICS, "gengar/front.png"));
-  const shiny = parseJascPalette(
-    readFileSync(path.join(GRAPHICS, "gengar/shiny.pal"), "utf8"),
-  );
-
   it("swaps the palette and keeps pixels and transparency", () => {
+    const front = readFileSync(path.join(GRAPHICS, "gengar/front.png"));
+    const shiny = parseJascPalette(
+      readFileSync(path.join(GRAPHICS, "gengar/shiny.pal"), "utf8"),
+    );
     const out = chunks(withPalette(front, shiny));
     const original = chunks(front);
     expect(out.get("PLTE")!.subarray(0, 6)).toEqual(
