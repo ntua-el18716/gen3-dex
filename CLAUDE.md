@@ -26,20 +26,33 @@ An **offline-first mobile companion for the Gen 3 Pokémon games** (Ruby, Sapphi
 - **Importer = TypeScript script run with tsx** (`npm run import` or similar), not a server.
 - Styling: decide when scaffolding (NativeWind would keep Tailwind knowledge; ask him).
 
-## Data source: pret decompilations (NOT PokeAPI)
+## Data pipeline (built in step 2)
 
-PokeAPI serves current-gen data. The pret decomp repos are the games' own data:
+PokeAPI serves current-gen data, so everything comes from the pret decompilations (the games' own source):
 
-- `github.com/pret/pokeemerald`, `pret/pokefirered`, `pret/pokeruby` — clone into a gitignored folder (e.g. `data-src/`), shallow.
-- Verified files in pokeemerald (`src/data/`):
-  - `pokemon/species_info.h` — base stats, types, abilities, EV yield, catch rate, exp yield, gender ratio, egg cycles, friendship, growth rate, egg groups, held items, body color
-  - `pokemon/level_up_learnsets.h`, `tmhm_learnsets.h`, `tutor_learnsets.h`, `egg_moves.h`, `evolution.h`, `pokedex_text.h`, `pokedex_entries.h`
-  - `trainers.h`, `trainer_parties.h` — every trainer's team (gym leaders, E4, rivals)
-  - `wild_encounters.json` — encounters per map
-  - `battle_frontier/battle_frontier_mons.h` (~880 sets), `battle_frontier_trainer_mons.h`, `battle_frontier_trainers.h`, `battle_pyramid_*_wild_mons.h`, `battle_tent.h`
-- Use pokeruby for R/S-specific data and pokefirered for FR/LG; keep per-version differences.
-- PokeAPI is still OK for things the decomps don't give conveniently (e.g. sprite images).
-- Stylianos also has his own **Battle Frontier CSV** from another source, location TBD. Not a priority; later, cross-check it against the pret data.
+- `npm run import` → fetches pinned commits of `pret/pokeemerald`, `pokefirered`, `pokeruby` into `data-src/` (gitignored, sparse + shallow; commits pinned in `scripts/import/sources.ts`), parses them, writes `assets/db/gen3.db`, runs validation checks. The build is deterministic (same commits → byte-identical file).
+- `npm run sprites` → `assets/sprites/{front,front-shiny,back,back-shiny}/<dex>.png` + `src/generated/sprites.ts` (dex number → `require()`d image). Shinies = same pixels with pret's shiny palette.
+- `npm test` → Vitest: parser, text normalisation, game rules, stat formulas, sprite conversion, and the validation checks run against the committed DB.
+- Schema: `src/db/schema.ts` (single source of truth); migration in `drizzle/` (regenerate with `npm run db:generate` after schema changes, then re-run the import).
+- Layout: `scripts/import/lib/c-parse.ts` (C-data parser: constants, enums, designated initializers, strings, #ifdef, list macros), `lib/text.ts` (ALL CAPS → display names), `context.ts` (games → repo + #defines; Lookups), `stages/*.ts` (one per data kind), `validate.ts` (known Gen 3 facts).
+- Key design points:
+  - Each game is read with its own `#ifdef`s (RUBY/SAPPHIRE/FIRERED/LEAFGREEN), so per-game differences come out naturally.
+  - Repos name some constants differently (MOVE_SOLAR_BEAM vs MOVE_SOLARBEAM, ITEM_TM01 vs ITEM_TM01_FOCUS_PUNCH), so lookups resolve names with the source game's constants and compare numeric ids.
+  - Species data is cross-checked across all three repos; any unexpected difference fails the import.
+  - Trainers without listed moves get the game's default moveset (GiveBoxMonInitialMoveset), flagged `moves_computed`.
+  - Physical/special is derived from type (Gen 3 rule), see `src/lib/damage-class.ts`. Stat formulas in `src/lib/stats.ts`.
+- Findings worth knowing (all handled):
+  - Deoxys' form depends on the game: Normal (R/S), Attack (FireRed), Defense (LeafGreen), Speed (Emerald) → `base_stat_override`; its learnset also differs between FR and LG, which is why `learnset` is keyed by game.
+  - Wild held items differ by version group (Pikachu holds a Light Ball only in R/S/E).
+  - 203 Pokémon have different Pokédex text in Ruby and Sapphire.
+  - FireRed keeps unused Hoenn trainer slots filled with DUMMY_TRAINER_MON; skipped.
+- Known gaps / later:
+  - Ruby and Sapphire share one trainer table, so both villain teams' trainers are in both games' data. The playthrough guide needs curated per-game trainer lists (story order, locations), which live in map scripts, not data files.
+  - Battle Frontier: which trainers appear at which streak, and the Frontier Brains' teams, are in code (`frontier_util.c`, `battle_tower.c`), not imported yet. Battle Pyramid/Pike wild Pokémon skipped. Battle Tents not imported.
+  - Altering Cave: only the default encounter table (Mystery Event variants skipped).
+  - FRLG special tutors (Blast Burn, Frenzy Plant, Hydro Cannon) are taught by scripts, so not in `learnset`.
+  - Sprites: Deoxys has its normal-form sprite only; Castform normal form; Unown "A".
+- Stylianos also has his own **Battle Frontier CSV** from another source, location TBD. Cross-check it against `frontier_set` later.
 
 ## Existing code (reference only, don't extend)
 
@@ -58,11 +71,13 @@ PokeAPI serves current-gen data. The pret decomp repos are the games' own data:
 
 ## Progress
 
-- **Step 1 (scaffold): done** on 2026-10-24, in a Claude app session (not Claude Code). Expo SDK 58, React Native 0.88, Expo Router, TypeScript strict, reset to a blank app (`src/app/_layout.tsx` with a Stack, `src/app/index.tsx`). ESLint (`eslint-config-expo` + `eslint-config-prettier`), Prettier with default settings. `npm run lint`, `npm run typecheck` and `npm run format:check` all pass.
-  - Still open from step 1: copy sprites, type icons and Pokéball SVGs from the old `gen3-dex` on the laptop; commit the old `gen3-dex` WIP there.
-  - Styling (NativeWind vs plain StyleSheet) not decided yet; ask before step 3.
-- **Next: step 2.** Start by proposing a schema to Stylianos and agreeing on it before writing the importer.
-- Also follow `AGENTS.md` (from the Expo template): use `npx expo install` for packages, check versioned Expo docs instead of memory, run lint and typecheck before calling anything done.
+- **Step 1 (scaffold): done** (2026-10-24). Expo SDK 58, React Native 0.88, Expo Router, TypeScript strict, blank app (`src/app/_layout.tsx` with a Stack, `src/app/index.tsx`). ESLint (`eslint-config-expo` + `eslint-config-prettier`), Prettier defaults.
+  - Still open: commit the old `gen3-dex` WIP on the laptop. Type icons and Pokéball SVGs from the old project could still be copied in (sprites now come from pret instead).
+- **Step 2 (schema + importer): done** (2026-10-24). Schema agreed with Stylianos (his answers: title-case names; pret sprites; store per-game text — R/S turned out to differ). See "Data pipeline" above.
+- **Next: step 3 (Pokédex screens).** Before he starts:
+  - Ask about styling (NativeWind vs StyleSheet).
+  - Wiring the bundled DB into the app is the first lesson: Metro must bundle `.db` assets (`metro.config.js` `resolver.assetExts`), then open it with expo-sqlite (check the SDK 58 docs for loading a database from assets) and wrap it with `drizzle-orm/expo-sqlite`. Let him write it with guidance.
+- Quality gates before calling anything done: `npm run lint`, `npm run typecheck`, `npm test`, `npm run format:check`. Also follow `AGENTS.md` (from the Expo template): `npx expo install` for packages, versioned Expo docs over memory.
 
 ## Practical notes
 
@@ -72,7 +87,6 @@ PokeAPI serves current-gen data. The pret decomp repos are the games' own data:
 
 ## Working in cloud sessions (phone / web)
 
-- This repo may be worked on from Claude Code cloud sessions, where the old local folders (`gen3-dex`, `pokeApi-v2`) are NOT available. Everything needed about them is summarised above.
-- The sprites and type icons from `gen3-dex` are not in this repo yet; Stylianos will copy them in from his laptop, or ask him. Don't block on them: scaffolding and the importer don't need them.
-- Cloud sessions can clone the pret repos from GitHub; nothing else needs network.
-- Step 1 here = scaffold the Expo app in this repo (it starts with only this file). Skip the "commit gen3-dex" part; that happens on the laptop.
+- The old local folders (`gen3-dex`, `pokeApi-v2`) are not available in cloud sessions; everything needed about them is summarised above.
+- Cloud sessions can fetch the pret repos from GitHub; nothing else needs network.
+- Pushing from Claude app sessions has failed so far (GitHub app access); work was handed over as git bundles that Stylianos pulls on his laptop.
