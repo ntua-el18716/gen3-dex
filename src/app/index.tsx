@@ -1,30 +1,51 @@
-import { asc, count } from "drizzle-orm";
-import { Text, View, StyleSheet } from "react-native";
+import { Stack } from "expo-router";
+import { useMemo, useState } from "react";
+import { FlatList, Text, TextInput, View } from "react-native";
 
+import { POKEMON_ROW_HEIGHT, PokemonRow } from "@/components/pokemon-row";
 import { useDb } from "@/db";
-import { pokemon } from "@/db/schema";
+import { listPokemon } from "@/db/queries";
 
-export default function Index() {
+export default function PokedexScreen() {
   const db = useDb();
-  const total = db.select({ n: count() }).from(pokemon).get();
-  const first = db
-    .select({ name: pokemon.name })
-    .from(pokemon)
-    .orderBy(asc(pokemon.id))
-    .get();
+  const all = useMemo(() => listPokemon(db), [db]);
+  const [query, setQuery] = useState("");
+
+  const q = query.trim().toLowerCase();
+  const shown = q
+    ? all.filter((p) => p.name.toLowerCase().includes(q) || String(p.id) === q)
+    : all;
 
   return (
-    <View style={styles.container}>
-      <Text>{total?.n} Pokémon in gen3.db</Text>
-      <Text>#1 is {first?.name}</Text>
+    <View className="flex-1 bg-white">
+      <Stack.Screen options={{ title: "Pokédex" }} />
+      <TextInput
+        className="mx-4 my-2 rounded-lg bg-neutral-100 px-3 py-2 text-base text-neutral-900"
+        placeholder="Search by name or number"
+        placeholderTextColor="#737373"
+        value={query}
+        onChangeText={setQuery}
+        autoCorrect={false}
+        autoCapitalize="none"
+        clearButtonMode="while-editing"
+      />
+      <FlatList
+        data={shown}
+        keyExtractor={(p) => String(p.id)}
+        renderItem={({ item }) => <PokemonRow pokemon={item} />}
+        getItemLayout={(_, index) => ({
+          length: POKEMON_ROW_HEIGHT,
+          offset: POKEMON_ROW_HEIGHT * index,
+          index,
+        })}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        ListEmptyComponent={
+          <Text className="p-8 text-center text-neutral-500">
+            No Pokémon match “{query}”.
+          </Text>
+        }
+      />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});
