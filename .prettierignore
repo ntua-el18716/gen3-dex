@@ -5,3 +5,5 @@ data-src
 package-lock.json
 *.db
 drizzle/meta
+src/generated
+assets/sprites

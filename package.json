@@ -55,7 +55,8 @@
     "fetch-sources": "tsx scripts/import/fetch-sources.ts",
     "import": "tsx scripts/import/index.ts",
     "test": "vitest run",
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "sprites": "tsx scripts/sprites/build-sprites.ts"
   },
   "private": true
 }
