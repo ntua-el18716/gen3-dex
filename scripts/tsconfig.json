@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "noUncheckedIndexedAccess": true
+  },
+  "include": [
+    "**/*.ts",
+    "../src/db/**/*.ts",
+    "../src/lib/**/*.ts",
+    "../drizzle.config.ts",
+    "../vitest.config.mts"
+  ],
+  "exclude": []
+}
