@@ -7,5 +7,12 @@
       "@/assets/*": ["./assets/*"]
     }
   },
-  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"]
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
+  "exclude": [
+    "scripts",
+    "data-src",
+    "drizzle.config.ts",
+    "vitest.config.mts",
+    "node_modules"
+  ]
 }
