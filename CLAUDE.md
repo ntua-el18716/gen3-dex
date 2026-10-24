@@ -24,7 +24,7 @@ An **offline-first mobile companion for the Gen 3 Pokémon games** (Ruby, Sapphi
 - **Drizzle ORM** with the expo-sqlite driver for typed queries in the app.
 - **One shared Drizzle schema file** used by both the importer (writes the DB) and the app (reads it), so schema changes break at compile time on both sides.
 - **Importer = TypeScript script run with tsx** (`npm run import` or similar), not a server.
-- Styling: decide when scaffolding (NativeWind would keep Tailwind knowledge; ask him).
+- Styling: **NativeWind** (decided 2026-10-25; keeps his Tailwind knowledge).
 
 ## Data pipeline (built in step 2)
 
@@ -74,8 +74,7 @@ PokeAPI serves current-gen data, so everything comes from the pret decompilation
 - **Step 1 (scaffold): done** (2026-10-24). Expo SDK 58, React Native 0.88, Expo Router, TypeScript strict, blank app (`src/app/_layout.tsx` with a Stack, `src/app/index.tsx`). ESLint (`eslint-config-expo` + `eslint-config-prettier`), Prettier defaults.
   - Still open: commit the old `gen3-dex` WIP on the laptop. Type icons and Pokéball SVGs from the old project could still be copied in (sprites now come from pret instead).
 - **Step 2 (schema + importer): done** (2026-10-24). Schema agreed with Stylianos (his answers: title-case names; pret sprites; store per-game text — R/S turned out to differ). See "Data pipeline" above.
-- **Next: step 3 (Pokédex screens).** Before he starts:
-  - Ask about styling (NativeWind vs StyleSheet).
+- **Step 3 (Pokédex screens): in progress** (started 2026-10-25). Styling: NativeWind.
   - Wiring the bundled DB into the app is the first lesson: Metro must bundle `.db` assets (`metro.config.js` `resolver.assetExts`), then open it with expo-sqlite (check the SDK 58 docs for loading a database from assets) and wrap it with `drizzle-orm/expo-sqlite`. Let him write it with guidance.
 - Quality gates before calling anything done: `npm run lint`, `npm run typecheck`, `npm test`, `npm run format:check`. Also follow `AGENTS.md` (from the Expo template): `npx expo install` for packages, versioned Expo docs over memory.
 
