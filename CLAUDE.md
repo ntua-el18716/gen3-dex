@@ -81,7 +81,8 @@ PokeAPI serves current-gen data, so everything comes from the pret decompilation
 
 ## Practical notes
 
-- Machine: Windows (x64). Has Android Studio / `.android` and Expo history. Node 24 available.
+- Machine: Windows (x64). Has Android Studio / `.android` and Expo history. Node 24 (upgraded from 22.10, which is too old for Expo SDK 58).
+- `package-lock.json` is regenerated on Windows with Node 24's npm; regenerate it there rather than in cloud sessions, so it matches the laptop.
 - GitHub repo: `ntua-el18716/gen3-dex` (the name is historical; the app is "Gen 3 Companion"). On the laptop it is cloned at `Documents/Projects/PokeApp/gen3-companion/`.
 - Keep commits small and descriptive.
 
