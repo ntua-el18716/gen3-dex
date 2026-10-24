@@ -1,1 +1,5 @@
+# LF everywhere (Prettier expects it), regardless of core.autocrlf.
+* text=auto eol=lf
+
 *.db binary
+*.png binary
