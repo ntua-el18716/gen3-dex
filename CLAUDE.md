@@ -75,7 +75,8 @@ PokeAPI serves current-gen data, so everything comes from the pret decompilation
   - Still open: commit the old `gen3-dex` WIP on the laptop. Type icons and Pokéball SVGs from the old project could still be copied in (sprites now come from pret instead).
 - **Step 2 (schema + importer): done** (2026-10-24). Schema agreed with Stylianos (his answers: title-case names; pret sprites; store per-game text — R/S turned out to differ). See "Data pipeline" above.
 - **Step 3 (Pokédex screens): in progress** (started 2026-10-25). Styling: NativeWind.
-  - Wiring the bundled DB into the app is the first lesson: Metro must bundle `.db` assets (`metro.config.js` `resolver.assetExts`), then open it with expo-sqlite (check the SDK 58 docs for loading a database from assets) and wrap it with `drizzle-orm/expo-sqlite`. Let him write it with guidance.
+  - DB wiring: done (he asked Claude to write it). `src/db/provider.tsx` (`SQLiteProvider` + `assetSource`, Suspense), `src/db/index.ts` (`useDb()` → typed Drizzle client; the expo-sqlite driver is sync, so `.get()`/`.all()`). SDK 58's default Metro config already bundles `.db`, so no `metro.config.js`. The local copy is named `gen3-<metro asset hash>.db` because expo-sqlite never overwrites an existing copy; a rebuilt DB gets a new name. Follow-up: delete stale `gen3-*.db` copies after an update (9 MB each).
+  - Next: NativeWind setup, then the Pokédex list screen (he writes it).
 - Quality gates before calling anything done: `npm run lint`, `npm run typecheck`, `npm test`, `npm run format:check`. Also follow `AGENTS.md` (from the Expo template): `npx expo install` for packages, versioned Expo docs over memory.
 
 ## Practical notes
