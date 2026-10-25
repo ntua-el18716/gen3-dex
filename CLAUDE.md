@@ -82,6 +82,8 @@ Read from pokeemerald's code (`battle_tower.c`, `frontier_util.c`; facility file
 
 ## Progress
 
+> **Start here (next session, decided 2026-10-25):** Claude implements **gift and one-time encounters** for the Locations page (importer + new table + query + UI hint), following the research note under step 3 below. Stylianos chose to let Claude decide; the Battle Frontier **screens** wait until he has time, so he can build them as a guided exercise (data and queries are ready: see "Battle Frontier data"). He hasn't pushed yet (23+ local commits) — remind him.
+
 - **Step 1 (scaffold): done** (2026-10-24). Expo SDK 58, React Native 0.88, Expo Router, TypeScript strict, blank app (`src/app/_layout.tsx` with a Stack, `src/app/index.tsx`). ESLint (`eslint-config-expo` + `eslint-config-prettier`), Prettier defaults.
   - Still open: commit the old `gen3-dex` WIP on the laptop. Type icons and Pokéball SVGs from the old project could still be copied in (sprites now come from pret instead).
 - **Step 2 (schema + importer): done** (2026-10-24). Schema agreed with Stylianos (his answers: title-case names; pret sprites; store per-game text — R/S turned out to differ). See "Data pipeline" above.
