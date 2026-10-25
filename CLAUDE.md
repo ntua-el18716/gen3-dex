@@ -98,6 +98,7 @@ PokeAPI serves current-gen data, so everything comes from the pret decompilation
   - Theme switch: header button (`components/theme-toggle.tsx`) cycles Auto/Light/Dark; saved via `src/lib/preferences.ts` (native: `expo-sqlite/kv-store`; web: `localStorage`), applied with NativeWind `colorScheme.set()`. Any scheme change logs a dev-only "state update on a component that hasn't mounted yet" from NativeWind internals (also on a plain system switch) — harmless.
   - In Expo Go the dev "Tools" button covers the header's right side; launch with `?__expo_disable_fab=1` to test.
   - Next: filters/sorting on the list (type, game's Dex, stats); persist the current game (same preferences helper); gift/static encounters for Locations.
+  - **Learning material (2026-10-25):** `docs/learning/walkthrough.md` (10-chapter tour of the code) and `docs/learning/practice-plan.md` (P1–P7: Hoenn number, remember game, type filter, regional Dex, stat sort, custom level, stretch). Those exercises are **his to write** — when he asks about one, give hints and review, don't implement it. Claude's share meanwhile: importer fixes ("Dna" → "DNA", gift/static encounters) and Battle Frontier data.
 - Quality gates before calling anything done: `npm run lint`, `npm run typecheck`, `npm test`, `npm run format:check`. Also follow `AGENTS.md` (from the Expo template): `npx expo install` for packages, versioned Expo docs over memory.
 
 ## Practical notes
