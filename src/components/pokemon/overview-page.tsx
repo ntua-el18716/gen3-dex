@@ -132,16 +132,18 @@ function Header({ pokemon }: { pokemon: PokemonDetail }) {
 
   return (
     <View className="items-center gap-2">
+      {/* The hint is inside the Pressable so tapping it works too. */}
       <Pressable
         onPress={() => setShiny((s) => !s)}
         accessibilityRole="button"
         accessibilityLabel={shiny ? "Show normal colours" : "Show shiny"}
+        className="items-center gap-2"
       >
         <Image source={sprite} style={{ width: 128, height: 128 }} />
+        <Text className="text-xs text-neutral-400">
+          {shiny ? "Shiny · tap for normal" : "Tap for shiny"}
+        </Text>
       </Pressable>
-      <Text className="text-xs text-neutral-400">
-        {shiny ? "Shiny · tap for normal" : "Tap for shiny"}
-      </Text>
       <Text className="text-sm text-neutral-500">
         #{String(pokemon.id).padStart(3, "0")} · {pokemon.category} Pokémon
         {pokemon.formName ? ` · ${pokemon.formName}` : ""}

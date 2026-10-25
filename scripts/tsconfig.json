@@ -6,7 +6,11 @@
   },
   "include": [
     "**/*.ts",
-    "../src/db/**/*.ts",
+    // Pure, React-free code shared with the app (not src/db/index.ts or
+    // context.ts, which lead into UI components).
+    "../src/db/schema.ts",
+    "../src/db/queries.ts",
+    "../src/db/queries.test.ts",
     "../src/lib/**/*.ts",
     "../drizzle.config.ts",
     "../vitest.config.mts"
