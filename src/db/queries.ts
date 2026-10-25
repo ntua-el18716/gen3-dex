@@ -1,22 +1,29 @@
-import { and, asc, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray, max, min, sum } from "drizzle-orm";
 import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 
 import * as schema from "./schema";
 import {
   ability,
   baseStatOverride,
+  encounter,
+  ENCOUNTER_METHODS,
+  evolution,
   game as gameTable,
   item,
   learnset,
   LEARN_METHODS,
+  location,
   machine,
   move,
   pokedexText,
   pokemon,
   STATS,
   wildHeldItem,
+  type EncounterMethod,
+  type EvolutionMethod,
   type Game,
   type LearnMethod,
+  type PokemonType,
   type Stat,
 } from "./schema";
 
@@ -168,3 +175,145 @@ export function getLearnset(db: Db, id: number, game: Game) {
 
 export type LearnsetSection = ReturnType<typeof getLearnset>[number];
 export type LearnsetMove = LearnsetSection["data"][number];
+
+export type EvolutionNode = {
+  id: number;
+  name: string;
+  type1: PokemonType;
+  type2: PokemonType | null;
+  /** How this stage evolves, one entry per branch (Eevee has five). */
+  evolutions: {
+    method: EvolutionMethod;
+    level: number | null;
+    item: string | null;
+    into: EvolutionNode;
+  }[];
+};
+
+/**
+ * The whole evolution family of a Pokémon as a tree, starting from its first
+ * stage (so Raichu gives Pichu → Pikachu → Raichu). Evolutions are the same
+ * in every Gen 3 game. A Pokémon that doesn't evolve is a single node.
+ */
+export function getEvolutionChain(db: Db, id: number): EvolutionNode {
+  // The table is small (under 200 rows), so read it whole.
+  const steps = db
+    .select({
+      from: evolution.fromPokemonId,
+      to: evolution.toPokemonId,
+      method: evolution.method,
+      level: evolution.level,
+      item: item.name,
+    })
+    .from(evolution)
+    .leftJoin(item, eq(item.id, evolution.itemId))
+    .all();
+
+  let root = id;
+  for (let prev; (prev = steps.find((s) => s.to === root));) root = prev.from;
+
+  const familyIds = new Set([root]);
+  for (let added = true; added;) {
+    added = false;
+    for (const s of steps) {
+      if (familyIds.has(s.from) && !familyIds.has(s.to)) {
+        familyIds.add(s.to);
+        added = true;
+      }
+    }
+  }
+  const members = db
+    .select({
+      id: pokemon.id,
+      name: pokemon.name,
+      type1: pokemon.type1,
+      type2: pokemon.type2,
+    })
+    .from(pokemon)
+    .where(inArray(pokemon.id, [...familyIds]))
+    .all();
+
+  const build = (nodeId: number): EvolutionNode => ({
+    ...members.find((m) => m.id === nodeId)!,
+    evolutions: steps
+      .filter((s) => s.from === nodeId)
+      .sort((a, b) => a.to - b.to)
+      .map((s) => ({
+        method: s.method,
+        level: s.level,
+        item: s.item,
+        into: build(s.to),
+      })),
+  });
+  return build(root);
+}
+
+/**
+ * Where a Pokémon can be found in the wild in one game: one entry per place,
+ * each with its encounter methods. `rate` adds up the encounter slots it
+ * occupies: the chance (%) that an encounter with that method is this Pokémon.
+ * Gifts and one-off encounters (legendaries, starters) aren't wild data.
+ */
+export function getLocations(db: Db, id: number, game: Game) {
+  const rows = db
+    .select({
+      locationId: location.id,
+      name: location.name,
+      method: encounter.method,
+      minLevel: min(encounter.minLevel),
+      maxLevel: max(encounter.maxLevel),
+      rate: sum(encounter.rate).mapWith(Number),
+    })
+    .from(encounter)
+    .innerJoin(location, eq(location.id, encounter.locationId))
+    .where(and(eq(encounter.pokemonId, id), eq(encounter.game, game)))
+    .groupBy(location.id, encounter.method)
+    .orderBy(asc(location.id))
+    .all();
+
+  const places: {
+    locationId: number;
+    name: string;
+    encounters: {
+      method: EncounterMethod;
+      minLevel: number;
+      maxLevel: number;
+      rate: number;
+    }[];
+  }[] = [];
+  for (const { locationId, name, method, minLevel, maxLevel, rate } of rows) {
+    let place = places.find((p) => p.locationId === locationId);
+    if (!place) {
+      place = { locationId, name, encounters: [] };
+      places.push(place);
+    }
+    place.encounters.push({
+      method,
+      minLevel: minLevel ?? 0,
+      maxLevel: maxLevel ?? 0,
+      rate,
+    });
+  }
+  for (const place of places) {
+    place.encounters.sort(
+      (a, b) =>
+        ENCOUNTER_METHODS.indexOf(a.method) -
+        ENCOUNTER_METHODS.indexOf(b.method),
+    );
+  }
+  return places;
+}
+
+export type LocationEntry = ReturnType<typeof getLocations>[number];
+
+/** The games (in game order) where a Pokémon can be found in the wild. */
+export function getWildGames(db: Db, id: number): Game[] {
+  return db
+    .selectDistinct({ game: encounter.game, order: gameTable.sortOrder })
+    .from(encounter)
+    .innerJoin(gameTable, eq(gameTable.id, encounter.game))
+    .where(eq(encounter.pokemonId, id))
+    .orderBy(asc(gameTable.sortOrder))
+    .all()
+    .map((r) => r.game);
+}

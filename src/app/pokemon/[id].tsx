@@ -3,11 +3,20 @@ import { useMemo } from "react";
 import { Text, View } from "react-native";
 
 import { GamePicker } from "@/components/game-picker";
+import { EvolutionPage } from "@/components/pokemon/evolution-page";
+import { LocationsPage } from "@/components/pokemon/locations-page";
 import { MovesPage } from "@/components/pokemon/moves-page";
 import { OverviewPage } from "@/components/pokemon/overview-page";
 import { SwipeTabs } from "@/components/swipe-tabs";
 import { useDb } from "@/db";
-import { getLearnset, getPokedexEntries, getPokemonDetail } from "@/db/queries";
+import {
+  getEvolutionChain,
+  getLearnset,
+  getLocations,
+  getPokedexEntries,
+  getPokemonDetail,
+  getWildGames,
+} from "@/db/queries";
 import { useCurrentGame } from "@/state/current-game";
 
 export default function PokemonScreen() {
@@ -29,8 +38,17 @@ export default function PokemonScreen() {
     () => getLearnset(db, dexNumber, game),
     [db, dexNumber, game],
   );
+  const chain = useMemo(
+    () => (pokemon ? getEvolutionChain(db, dexNumber) : null),
+    [db, dexNumber, pokemon],
+  );
+  const places = useMemo(
+    () => getLocations(db, dexNumber, game),
+    [db, dexNumber, game],
+  );
+  const wildIn = useMemo(() => getWildGames(db, dexNumber), [db, dexNumber]);
 
-  if (!pokemon) {
+  if (!pokemon || !chain) {
     return (
       <View className="flex-1 items-center justify-center">
         <Stack.Screen options={{ title: "Not found" }} />
@@ -47,6 +65,9 @@ export default function PokemonScreen() {
         <GamePicker />
       </View>
       <SwipeTabs
+        // A new Pokémon (e.g. opened from its evolution line) starts on the
+        // first page again.
+        key={dexNumber}
         tabs={[
           {
             title: "Overview",
@@ -57,6 +78,16 @@ export default function PokemonScreen() {
           {
             title: "Moves",
             content: <MovesPage sections={learnset} game={game} />,
+          },
+          {
+            title: "Evolution",
+            content: <EvolutionPage chain={chain} currentId={dexNumber} />,
+          },
+          {
+            title: "Locations",
+            content: (
+              <LocationsPage places={places} game={game} wildIn={wildIn} />
+            ),
           },
         ]}
       />

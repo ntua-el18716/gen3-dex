@@ -8,10 +8,14 @@ import { afterAll, describe, expect, it } from "vitest";
 import { GAME_INFO } from "@/lib/games";
 
 import {
+  getEvolutionChain,
   getLearnset,
+  getLocations,
   getPokedexEntries,
   getPokemonDetail,
+  getWildGames,
   listPokemon,
+  type EvolutionNode,
 } from "./queries";
 import * as schema from "./schema";
 
@@ -123,6 +127,87 @@ describe.skipIf(!existsSync(DB_PATH))("queries", () => {
           .find((s) => s.method === "level")!
           .data.map((m) => m.name);
       expect(moves("firered")).not.toEqual(moves("leafgreen"));
+    });
+  });
+
+  describe("getEvolutionChain", () => {
+    /** "Pichu > Pikachu (Use Thunderstone) > …" style outline of a tree. */
+    const outline = (n: EvolutionNode): string[] =>
+      n.evolutions
+        .map(
+          (e) =>
+            `${n.name} > ${e.into.name} [${e.method}${e.level ? ` ${e.level}` : ""}${e.item ? ` ${e.item}` : ""}]`,
+        )
+        .concat(n.evolutions.flatMap((e) => outline(e.into)));
+
+    it("starts from the first stage, whichever member is asked for", () => {
+      const fromRaichu = getEvolutionChain(db, 26);
+      expect(fromRaichu.name).toBe("Pichu");
+      expect(outline(fromRaichu)).toEqual([
+        "Pichu > Pikachu [friendship]",
+        "Pikachu > Raichu [item ThunderStone]",
+      ]);
+      expect(getEvolutionChain(db, 172)).toEqual(fromRaichu);
+    });
+
+    it("keeps every branch", () => {
+      expect(
+        getEvolutionChain(db, 133).evolutions.map((e) => e.into.name),
+      ).toEqual(["Vaporeon", "Jolteon", "Flareon", "Espeon", "Umbreon"]);
+      expect(outline(getEvolutionChain(db, 292))).toEqual([
+        "Nincada > Ninjask [level-ninjask 20]",
+        "Nincada > Shedinja [level-shedinja 20]",
+      ]);
+    });
+
+    it("is a single node for Pokémon that don't evolve", () => {
+      expect(getEvolutionChain(db, 214)).toMatchObject({
+        name: "Heracross",
+        evolutions: [],
+      });
+    });
+  });
+
+  describe("getLocations", () => {
+    it("groups encounters by place, per game", () => {
+      expect(getLocations(db, 25, "firered")).toEqual([
+        {
+          locationId: expect.any(Number),
+          name: "Viridian Forest",
+          encounters: [{ method: "grass", minLevel: 3, maxLevel: 5, rate: 5 }],
+        },
+        {
+          locationId: expect.any(Number),
+          name: "Power Plant",
+          encounters: [
+            { method: "grass", minLevel: 22, maxLevel: 26, rate: 25 },
+          ],
+        },
+      ]);
+      expect(getLocations(db, 25, "emerald").map((p) => p.name)).toEqual([
+        "Safari Zone South",
+        "Safari Zone Southwest",
+      ]);
+    });
+
+    it("lists methods in a fixed order and is empty when not wild", () => {
+      const route102 = getLocations(db, 129, "emerald")[0];
+      expect(route102?.encounters.map((e) => e.method)).toEqual([
+        "old-rod",
+        "good-rod",
+      ]);
+      expect(getLocations(db, 1, "emerald")).toEqual([]);
+    });
+
+    it("lists the games where a Pokémon is wild, in game order", () => {
+      expect(getWildGames(db, 25)).toEqual([
+        "ruby",
+        "sapphire",
+        "emerald",
+        "firered",
+        "leafgreen",
+      ]);
+      expect(getWildGames(db, 1)).toEqual([]);
     });
   });
 

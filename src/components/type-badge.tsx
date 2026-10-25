@@ -58,7 +58,7 @@ export function TypeBadge({
   return (
     <View
       className={`items-center rounded-full ${
-        small ? "w-14 py-px" : "w-20 py-0.5"
+        small ? "w-16 py-px" : "w-20 py-0.5"
       } ${BACKGROUND[type]}`}
     >
       <Text

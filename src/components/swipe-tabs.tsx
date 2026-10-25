@@ -15,25 +15,27 @@ export type SwipeTab = { title: string; content: ReactNode };
  * top. Swiping changes the tab; tapping a tab scrolls to its page.
  */
 export function SwipeTabs({ tabs }: { tabs: SwipeTab[] }) {
-  // Pages are as wide as this component, which is narrower than the window
-  // on big screens; start with the window width until it's measured.
+  // Each page gets the exact size of the area below the tab bar. The width
+  // matters on big screens (narrower than the window); the height on web,
+  // where a page's own vertical ScrollView otherwise grows to fit its
+  // content and never scrolls. Start with the window size until measured.
   const window = useWindowDimensions();
-  const [width, setWidth] = useState(window.width);
+  const [size, setSize] = useState({
+    width: window.width,
+    height: window.height,
+  });
   // ScrollView is a function component since RN 0.88: refs get the instance type.
   const pager = useRef<ScrollViewInstance>(null);
   const [index, setIndex] = useState(0);
 
   const goTo = (i: number) => {
     setIndex(i);
-    pager.current?.scrollTo({ x: i * width, animated: true });
+    pager.current?.scrollTo({ x: i * size.width, animated: true });
   };
 
   return (
-    <View
-      className="flex-1"
-      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
-    >
-      <View className="flex-row border-b border-line px-4">
+    <View className="flex-1">
+      <View className="flex-row border-b border-line px-2">
         {tabs.map((tab, i) => (
           <Pressable
             key={tab.title}
@@ -45,7 +47,8 @@ export function SwipeTabs({ tabs }: { tabs: SwipeTab[] }) {
             }`}
           >
             <Text
-              className={`font-bold ${
+              numberOfLines={1}
+              className={`text-sm font-bold ${
                 i === index ? "text-ink" : "text-ink-subtle"
               }`}
             >
@@ -54,22 +57,30 @@ export function SwipeTabs({ tabs }: { tabs: SwipeTab[] }) {
           </Pressable>
         ))}
       </View>
-      <ScrollView
-        ref={pager}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        scrollEventThrottle={16}
-        onScroll={(e) =>
-          setIndex(Math.round(e.nativeEvent.contentOffset.x / width))
-        }
+      <View
+        className="flex-1"
+        onLayout={(e) => {
+          const { width, height } = e.nativeEvent.layout;
+          setSize({ width, height });
+        }}
       >
-        {tabs.map((tab) => (
-          <View key={tab.title} style={{ width }}>
-            {tab.content}
-          </View>
-        ))}
-      </ScrollView>
+        <ScrollView
+          ref={pager}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onScroll={(e) =>
+            setIndex(Math.round(e.nativeEvent.contentOffset.x / size.width))
+          }
+        >
+          {tabs.map((tab) => (
+            <View key={tab.title} style={size}>
+              {tab.content}
+            </View>
+          ))}
+        </ScrollView>
+      </View>
     </View>
   );
 }
