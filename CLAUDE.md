@@ -65,7 +65,7 @@ PokeAPI serves current-gen data, so everything comes from the pret decompilation
 1. **Scaffold**: commit gen3-dex WIP; create the new Expo project in a new folder next to it (e.g. `PokeApp/gen3-companion/`); git init; TypeScript strict; ESLint/Prettier; copy over sprites and icons.
 2. **Schema + importer**: design the schema _together with Stylianos_ (it decides what the app can show); importer parses pret files into `assets/db/gen3.db`; add tests for the parser and for stat formulas.
 3. **Pokédex** list + detail screens (he writes, Claude guides).
-4. **Playthrough guide**: trainers, gyms, encounters.
+4. **Playthrough guide** (optional — he's not sure he wants it): trainers, gyms, encounters per route. Keep it self-contained (own route group, e.g. `src/app/(guide)/`, plus its own components/queries) and don't make the Pokédex or Frontier tool depend on it, so it can be dropped without touching anything else.
 5. **Battle Frontier tool.**
 6. **Polish**: tests, GitHub Actions CI, release APK, README with architecture, demo video.
 
@@ -78,7 +78,13 @@ PokeAPI serves current-gen data, so everything comes from the pret decompilation
   - DB wiring: done (he asked Claude to write it). `src/db/provider.tsx` (`SQLiteProvider` + `assetSource`, Suspense), `src/db/index.ts` (`useDb()` → typed Drizzle client; the expo-sqlite driver is sync, so `.get()`/`.all()`). SDK 58's default Metro config already bundles `.db` (the `metro.config.js` is only for NativeWind). The local copy is named `gen3-<metro asset hash>.db` because expo-sqlite never overwrites an existing copy; a rebuilt DB gets a new name. Follow-up: delete stale `gen3-*.db` copies after an update (9 MB each).
   - NativeWind: done. v4.2.7 (latest stable; officially lists SDK 57, works on 58) with Tailwind 3. `tailwind.config.js` scans `src/**`; type colours are `bg-type-<type>` (`???` → `mystery`). Class names must appear in full in source (see `src/components/type-badge.tsx`). Verified by `expo export`: compiled styles are in the bundle.
   - List screen: done by Claude at his request (2026-10-25): `src/app/index.tsx` (FlatList + search by name/number), `src/components/pokemon-row.tsx`, `type-badge.tsx`. Queries live in `src/db/queries.ts`, typed against any sync Drizzle DB (`Db`), so `queries.test.ts` runs them on the real gen3.db via better-sqlite3. Not yet checked on a device.
-  - Next: Pokémon detail screen (`src/app/pokemon/[id].tsx`), then version/type filters and stat sorting. Light theme only so far (dark mode later).
+  - Web: works as a preview only (Android is the target). `metro.config.js` adds `wasm` + COOP/COEP headers for expo-sqlite; `darkMode: "class"` (NativeWind's web runtime throws under "media"); `web.output: "single"` (SSR rendered an empty list → hydration mismatch).
+  - CI: `.github/workflows/ci.yml` (lint, typecheck, format, test on Node 24). Not yet seen running on GitHub (unpushed as of 2026-10-25).
+  - Decisions (2026-10-25):
+    - **Game selection is per game (5 options), not per pair** — R/S, FR/LG differ (Dex text, encounters, Deoxys). A global "current game" (React context) drives the screens; where both games of a pair have identical data, show it once labelled e.g. "FR/LG".
+    - **Detail screen = SmartDex-style swipeable pages/tabs**: 1) overview (sprite + shiny toggle, types, stats, Dex entries), 2) moves (level-up, TM/HM, tutor, egg), later locations and evolution/breeding. Exact split to be refined.
+    - Filters wanted: by type, by game's Dex, sorting by stats.
+  - Next: detail screen (`src/app/pokemon/[id].tsx`) — Claude explains dynamic routes / `useLocalSearchParams` / `Link` and the queries, **he writes the screen**. Then current-game context, then filters/sorting. Light theme only so far (dark mode later).
 - Quality gates before calling anything done: `npm run lint`, `npm run typecheck`, `npm test`, `npm run format:check`. Also follow `AGENTS.md` (from the Expo template): `npx expo install` for packages, versioned Expo docs over memory.
 
 ## Practical notes
