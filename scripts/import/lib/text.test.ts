@@ -18,6 +18,9 @@ describe("titleCase", () => {
     ["PKMN TRAINER", "Pokémon Trainer"],
     ["THUNDERPUNCH", "ThunderPunch"],
     ["BLACKGLASSES", "BlackGlasses"],
+    ["DNA", "DNA"],
+    ["TINYRACCOON", "TinyRaccoon"],
+    ["FLYSCORPION", "FlyScorpion"],
   ])("%s → %s", (input, expected) => {
     expect(titleCase(input)).toBe(expected);
   });
@@ -36,8 +39,11 @@ describe("gameText", () => {
     );
   });
 
-  it("keeps HP and PP upper case", () => {
+  it("keeps HP, PP and DNA upper case", () => {
     expect(gameText("Restores HP and PP.")).toBe("Restores HP and PP.");
+    expect(gameText("The DNA of a space virus")).toBe(
+      "The DNA of a space virus",
+    );
   });
 });
 

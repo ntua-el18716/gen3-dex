@@ -17,6 +17,7 @@ const KEEP_UPPER = new Set([
   "SS",
   "TM",
   "HM",
+  "DNA",
 ]);
 
 /** Whole-word replacements applied after title-casing. */
@@ -81,6 +82,10 @@ const GEN3_SPELLINGS: Record<string, string> = Object.fromEntries(
     "TwistedSpoon",
     "MysticTicket",
     "AuroraTicket",
+    // Pokédex categories
+    "TinyRaccoon",
+    "TinySwallow",
+    "FlyScorpion",
   ].map((name) => [name.toUpperCase(), name]),
 );
 
