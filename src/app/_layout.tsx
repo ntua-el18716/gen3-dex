@@ -4,13 +4,31 @@ import { Stack } from "expo-router";
 
 import { DatabaseProvider } from "@/db";
 import { CurrentGameProvider } from "@/state/current-game";
+import { AppThemeProvider, useColors } from "@/theme/theme";
 
 export default function RootLayout() {
   return (
-    <DatabaseProvider>
-      <CurrentGameProvider>
-        <Stack />
-      </CurrentGameProvider>
-    </DatabaseProvider>
+    <AppThemeProvider>
+      <DatabaseProvider>
+        <CurrentGameProvider>
+          <ThemedStack />
+        </CurrentGameProvider>
+      </DatabaseProvider>
+    </AppThemeProvider>
+  );
+}
+
+function ThemedStack() {
+  const colors = useColors();
+  return (
+    <Stack
+      screenOptions={{
+        // The header blends into the page instead of sitting on a bar.
+        headerStyle: { backgroundColor: colors.canvas },
+        headerShadowVisible: false,
+        headerTitleStyle: { fontWeight: "800" },
+        contentStyle: { backgroundColor: colors.canvas },
+      }}
+    />
   );
 }

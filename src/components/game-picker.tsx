@@ -1,14 +1,23 @@
 import { Pressable, Text, View } from "react-native";
 
-import { GAMES } from "@/db/schema";
+import { GAMES, type Game } from "@/db/schema";
 import { GAME_INFO } from "@/lib/games";
 import { useCurrentGame } from "@/state/current-game";
 
-/** A row of chips (R, S, E, FR, LG) that sets the current game. */
+// Full class names so Tailwind generates them (see type-badge.tsx).
+const SELECTED: Record<Game, string> = {
+  ruby: "bg-game-ruby",
+  sapphire: "bg-game-sapphire",
+  emerald: "bg-game-emerald",
+  firered: "bg-game-firered",
+  leafgreen: "bg-game-leafgreen",
+};
+
+/** A segmented control (R, S, E, FR, LG) that sets the current game. */
 export function GamePicker() {
   const { game, setGame } = useCurrentGame();
   return (
-    <View className="flex-row gap-2 px-4 py-2">
+    <View className="flex-row gap-1 rounded-full bg-sunken p-1">
       {GAMES.map((g) => {
         const selected = g === game;
         return (
@@ -18,15 +27,13 @@ export function GamePicker() {
             accessibilityRole="button"
             accessibilityState={{ selected }}
             accessibilityLabel={GAME_INFO[g].name}
-            className={`flex-1 items-center rounded-full border py-1 ${
-              selected
-                ? "border-neutral-900 bg-neutral-900"
-                : "border-neutral-300 bg-white"
+            className={`flex-1 items-center rounded-full py-1.5 ${
+              selected ? SELECTED[g] : ""
             }`}
           >
             <Text
-              className={`text-sm font-semibold ${
-                selected ? "text-white" : "text-neutral-700"
+              className={`text-sm font-bold ${
+                selected ? "text-white" : "text-ink-muted"
               }`}
             >
               {GAME_INFO[g].short}

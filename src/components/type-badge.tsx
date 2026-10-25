@@ -25,12 +25,34 @@ const BACKGROUND: Record<PokemonType, string> = {
   dark: "bg-type-dark",
 };
 
+/** A faint wash of the type's colour, for backgrounds behind sprites. */
+export const TYPE_TINT: Record<PokemonType, string> = {
+  normal: "bg-type-normal/20",
+  fighting: "bg-type-fighting/20",
+  flying: "bg-type-flying/20",
+  poison: "bg-type-poison/20",
+  ground: "bg-type-ground/20",
+  rock: "bg-type-rock/20",
+  bug: "bg-type-bug/20",
+  ghost: "bg-type-ghost/20",
+  steel: "bg-type-steel/20",
+  "???": "bg-type-mystery/20",
+  fire: "bg-type-fire/20",
+  water: "bg-type-water/20",
+  grass: "bg-type-grass/20",
+  electric: "bg-type-electric/20",
+  psychic: "bg-type-psychic/20",
+  ice: "bg-type-ice/20",
+  dragon: "bg-type-dragon/20",
+  dark: "bg-type-dark/20",
+};
+
 export function TypeBadge({
   type,
   small = false,
 }: {
   type: PokemonType;
-  /** Narrower and smaller text, for move lists. */
+  /** Narrower and smaller text, for move lists and cards. */
   small?: boolean;
 }) {
   return (
@@ -40,7 +62,7 @@ export function TypeBadge({
       } ${BACKGROUND[type]}`}
     >
       <Text
-        className={`font-bold uppercase text-white ${
+        className={`font-bold uppercase tracking-wide text-white ${
           small ? "text-[10px]" : "text-xs"
         }`}
       >

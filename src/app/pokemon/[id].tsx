@@ -32,17 +32,20 @@ export default function PokemonScreen() {
 
   if (!pokemon) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <View className="flex-1 items-center justify-center">
         <Stack.Screen options={{ title: "Not found" }} />
-        <Text className="text-neutral-500">No Pokémon #{id}.</Text>
+        <Text className="text-ink-muted">No Pokémon #{id}.</Text>
       </View>
     );
   }
 
   return (
-    <View className="flex-1 bg-white">
+    // On big screens, a centred column of comfortable reading width.
+    <View className="w-full max-w-3xl flex-1 self-center">
       <Stack.Screen options={{ title: pokemon.name }} />
-      <GamePicker />
+      <View className="px-4 pt-3">
+        <GamePicker />
+      </View>
       <SwipeTabs
         tabs={[
           {

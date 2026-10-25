@@ -1,3 +1,13 @@
+const palette = require("./src/theme/palette.json");
+
+/** `bg-surface` etc. read CSS variables that AppThemeProvider sets per scheme. */
+const themeColors = Object.fromEntries(
+  Object.keys(palette.light).map((token) => [
+    token,
+    `rgb(var(--${token}) / <alpha-value>)`,
+  ]),
+);
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
@@ -8,6 +18,7 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        ...themeColors,
         // The classic type colours (as used on Bulbapedia).
         type: {
           normal: "#A8A878",
@@ -29,8 +40,27 @@ module.exports = {
           dragon: "#7038F8",
           dark: "#705848",
         },
+        // One colour per game, for the game picker.
+        game: {
+          ruby: "#C0392B",
+          sapphire: "#2563EB",
+          emerald: "#059669",
+          firered: "#EA580C",
+          leafgreen: "#65A30D",
+        },
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // Light values as the default, so classes work before the provider mounts.
+    ({ addBase }) =>
+      addBase({
+        ":root": Object.fromEntries(
+          Object.entries(palette.light).map(([token, rgb]) => [
+            `--${token}`,
+            rgb.join(" "),
+          ]),
+        ),
+      }),
+  ],
 };

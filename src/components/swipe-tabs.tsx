@@ -15,7 +15,10 @@ export type SwipeTab = { title: string; content: ReactNode };
  * top. Swiping changes the tab; tapping a tab scrolls to its page.
  */
 export function SwipeTabs({ tabs }: { tabs: SwipeTab[] }) {
-  const { width } = useWindowDimensions();
+  // Pages are as wide as this component, which is narrower than the window
+  // on big screens; start with the window width until it's measured.
+  const window = useWindowDimensions();
+  const [width, setWidth] = useState(window.width);
   // ScrollView is a function component since RN 0.88: refs get the instance type.
   const pager = useRef<ScrollViewInstance>(null);
   const [index, setIndex] = useState(0);
@@ -26,8 +29,11 @@ export function SwipeTabs({ tabs }: { tabs: SwipeTab[] }) {
   };
 
   return (
-    <View className="flex-1">
-      <View className="flex-row border-b border-neutral-200">
+    <View
+      className="flex-1"
+      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
+    >
+      <View className="flex-row border-b border-line px-4">
         {tabs.map((tab, i) => (
           <Pressable
             key={tab.title}
@@ -35,12 +41,12 @@ export function SwipeTabs({ tabs }: { tabs: SwipeTab[] }) {
             accessibilityRole="tab"
             accessibilityState={{ selected: i === index }}
             className={`flex-1 items-center border-b-2 py-3 ${
-              i === index ? "border-neutral-900" : "border-transparent"
+              i === index ? "border-accent" : "border-transparent"
             }`}
           >
             <Text
-              className={`font-semibold ${
-                i === index ? "text-neutral-900" : "text-neutral-500"
+              className={`font-bold ${
+                i === index ? "text-ink" : "text-ink-subtle"
               }`}
             >
               {tab.title}
