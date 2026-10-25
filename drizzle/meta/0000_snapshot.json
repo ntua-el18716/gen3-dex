@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "e82235ad-d32d-4b8f-b251-1521c0fb4259",
+  "id": "62286c3b-6374-4013-b7e3-164d90ba8289",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "ability": {
@@ -1934,6 +1934,168 @@
           "tableTo": "ability",
           "columnsFrom": [
             "ability2_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "static_encounter": {
+      "name": "static_encounter",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "game": {
+          "name": "game",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "location_id": {
+          "name": "location_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "pokemon_id": {
+          "name": "pokemon_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "kind": {
+          "name": "kind",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "level": {
+          "name": "level",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "count": {
+          "name": "count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "held_item_id": {
+          "name": "held_item_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "trade_for_id": {
+          "name": "trade_for_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "nickname": {
+          "name": "nickname",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "static_encounter_pokemon_idx": {
+          "name": "static_encounter_pokemon_idx",
+          "columns": [
+            "pokemon_id",
+            "game"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "static_encounter_game_game_id_fk": {
+          "name": "static_encounter_game_game_id_fk",
+          "tableFrom": "static_encounter",
+          "tableTo": "game",
+          "columnsFrom": [
+            "game"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "static_encounter_location_id_location_id_fk": {
+          "name": "static_encounter_location_id_location_id_fk",
+          "tableFrom": "static_encounter",
+          "tableTo": "location",
+          "columnsFrom": [
+            "location_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "static_encounter_pokemon_id_pokemon_id_fk": {
+          "name": "static_encounter_pokemon_id_pokemon_id_fk",
+          "tableFrom": "static_encounter",
+          "tableTo": "pokemon",
+          "columnsFrom": [
+            "pokemon_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "static_encounter_held_item_id_item_id_fk": {
+          "name": "static_encounter_held_item_id_item_id_fk",
+          "tableFrom": "static_encounter",
+          "tableTo": "item",
+          "columnsFrom": [
+            "held_item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "static_encounter_trade_for_id_pokemon_id_fk": {
+          "name": "static_encounter_trade_for_id_pokemon_id_fk",
+          "tableFrom": "static_encounter",
+          "tableTo": "pokemon",
+          "columnsFrom": [
+            "trade_for_id"
           ],
           "columnsTo": [
             "id"

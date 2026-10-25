@@ -128,6 +128,18 @@ export const ENCOUNTER_METHODS = [
 ] as const;
 export type EncounterMethod = (typeof ENCOUNTER_METHODS)[number];
 
+/** Ways to get a Pokémon once, outside the wild encounter tables. */
+export const STATIC_ENCOUNTER_KINDS = [
+  "starter",
+  "gift",
+  "egg",
+  "static",
+  "roaming",
+  "trade",
+  "prize",
+] as const;
+export type StaticEncounterKind = (typeof STATIC_ENCOUNTER_KINDS)[number];
+
 export const EVOLUTION_METHODS = [
   "level",
   "level-attack-gt-defense",
@@ -449,6 +461,42 @@ export const encounter = sqliteTable(
     primaryKey({ columns: [t.game, t.locationId, t.method, t.slot] }),
     index("encounter_pokemon_idx").on(t.pokemonId, t.game),
   ],
+);
+
+/**
+ * Pokémon you get once rather than from an encounter table: starters,
+ * gifts, eggs, legendaries and other overworld Pokémon (`static`), roamers,
+ * in-game trades and Game Corner prizes. Read from the map scripts, so a
+ * row is only here if a map in that game actually runs the script.
+ * Where you choose between several (starters, fossils, the Dojo), each
+ * option is a row.
+ */
+export const staticEncounter = sqliteTable(
+  "static_encounter",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    game: text("game", { enum: GAMES })
+      .notNull()
+      .references(() => game.id),
+    /** Null for roamers, which move between routes. */
+    locationId: integer("location_id").references(() => location.id),
+    pokemonId: integer("pokemon_id")
+      .notNull()
+      .references(() => pokemon.id),
+    kind: text("kind", { enum: STATIC_ENCOUNTER_KINDS }).notNull(),
+    /** Null for trades: the Pokémon keeps the level of the one you give. Eggs: the hatch level. */
+    level: integer("level"),
+    /** How many there are at this place (e.g. 3 Voltorb in New Mauville). */
+    count: integer("count").notNull(),
+    heldItemId: integer("held_item_id").references(() => item.id),
+    /** Trades: the Pokémon the trainer asks for. */
+    tradeForId: integer("trade_for_id").references(() => pokemon.id),
+    /** Trades: the nickname it comes with. */
+    nickname: text("nickname"),
+    /** Hand-written hint (requirements, choices); null when there is nothing to add. */
+    note: text("note"),
+  },
+  (t) => [index("static_encounter_pokemon_idx").on(t.pokemonId, t.game)],
 );
 
 // ---------------------------------------------------------------------------

@@ -62,11 +62,15 @@ const ROD_METHOD: Record<string, EncounterMethod> = {
   super_rod: "super-rod",
 };
 
+export type Location = {
+  id: number;
+  key: string;
+  name: string;
+  region: "hoenn" | "kanto";
+};
+
 export function importEncounters(lookups: Lookups) {
-  const locations = new Map<
-    string,
-    { id: number; key: string; name: string; region: "hoenn" | "kanto" }
-  >();
+  const locations = new Map<string, Location>();
   const encounters: {
     game: Game;
     locationId: number;

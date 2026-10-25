@@ -271,6 +271,26 @@ CREATE TABLE `pokemon` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `pokemon_key_unique` ON `pokemon` (`key`);--> statement-breakpoint
+CREATE TABLE `static_encounter` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`game` text NOT NULL,
+	`location_id` integer,
+	`pokemon_id` integer NOT NULL,
+	`kind` text NOT NULL,
+	`level` integer,
+	`count` integer NOT NULL,
+	`held_item_id` integer,
+	`trade_for_id` integer,
+	`nickname` text,
+	`note` text,
+	FOREIGN KEY (`game`) REFERENCES `game`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`location_id`) REFERENCES `location`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`pokemon_id`) REFERENCES `pokemon`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`held_item_id`) REFERENCES `item`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`trade_for_id`) REFERENCES `pokemon`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
+CREATE INDEX `static_encounter_pokemon_idx` ON `static_encounter` (`pokemon_id`,`game`);--> statement-breakpoint
 CREATE TABLE `trainer` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`game` text NOT NULL,

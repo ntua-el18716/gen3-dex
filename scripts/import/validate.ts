@@ -196,6 +196,55 @@ const CHECKS: Check[] = [
           WHERE w.pokemon_id = 25 AND i.name = 'Light Ball' ORDER BY version_group)`,
     expect: "e,rs",
   },
+  // Gifts and one-time encounters
+  {
+    name: "every game has three starters",
+    sql: "SELECT group_concat(n) FROM (SELECT count(*) n FROM static_encounter WHERE kind = 'starter' GROUP BY game)",
+    expect: "3,3,3,3,3",
+  },
+  {
+    name: "Groudon Lv 45 in Ruby, Kyogre Lv 45 in Sapphire",
+    sql: `SELECT group_concat(s.game || ' ' || p.name || ' ' || s.level) FROM (SELECT * FROM static_encounter ORDER BY game) s
+          JOIN pokemon p ON p.id = s.pokemon_id WHERE s.game IN ('ruby', 'sapphire') AND p.name IN ('Groudon', 'Kyogre')`,
+    expect: "ruby Groudon 45,sapphire Kyogre 45",
+  },
+  {
+    name: "Ruby's Electrode are in the Magma Hideout only",
+    sql: `SELECT group_concat(l.key) FROM static_encounter s JOIN location l ON l.id = s.location_id
+          JOIN pokemon p ON p.id = s.pokemon_id WHERE s.game = 'ruby' AND p.name = 'Electrode'`,
+    expect: "MAP_MAGMA_HIDEOUT_B1F",
+  },
+  {
+    name: "Emerald Route 120 has six Kecleon",
+    sql: `SELECT s.count FROM static_encounter s JOIN location l ON l.id = s.location_id JOIN pokemon p ON p.id = s.pokemon_id
+          WHERE s.game = 'emerald' AND l.key = 'MAP_ROUTE120' AND p.name = 'Kecleon'`,
+    expect: 6,
+  },
+  {
+    name: "LeafGreen Game Corner Dratini is Lv 24",
+    sql: `SELECT s.level FROM static_encounter s JOIN pokemon p ON p.id = s.pokemon_id
+          WHERE s.game = 'leafgreen' AND s.kind = 'prize' AND p.name = 'Dratini'`,
+    expect: 24,
+  },
+  {
+    name: "Emerald Seedot trade: for Ralts, holding a Chesto Berry",
+    sql: `SELECT t.name || ' ' || i.name FROM static_encounter s JOIN pokemon p ON p.id = s.pokemon_id
+          JOIN pokemon t ON t.id = s.trade_for_id JOIN item i ON i.id = s.held_item_id
+          WHERE s.game = 'emerald' AND s.kind = 'trade' AND p.name = 'Seedot'`,
+    expect: "Ralts Chesto Berry",
+  },
+  {
+    name: "FireRed's roamers are Raikou, Entei and Suicune at Lv 50",
+    sql: `SELECT group_concat(p.name || ' ' || s.level) FROM (SELECT * FROM static_encounter ORDER BY pokemon_id) s
+          JOIN pokemon p ON p.id = s.pokemon_id WHERE s.game = 'firered' AND s.kind = 'roaming'`,
+    expect: "Raikou 50,Entei 50,Suicune 50",
+  },
+  {
+    name: "no Ghost Marowak, no debug-menu or Mystery Gift Pokémon",
+    sql: `SELECT count(*) FROM static_encounter s JOIN pokemon p ON p.id = s.pokemon_id
+          WHERE p.name IN ('Marowak', 'Barboach', 'Shroomish', 'Pichu')`,
+    expect: 0,
+  },
 ];
 
 export function validate(db: Database.Database): string[] {

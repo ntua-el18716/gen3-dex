@@ -140,6 +140,10 @@ const MAP_WORD_FIXES: Record<string, string> = {
   Mt: "Mt.",
   Pokemon: "Pokémon",
   Sevii: "Sevii",
+  Birchs: "Birch's",
+  Oaks: "Oak's",
+  Stevens: "Steven's",
+  Of: "of",
 };
 
 /**
@@ -154,6 +158,9 @@ export function mapName(mapKey: string): string {
     .filter((w) => w !== "")
     .map((w) => {
       if (/^(B?\d+F|\d+R|B\d+|N|S|E|W|NE|NW|SE|SW)$/.test(w)) return w; // floors, room numbers, compass
+      const numbered = /^([A-Z]+)(\d+)$/.exec(w); // HOUSE1 → House 1
+      if (numbered)
+        return `${numbered[1]!.charAt(0)}${numbered[1]!.slice(1).toLowerCase()} ${numbered[2]}`;
       const t = w.charAt(0) + w.slice(1).toLowerCase();
       return MAP_WORD_FIXES[t] ?? t;
     })

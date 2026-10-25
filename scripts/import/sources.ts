@@ -31,7 +31,13 @@ export const SOURCES: SourceRepo[] = [
       "/src/battle_arena.c",
       "/src/battle_pike.c",
       "/src/battle_pyramid.c",
-      "/data/maps/BattleFrontier_*/scripts.inc",
+      // Map scripts and map ids: gifts, static encounters, Frontier scripts.
+      "/data/maps/*/scripts.inc",
+      "/data/maps/*/map.json",
+      "/data/scripts/",
+      "/src/starter_choose.c",
+      "/src/battle_setup.c",
+      "/src/roamer.c",
       "/src/pokemon.c",
       "/graphics/pokemon/",
     ],
@@ -40,13 +46,34 @@ export const SOURCES: SourceRepo[] = [
     name: "pokefirered",
     url: "https://github.com/pret/pokefirered.git",
     commit: "ce6406d8c2eaf46d543c8a2606de0c3cb1951982",
-    paths: ["/src/data/", "/include/constants/", "/src/pokemon.c"],
+    paths: [
+      "/src/data/",
+      "/include/constants/",
+      "/src/pokemon.c",
+      "/data/maps/*/scripts.inc",
+      "/data/maps/*/map.json",
+      "/data/scripts/",
+      "/src/roamer.c",
+    ],
   },
   {
     name: "pokeruby",
     url: "https://github.com/pret/pokeruby.git",
     commit: "5784633ce4ef7ade1a7f2d2d0c288e3d5e6cdd7f",
-    paths: ["/src/data/", "/include/constants/"],
+    paths: [
+      "/src/data/",
+      "/include/constants/",
+      "/data/maps/*/scripts.inc",
+      "/data/maps/*/map.json",
+      "/data/scripts/",
+      // Version-specific aliases (SPECIES_GROUDON_OR_KYOGRE…) used by the scripts.
+      "/constants/version.inc",
+      "/src/starter_choose.c",
+      "/src/battle_setup.c",
+      "/src/roamer.c",
+      // In-game trades.
+      "/src/trade.c",
+    ],
   },
 ];
 

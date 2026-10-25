@@ -28,6 +28,7 @@ import { importEncounters } from "./stages/encounters";
 import { importFrontier } from "./stages/frontier";
 import { importLearnsets } from "./stages/learnsets";
 import * as pokemon from "./stages/pokemon";
+import { importStaticEncounters } from "./stages/static-encounters";
 import { importTrainers } from "./stages/trainers";
 import { validate } from "./validate";
 
@@ -72,6 +73,10 @@ function main() {
   const { locations, encounters } = time("encounters", () =>
     importEncounters(lookups),
   );
+  // Adds the gift and one-time encounter maps to `locations`.
+  const staticEncounters = time("gifts and one-time", () =>
+    importStaticEncounters(lookups, locations),
+  );
   const { trainers, mons } = time("trainers", () => importTrainers(lookups));
   const frontier = time("Battle Frontier", () => importFrontier(lookups));
 
@@ -109,6 +114,7 @@ function main() {
     insert(schema.learnset, learnsets);
     insert(schema.location, locations);
     insert(schema.encounter, encounters);
+    insert(schema.staticEncounter, staticEncounters);
     insert(schema.trainer, trainers);
     insert(schema.trainerMon, mons);
     insert(schema.frontierSet, frontier.sets);
@@ -119,7 +125,7 @@ function main() {
     insert(schema.frontierBrainMon, frontier.brainMons);
     insert(schema.meta, [
       ...SOURCES.map((s) => ({ key: `source.${s.name}`, value: s.commit })),
-      { key: "schema", value: "gen3-companion/2" },
+      { key: "schema", value: "gen3-companion/3" },
     ]);
   });
 
