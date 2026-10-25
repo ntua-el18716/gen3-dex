@@ -11,11 +11,12 @@ import { SwipeTabs } from "@/components/swipe-tabs";
 import { useDb } from "@/db";
 import {
   getEvolutionChain,
+  getFoundGames,
   getLearnset,
   getLocations,
   getPokedexEntries,
   getPokemonDetail,
-  getWildGames,
+  getStaticEncounters,
 } from "@/db/queries";
 import { useCurrentGame } from "@/state/current-game";
 
@@ -46,7 +47,11 @@ export default function PokemonScreen() {
     () => getLocations(db, dexNumber, game),
     [db, dexNumber, game],
   );
-  const wildIn = useMemo(() => getWildGames(db, dexNumber), [db, dexNumber]);
+  const oneTime = useMemo(
+    () => getStaticEncounters(db, dexNumber, game),
+    [db, dexNumber, game],
+  );
+  const foundIn = useMemo(() => getFoundGames(db, dexNumber), [db, dexNumber]);
 
   if (!pokemon || !chain) {
     return (
@@ -86,7 +91,12 @@ export default function PokemonScreen() {
           {
             title: "Locations",
             content: (
-              <LocationsPage places={places} game={game} wildIn={wildIn} />
+              <LocationsPage
+                places={places}
+                oneTime={oneTime}
+                game={game}
+                foundIn={foundIn}
+              />
             ),
           },
         ]}

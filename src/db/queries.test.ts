@@ -9,10 +9,12 @@ import { GAME_INFO } from "@/lib/games";
 
 import {
   getEvolutionChain,
+  getFoundGames,
   getLearnset,
   getLocations,
   getPokedexEntries,
   getPokemonDetail,
+  getStaticEncounters,
   getWildGames,
   listPokemon,
   type EvolutionNode,
@@ -208,6 +210,57 @@ describe.skipIf(!existsSync(DB_PATH))("queries", () => {
         "leafgreen",
       ]);
       expect(getWildGames(db, 1)).toEqual([]);
+    });
+  });
+
+  describe("getStaticEncounters", () => {
+    it("lists gifts with their place, level and held item", () => {
+      expect(getStaticEncounters(db, 351, "emerald")).toEqual([
+        {
+          id: expect.any(Number),
+          kind: "gift",
+          place: "Route 119 Weather Institute 2F",
+          level: 25,
+          count: 1,
+          heldItem: "Mystic Water",
+          tradeFor: null,
+          nickname: null,
+          note: expect.stringContaining("Weather Institute"),
+        },
+      ]);
+    });
+
+    it("lists starters first, and roamers without a place", () => {
+      expect(
+        getStaticEncounters(db, 1, "firered").map((e) => [e.kind, e.place]),
+      ).toEqual([["starter", "Pallet Town Professor Oak's Lab"]]);
+      const latios = getStaticEncounters(db, 381, "emerald");
+      expect(latios.map((e) => [e.kind, e.place, e.level])).toEqual([
+        ["static", "Southern Island Interior", 50],
+        ["roaming", null, 40],
+      ]);
+    });
+
+    it("gives trades the requested Pokémon and nickname", () => {
+      const [trade] = getStaticEncounters(db, 122, "leafgreen");
+      expect(trade).toMatchObject({
+        kind: "trade",
+        level: null,
+        tradeFor: "Abra",
+        nickname: "Mimien",
+      });
+    });
+
+    it("counts Pokémon found several times in one place", () => {
+      expect(
+        getStaticEncounters(db, 101, "emerald").map((e) => [e.place, e.count]),
+      ).toEqual([["Aqua Hideout B1F", 2]]);
+    });
+
+    it("lists the games where a Pokémon can be found at all", () => {
+      expect(getFoundGames(db, 1)).toEqual(["firered", "leafgreen"]);
+      expect(getFoundGames(db, 382)).toEqual(["sapphire", "emerald"]);
+      expect(getFoundGames(db, 2)).toEqual([]);
     });
   });
 

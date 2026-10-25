@@ -1,5 +1,5 @@
 import { and, asc, eq, inArray, max, min, sum } from "drizzle-orm";
-import type { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
+import { alias, type BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 
 import * as schema from "./schema";
 import {
@@ -8,6 +8,7 @@ import {
   encounter,
   ENCOUNTER_METHODS,
   evolution,
+  GAMES,
   game as gameTable,
   item,
   learnset,
@@ -17,6 +18,8 @@ import {
   move,
   pokedexText,
   pokemon,
+  STATIC_ENCOUNTER_KINDS,
+  staticEncounter,
   STATS,
   wildHeldItem,
   type EncounterMethod,
@@ -316,4 +319,54 @@ export function getWildGames(db: Db, id: number): Game[] {
     .orderBy(asc(gameTable.sortOrder))
     .all()
     .map((r) => r.game);
+}
+
+/** Gifts, starters, one-time encounters, roamers, trades and prizes in a game. */
+export function getStaticEncounters(db: Db, id: number, game: Game) {
+  const tradeFor = alias(pokemon, "trade_for");
+  return db
+    .select({
+      id: staticEncounter.id,
+      kind: staticEncounter.kind,
+      /** Null for roamers. */
+      place: location.name,
+      level: staticEncounter.level,
+      count: staticEncounter.count,
+      heldItem: item.name,
+      tradeFor: tradeFor.name,
+      nickname: staticEncounter.nickname,
+      note: staticEncounter.note,
+    })
+    .from(staticEncounter)
+    .leftJoin(location, eq(location.id, staticEncounter.locationId))
+    .leftJoin(item, eq(item.id, staticEncounter.heldItemId))
+    .leftJoin(tradeFor, eq(tradeFor.id, staticEncounter.tradeForId))
+    .where(
+      and(eq(staticEncounter.pokemonId, id), eq(staticEncounter.game, game)),
+    )
+    .orderBy(asc(staticEncounter.id))
+    .all()
+    .sort(
+      (a, b) =>
+        STATIC_ENCOUNTER_KINDS.indexOf(a.kind) -
+        STATIC_ENCOUNTER_KINDS.indexOf(b.kind),
+    );
+}
+
+export type StaticEncounterEntry = ReturnType<
+  typeof getStaticEncounters
+>[number];
+
+/** The games (in game order) where a Pokémon can be caught or received, not counting evolution or breeding. */
+export function getFoundGames(db: Db, id: number): Game[] {
+  const games = new Set<Game>([
+    ...getWildGames(db, id),
+    ...db
+      .selectDistinct({ game: staticEncounter.game })
+      .from(staticEncounter)
+      .where(eq(staticEncounter.pokemonId, id))
+      .all()
+      .map((r) => r.game),
+  ]);
+  return GAMES.filter((g) => games.has(g));
 }
