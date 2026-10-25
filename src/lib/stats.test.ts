@@ -1,7 +1,25 @@
 import { describe, expect, it } from "vitest";
 
 import { damageClass } from "./damage-class";
-import { calculateStats, hpStat, otherStat, uniformSpread } from "./stats";
+import {
+  calculateStats,
+  hpStat,
+  otherStat,
+  statRange,
+  uniformSpread,
+} from "./stats";
+
+describe("statRange", () => {
+  // Bulbasaur's Lv 100 ranges as Bulbapedia lists them.
+  it("spans 0 IV/EV with a hindering nature to 31/252 with a boosting one", () => {
+    expect(statRange("hp", 45, 100)).toEqual({ min: 200, max: 294 });
+    expect(statRange("attack", 49, 100)).toEqual({ min: 92, max: 216 });
+  });
+
+  it("gives Shedinja 1 HP either way", () => {
+    expect(statRange("hp", 1, 50)).toEqual({ min: 1, max: 1 });
+  });
+});
 
 describe("stat formulas", () => {
   // Bulbapedia's worked example (the formula is unchanged since Gen 3):

@@ -96,6 +96,28 @@ export function calculateStats({
   };
 }
 
+/**
+ * The lowest and highest value a stat can have at a level: 0 IVs, 0 EVs and
+ * a hindering nature, up to 31 IVs, 252 EVs and a boosting nature.
+ * HP is not affected by natures.
+ */
+export function statRange(
+  stat: Stat,
+  base: number,
+  level: number,
+): { min: number; max: number } {
+  if (stat === "hp") {
+    return {
+      min: hpStat(base, 0, 0, level),
+      max: hpStat(base, 31, 252, level),
+    };
+  }
+  return {
+    min: otherStat(base, 0, 0, level, -1),
+    max: otherStat(base, 31, 252, level, 1),
+  };
+}
+
 /** Same IV in every stat (trainers and the Frontier use one fixed IV for all six). */
 export function uniformSpread(value: number): StatSpread {
   return {
