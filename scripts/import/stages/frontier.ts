@@ -5,6 +5,8 @@
  */
 import {
   BATTLES_PER_CHALLENGE,
+  FACTORY_BRAIN_IV_OFFSET,
+  FACTORY_IV_ROWS,
   LAST_RANGED_CHALLENGE,
   LEVEL_50,
   MAX_FRIENDSHIP,
@@ -12,6 +14,7 @@ import {
 } from "../../../src/lib/frontier";
 import {
   FRONTIER_FACILITIES,
+  FRONTIER_LEVEL_MODES,
   FRONTIER_SYMBOLS,
   type FrontierFacility,
 } from "../../../src/db/schema";
@@ -216,6 +219,7 @@ export function importFrontier(lookups: Lookups) {
     trainers,
     trainerSets,
     trainerRanges: importTrainerRanges(towerSrc, constants),
+    ...importFactory(towerSrc, constants, setIds),
     ...importBrains(lookups, utilSrc, constants, classNames),
   };
 }
@@ -246,6 +250,90 @@ function importTrainerRanges(towerSrc: string, constants: Constants) {
       `Expected ${LAST_RANGED_CHALLENGE + 1} challenge ranges, got ${normal.length}/${hard.length}`,
     );
   return [...normal, ...hard];
+}
+
+/**
+ * Battle Factory: the set ranges per level mode and challenge
+ * (sInitialRentalMonRanges: 8 rows for Level 50, then 8 for Open Level) and
+ * the IV table (sFixedIVTable). Also checks that the quirks encoded in
+ * src/lib/frontier.ts are still what pret's code does.
+ */
+function importFactory(
+  towerSrc: string,
+  constants: Constants,
+  setIds: Set<number>,
+) {
+  const factorySrc = readForGame(E, "src/battle_factory.c");
+  const rows = (name: string) =>
+    splitTopLevel(findArrayBody(factorySrc, name))
+      .filter((row) => row !== "")
+      .map((row) => parseList(row).map((t) => numeric(t, constants)));
+
+  const ranges = rows("sInitialRentalMonRanges");
+  const perMode = LAST_RANGED_CHALLENGE + 1;
+  if (ranges.length !== perMode * FRONTIER_LEVEL_MODES.length)
+    throw new Error(`Expected ${perMode} Factory ranges per level mode`);
+  const setRanges = ranges.map(([first, last], i) => {
+    if (
+      first === undefined ||
+      last === undefined ||
+      !setIds.has(first) ||
+      !setIds.has(last) ||
+      first > last
+    )
+      throw new Error(`Bad Factory range ${i}: ${first}–${last}`);
+    return {
+      levelMode: FRONTIER_LEVEL_MODES[Math.floor(i / perMode)]!,
+      challenge: i % perMode,
+      firstSetId: first,
+      lastSetId: last,
+    };
+  });
+
+  const ivs = rows("sFixedIVTable").map(([iv, lastBattleIv], challenge) => {
+    if (iv === undefined || lastBattleIv === undefined)
+      throw new Error(`Bad Factory IV row ${challenge}`);
+    return { challenge, iv, lastBattleIv };
+  });
+  if (ivs.length !== FACTORY_IV_ROWS)
+    throw new Error(
+      `Expected ${FACTORY_IV_ROWS} Factory IV rows, got ${ivs.length}`,
+    );
+
+  const expectations: [string, string, RegExp][] = [
+    // Ranges: challenges below 7 have their own row; later ones use row 7.
+    [
+      "battle_factory.c",
+      factorySrc,
+      new RegExp(String.raw`challengeNum < ${LAST_RANGED_CHALLENGE}\b`),
+    ],
+    // The off-by-one clamp in GetFactoryMonFixedIV (row 8 reads past the table).
+    [
+      "battle_factory.c",
+      factorySrc,
+      /challengeNum > ARRAY_COUNT\(sFixedIVTable\)/,
+    ],
+    [
+      "battle_factory.c",
+      factorySrc,
+      new RegExp(
+        String.raw`GetFactoryMonFixedIV\(challengeNum \+ ${FACTORY_BRAIN_IV_OFFSET}, FALSE\)`,
+      ),
+    ],
+    // Opponents' IVs come from the Battle Tower Level 50 streak.
+    [
+      "battle_tower.c",
+      towerSrc,
+      /challengeNum = gSaveBlock2Ptr->frontier\.towerWinStreaks\[battleMode\]\[FRONTIER_LVL_50\]/,
+    ],
+  ];
+  for (const [file, src, pattern] of expectations)
+    if (!pattern.test(src))
+      throw new Error(
+        `${file} no longer matches ${pattern} (see src/lib/frontier.ts)`,
+      );
+
+  return { factorySetRanges: setRanges, factoryIvs: ivs };
 }
 
 /** Frontier Brains: who, when (sFrontierBrainStreakAppearances), and their teams. */

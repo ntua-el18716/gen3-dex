@@ -583,6 +583,9 @@ export type FrontierFacility = (typeof FRONTIER_FACILITIES)[number];
 export const FRONTIER_SYMBOLS = ["silver", "gold"] as const;
 export type FrontierSymbol = (typeof FRONTIER_SYMBOLS)[number];
 
+export const FRONTIER_LEVEL_MODES = ["50", "open"] as const;
+export type FrontierLevelMode = (typeof FRONTIER_LEVEL_MODES)[number];
+
 export const frontierSet = sqliteTable(
   "frontier_set",
   {
@@ -697,6 +700,42 @@ export const frontierBrainMon = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.facility, t.symbol, t.slot] })],
 );
+
+/**
+ * Battle Factory: the sets the game draws from, per level mode and
+ * challenge (sInitialRentalMonRanges; challenges after 7 reuse 7). Unlike
+ * the Tower, opponents' Pokémon don't depend on the trainer: each is a
+ * random set id in this range (never Unown, never a species among the
+ * player's rentals; Level 50 skips the open-level-only sets). Rentals come
+ * from the same range, or partly from the next challenge's after many past
+ * rentals.
+ */
+export const factorySetRange = sqliteTable(
+  "factory_set_range",
+  {
+    levelMode: text("level_mode", { enum: FRONTIER_LEVEL_MODES }).notNull(),
+    challenge: integer("challenge").notNull(),
+    firstSetId: integer("first_set_id")
+      .notNull()
+      .references(() => frontierSet.id),
+    lastSetId: integer("last_set_id")
+      .notNull()
+      .references(() => frontierSet.id),
+  },
+  (t) => [primaryKey({ columns: [t.levelMode, t.challenge] })],
+);
+
+/**
+ * Battle Factory IVs per challenge row (sFixedIVTable): every IV of a
+ * Pokémon equals `iv`, or `lastBattleIv` in the 7th battle of a challenge.
+ * Which row applies has quirks (the game reads the Battle Tower streak);
+ * see factoryOpponentIv in src/lib/frontier.ts.
+ */
+export const factoryIv = sqliteTable("factory_iv", {
+  challenge: integer("challenge").primaryKey(),
+  iv: integer("iv").notNull(),
+  lastBattleIv: integer("last_battle_iv").notNull(),
+});
 
 /** Which sets each Frontier trainer can draw from. */
 export const frontierTrainerSet = sqliteTable(

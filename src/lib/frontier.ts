@@ -3,9 +3,10 @@
  * as pure functions. The importer checks these constants against pret.
  *
  * Applies to the Battle Tower, Palace and Arena, which pick trainers and
- * build their teams the same way.
+ * build their teams the same way; the Battle Factory's own rules are at the
+ * end.
  */
-import type { FrontierSymbol, Stat } from "@/db/schema";
+import type { FrontierLevelMode, FrontierSymbol, Stat } from "@/db/schema";
 
 import { calculateStats, uniformSpread, type StatSpread } from "./stats";
 
@@ -20,7 +21,7 @@ export const MIN_OPEN_LEVEL = 60;
 /** MAX_FRIENDSHIP; Pokémon that know Frustration get 0 instead. */
 export const MAX_FRIENDSHIP = 255;
 
-export type LevelMode = "50" | "open";
+export type LevelMode = FrontierLevelMode;
 
 /**
  * Where battle `battle` (1 = the first battle of a streak) falls: its
@@ -120,4 +121,60 @@ export function frontierStats(
       decreasedStat: set.decreasedStat,
     },
   });
+}
+
+// ---------------------------------------------------------------------------
+// Battle Factory (battle_factory.c)
+// ---------------------------------------------------------------------------
+
+/** Rows in sFixedIVTable; the game clamps to the last row, with an off-by-one. */
+export const FACTORY_IV_ROWS = 8;
+/** FillFactoryBrainParty uses the IV row two challenges ahead. */
+export const FACTORY_BRAIN_IV_OFFSET = 2;
+
+export type FactoryIvRow = {
+  challenge: number;
+  iv: number;
+  lastBattleIv: number;
+};
+
+/**
+ * GetFactoryMonFixedIV: the IV for an IV-table row and battle. Rows past the
+ * end clamp to the last one, but the check is `>` instead of `>=`, so row 8
+ * reads past the table; pret notes that value is above 31, which the game
+ * treats as random IVs. Returns null for random.
+ */
+export function factoryFixedIv(
+  table: FactoryIvRow[],
+  row: number,
+  lastBattle: boolean,
+): number | null {
+  if (row === FACTORY_IV_ROWS) return null;
+  const r = table[Math.min(row, FACTORY_IV_ROWS - 1)];
+  if (!r) throw new Error(`No Factory IV row ${row}`);
+  return lastBattle ? r.lastBattleIv : r.iv;
+}
+
+/**
+ * IVs of a regular Factory opponent's Pokémon. A bug in
+ * FillFactoryFrontierTrainerParty picks the IV row from the player's
+ * *Battle Tower Level 50* win streak (same singles/doubles mode), not the
+ * Factory streak; the 7th Factory battle of a challenge uses the higher IV.
+ */
+export function factoryOpponentIv(
+  table: FactoryIvRow[],
+  towerLevel50Wins: number,
+  factoryBattle: number,
+): number | null {
+  const row = Math.floor(towerLevel50Wins / BATTLES_PER_CHALLENGE);
+  return factoryFixedIv(table, row, battlePosition(factoryBattle).lastBattle);
+}
+
+/** IVs of the Factory Head's (Noland's) Pokémon at Factory battle `battle`. */
+export function factoryBrainIv(
+  table: FactoryIvRow[],
+  battle: number,
+): number | null {
+  const { challenge } = battlePosition(battle);
+  return factoryFixedIv(table, challenge + FACTORY_BRAIN_IV_OFFSET, false);
 }

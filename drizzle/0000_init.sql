@@ -50,6 +50,22 @@ CREATE TABLE `evolution` (
 );
 --> statement-breakpoint
 CREATE INDEX `evolution_to_idx` ON `evolution` (`to_pokemon_id`);--> statement-breakpoint
+CREATE TABLE `factory_iv` (
+	`challenge` integer PRIMARY KEY NOT NULL,
+	`iv` integer NOT NULL,
+	`last_battle_iv` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE `factory_set_range` (
+	`level_mode` text NOT NULL,
+	`challenge` integer NOT NULL,
+	`first_set_id` integer NOT NULL,
+	`last_set_id` integer NOT NULL,
+	PRIMARY KEY(`level_mode`, `challenge`),
+	FOREIGN KEY (`first_set_id`) REFERENCES `frontier_set`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`last_set_id`) REFERENCES `frontier_set`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
 CREATE TABLE `frontier_brain` (
 	`facility` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,

@@ -2,14 +2,20 @@
  * Battle Frontier queries (see src/lib/frontier.ts for the rules). They take
  * the same synchronous Db as queries.ts and are tested on the real gen3.db.
  */
-import { and, asc, between, eq, inArray } from "drizzle-orm";
+import { and, asc, between, eq, inArray, ne } from "drizzle-orm";
 import { alias } from "drizzle-orm/sqlite-core";
 
-import { battlePosition, type LevelMode } from "@/lib/frontier";
+import {
+  battlePosition,
+  type FactoryIvRow,
+  type LevelMode,
+} from "@/lib/frontier";
 import type { StatSpread } from "@/lib/stats";
 
 import type { Db } from "./queries";
 import {
+  factoryIv,
+  factorySetRange,
   frontierBrain,
   frontierBrainMon,
   frontierSet,
@@ -253,4 +259,57 @@ export function getFrontierBrain(db: Db, facility: FrontierFacility) {
         ),
       }));
   return { ...brain, silver: team("silver"), gold: team("gold") };
+}
+
+/** National Dex number of Unown, which the Factory never gives opponents. */
+const UNOWN = 201;
+
+/**
+ * The Battle Factory predictor: every set a regular opponent's Pokémon can be
+ * at Factory battle `battle` (the Factory Head draws from the same pool).
+ * The trainer doesn't matter in the Factory, only the streak and level mode.
+ * The game also skips species among the player's current rentals, which
+ * isn't known here.
+ */
+export function getFactorySets(
+  db: Db,
+  {
+    battle,
+    levelMode,
+    pokemonId,
+  }: { battle: number; levelMode: LevelMode; pokemonId?: number },
+) {
+  const position = battlePosition(battle);
+  const range = db
+    .select()
+    .from(factorySetRange)
+    .where(
+      and(
+        eq(factorySetRange.levelMode, levelMode),
+        eq(factorySetRange.challenge, position.rangeChallenge),
+      ),
+    )
+    .get();
+  if (!range) throw new Error(`No Factory range for battle ${battle}`);
+  const ids = db
+    .select({ id: frontierSet.id })
+    .from(frontierSet)
+    .where(
+      and(
+        between(frontierSet.id, range.firstSetId, range.lastSetId),
+        ne(frontierSet.pokemonId, UNOWN),
+        pokemonId === undefined
+          ? undefined
+          : eq(frontierSet.pokemonId, pokemonId),
+        levelMode === "50" ? eq(frontierSet.openLevelOnly, false) : undefined,
+      ),
+    )
+    .all()
+    .map((r) => r.id);
+  return { ...position, sets: getSetDetails(db, ids) };
+}
+
+/** The Factory IV table, for factoryOpponentIv / factoryBrainIv in src/lib/frontier.ts. */
+export function getFactoryIvTable(db: Db): FactoryIvRow[] {
+  return db.select().from(factoryIv).orderBy(asc(factoryIv.challenge)).all();
 }

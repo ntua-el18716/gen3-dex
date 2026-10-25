@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "62286c3b-6374-4013-b7e3-164d90ba8289",
+  "id": "fcff69f4-e3fa-4411-8642-106ee9c9f353",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "ability": {
@@ -380,6 +380,110 @@
             "method"
           ],
           "name": "evolution_from_pokemon_id_to_pokemon_id_method_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "factory_iv": {
+      "name": "factory_iv",
+      "columns": {
+        "challenge": {
+          "name": "challenge",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "iv": {
+          "name": "iv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "last_battle_iv": {
+          "name": "last_battle_iv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "factory_set_range": {
+      "name": "factory_set_range",
+      "columns": {
+        "level_mode": {
+          "name": "level_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "challenge": {
+          "name": "challenge",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "first_set_id": {
+          "name": "first_set_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "last_set_id": {
+          "name": "last_set_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "factory_set_range_first_set_id_frontier_set_id_fk": {
+          "name": "factory_set_range_first_set_id_frontier_set_id_fk",
+          "tableFrom": "factory_set_range",
+          "tableTo": "frontier_set",
+          "columnsFrom": [
+            "first_set_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "factory_set_range_last_set_id_frontier_set_id_fk": {
+          "name": "factory_set_range_last_set_id_frontier_set_id_fk",
+          "tableFrom": "factory_set_range",
+          "tableTo": "frontier_set",
+          "columnsFrom": [
+            "last_set_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "factory_set_range_level_mode_challenge_pk": {
+          "columns": [
+            "level_mode",
+            "challenge"
+          ],
+          "name": "factory_set_range_level_mode_challenge_pk"
         }
       },
       "uniqueConstraints": {},

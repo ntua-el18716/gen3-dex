@@ -103,6 +103,12 @@ const CHECKS: Check[] = [
     expect: 0,
   },
   {
+    name: "Factory: Level 50 starts at sets 110–199, Open Level ends at 372–881",
+    sql: `SELECT group_concat(first_set_id || '-' || last_set_id) FROM factory_set_range
+          WHERE (level_mode = '50' AND challenge = 0) OR (level_mode = 'open' AND challenge = 7)`,
+    expect: "110-199,372-881",
+  },
+  {
     name: "882 Frontier sets",
     sql: "SELECT count(*) FROM frontier_set",
     expect: 882,

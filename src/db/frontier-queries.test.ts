@@ -7,6 +7,8 @@ import { afterAll, describe, expect, it } from "vitest";
 import { frontierStats } from "@/lib/frontier";
 
 import {
+  getFactoryIvTable,
+  getFactorySets,
   getFrontierBrain,
   getPossibleSets,
   getSetDetails,
@@ -148,6 +150,45 @@ describe.skipIf(!existsSync(DB_PATH))("Battle Frontier queries", () => {
       expect(noland.name).toBe("Noland");
       expect(noland.silver).toEqual([]);
       expect(noland.gold).toEqual([]);
+    });
+  });
+
+  describe("getFactorySets", () => {
+    it("draws from the challenge's range, whatever the trainer", () => {
+      const first = getFactorySets(db, { battle: 1, levelMode: "50" });
+      const ids = first.sets.map((s) => s.id);
+      expect(Math.min(...ids)).toBe(110);
+      expect(Math.max(...ids)).toBe(199);
+      // Challenges after 7 reuse 7.
+      const late = getFactorySets(db, { battle: 99, levelMode: "50" });
+      expect(late.rangeChallenge).toBe(7);
+      expect(late.sets.every((s) => !s.openLevelOnly)).toBe(true);
+    });
+
+    it("never gives Unown, and filters by species", () => {
+      const open = getFactorySets(db, { battle: 50, levelMode: "open" });
+      expect(open.sets.some((s) => s.species === "Unown")).toBe(false);
+      expect(open.sets.some((s) => s.openLevelOnly)).toBe(true);
+      const metagross = getFactorySets(db, {
+        battle: 50,
+        levelMode: "open",
+        pokemonId: METAGROSS,
+      });
+      expect(metagross.sets.length).toBeGreaterThan(0);
+      expect(metagross.sets.every((s) => s.pokemonId === METAGROSS)).toBe(true);
+    });
+
+    it("reads the IV table", () => {
+      expect(getFactoryIvTable(db).map((r) => [r.iv, r.lastBattleIv])).toEqual([
+        [3, 6],
+        [6, 9],
+        [9, 12],
+        [12, 15],
+        [15, 18],
+        [21, 31],
+        [31, 31],
+        [31, 31],
+      ]);
     });
   });
 });
