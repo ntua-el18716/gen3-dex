@@ -506,7 +506,34 @@ export const trainerMon = sqliteTable(
 
 // ---------------------------------------------------------------------------
 // Battle Frontier (Emerald)
+//
+// How opponents are chosen (Battle Tower, Palace and Arena; the Factory picks
+// trainers the same way but builds their teams from rentals, and the Dome,
+// Pike and Pyramid have their own rules):
+// - A streak is split into challenges of 7 battles. For the next battle the
+//   game draws a trainer from frontier_trainer_range for that challenge (the
+//   7th battle uses a harder range), never one already fought in the challenge.
+// - The trainer's team is 3 random sets from their list (frontier_trainer_set)
+//   with no repeated species or held item; in Level 50 mode the
+//   open-level-only sets are skipped. All IVs equal the trainer's fixed IV.
+// - At set battle numbers the facility's Frontier Brain appears instead
+//   (frontier_brain), with a fixed team (frontier_brain_mon).
+// See src/lib/frontier.ts for the rules as code.
 // ---------------------------------------------------------------------------
+
+export const FRONTIER_FACILITIES = [
+  "tower",
+  "dome",
+  "palace",
+  "arena",
+  "factory",
+  "pike",
+  "pyramid",
+] as const;
+export type FrontierFacility = (typeof FRONTIER_FACILITIES)[number];
+
+export const FRONTIER_SYMBOLS = ["silver", "gold"] as const;
+export type FrontierSymbol = (typeof FRONTIER_SYMBOLS)[number];
 
 export const frontierSet = sqliteTable(
   "frontier_set",
@@ -532,18 +559,96 @@ export const frontierSet = sqliteTable(
     evSpeed: integer("ev_speed").notNull(),
     evSpAttack: integer("ev_sp_attack").notNull(),
     evSpDefense: integer("ev_sp_defense").notNull(),
+    /** "High tier" sets (after FRONTIER_MONS_HIGH_TIER): never used in Level 50 mode. */
+    openLevelOnly: integer("open_level_only", { mode: "boolean" }).notNull(),
   },
   (t) => [index("frontier_set_pokemon_idx").on(t.pokemonId)],
 );
 
 export const frontierTrainer = sqliteTable("frontier_trainer", {
-  /** pret index into gFacilityTrainers. */
+  /** pret index into gFacilityTrainers. Higher ids are harder trainers. */
   id: integer("id").primaryKey(),
   key: text("key").notNull().unique(),
   name: text("name").notNull(),
   /** Display name of the trainer class, e.g. "Youngster". */
   trainerClass: text("trainer_class").notNull(),
+  /** Every IV of this trainer's Pokémon (GetFrontierTrainerFixedIvs). */
+  fixedIv: integer("fixed_iv").notNull(),
 });
+
+/**
+ * The trainer ids the game draws from for a challenge (sFrontierTrainerIdRanges
+ * and …Hard). `challenge` is the streak divided by 7 (0 = battles 1–7);
+ * challenges after 7 reuse challenge 7. `lastBattle` rows apply to the 7th
+ * battle of the challenge.
+ */
+export const frontierTrainerRange = sqliteTable(
+  "frontier_trainer_range",
+  {
+    challenge: integer("challenge").notNull(),
+    lastBattle: integer("last_battle", { mode: "boolean" }).notNull(),
+    firstTrainerId: integer("first_trainer_id")
+      .notNull()
+      .references(() => frontierTrainer.id),
+    lastTrainerId: integer("last_trainer_id")
+      .notNull()
+      .references(() => frontierTrainer.id),
+  },
+  (t) => [primaryKey({ columns: [t.challenge, t.lastBattle] })],
+);
+
+/**
+ * Each facility's Frontier Brain and when they appear (single battles only).
+ * With n = the number of the battle about to be fought in the streak (1 =
+ * first; for the Dome and Pyramid the game counts rounds differently, hence
+ * `streakOffset`), the Brain appears when n - 1 + streakOffset equals
+ * `silverAt` (Silver Symbol), `goldAt` (Gold Symbol), or, once both Symbols
+ * are won, goldAt + any multiple of `repeatEvery` (gold team).
+ */
+export const frontierBrain = sqliteTable("frontier_brain", {
+  facility: text("facility", { enum: FRONTIER_FACILITIES }).primaryKey(),
+  name: text("name").notNull(),
+  /** Display name of the trainer class, e.g. "Salon Maiden". */
+  trainerClass: text("trainer_class").notNull(),
+  silverAt: integer("silver_at").notNull(),
+  goldAt: integer("gold_at").notNull(),
+  repeatEvery: integer("repeat_every").notNull(),
+  streakOffset: integer("streak_offset").notNull(),
+});
+
+/**
+ * The Frontier Brains' fixed teams, per Symbol. None for the Factory: its
+ * Brain uses random rental Pokémon (pret's table entry for it is unused).
+ */
+export const frontierBrainMon = sqliteTable(
+  "frontier_brain_mon",
+  {
+    facility: text("facility", { enum: FRONTIER_FACILITIES })
+      .notNull()
+      .references(() => frontierBrain.facility),
+    symbol: text("symbol", { enum: FRONTIER_SYMBOLS }).notNull(),
+    slot: integer("slot").notNull(),
+    pokemonId: integer("pokemon_id")
+      .notNull()
+      .references(() => pokemon.id),
+    itemId: integer("item_id").references(() => item.id),
+    natureId: integer("nature_id")
+      .notNull()
+      .references(() => nature.id),
+    fixedIv: integer("fixed_iv").notNull(),
+    evHp: integer("ev_hp").notNull(),
+    evAttack: integer("ev_attack").notNull(),
+    evDefense: integer("ev_defense").notNull(),
+    evSpeed: integer("ev_speed").notNull(),
+    evSpAttack: integer("ev_sp_attack").notNull(),
+    evSpDefense: integer("ev_sp_defense").notNull(),
+    move1Id: integer("move1_id").references(() => move.id),
+    move2Id: integer("move2_id").references(() => move.id),
+    move3Id: integer("move3_id").references(() => move.id),
+    move4Id: integer("move4_id").references(() => move.id),
+  },
+  (t) => [primaryKey({ columns: [t.facility, t.symbol, t.slot] })],
+);
 
 /** Which sets each Frontier trainer can draw from. */
 export const frontierTrainerSet = sqliteTable(

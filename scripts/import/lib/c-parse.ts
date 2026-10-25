@@ -225,12 +225,19 @@ export function parseDesignatedArray(
   rawSrc: string,
   arrayName: string,
 ): Entry[] {
+  return parseDesignatedEntries(findArrayBody(rawSrc, arrayName));
+}
+
+/**
+ * The initializer body (between the outer braces) of the array named
+ * `arrayName`, whatever its dimensions: `NAME[] = {…}`, `NAME[][2] = {…}`.
+ */
+export function findArrayBody(rawSrc: string, arrayName: string): string {
   const src = stripComments(rawSrc);
   const decl = new RegExp(`\\b${arrayName}\\b[^=;]*=\\s*\\{`).exec(src);
   if (!decl) throw new Error(`Array ${arrayName} not found`);
   const open = decl.index + decl[0].length - 1;
-  const close = findMatching(src, open);
-  return parseDesignatedEntries(src.slice(open + 1, close));
+  return src.slice(open + 1, findMatching(src, open));
 }
 
 /** Parses `[KEY] = value, [KEY2] = value2, …` from an initializer body. */

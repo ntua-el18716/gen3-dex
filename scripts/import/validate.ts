@@ -112,6 +112,31 @@ const CHECKS: Check[] = [
     sql: "SELECT count(DISTINCT trainer_id) FROM frontier_trainer_set",
     expect: 300,
   },
+  {
+    name: "Frontier trainer ranges for challenges 0–7, normal and 7th battle",
+    sql: "SELECT count(*) FROM frontier_trainer_range",
+    expect: 16,
+  },
+  {
+    name: "Frontier IVs run 3 → 31 with the trainer id",
+    sql: "SELECT (SELECT fixed_iv FROM frontier_trainer WHERE id = 0) || '/' || (SELECT fixed_iv FROM frontier_trainer WHERE id = 299)",
+    expect: "3/31",
+  },
+  {
+    name: "32 high-tier sets (Open Level only)",
+    sql: "SELECT count(*) FROM frontier_set WHERE open_level_only",
+    expect: 32,
+  },
+  {
+    name: "7 Frontier Brains, fixed teams for all but the Factory",
+    sql: "SELECT count(*) || '/' || (SELECT count(DISTINCT facility) FROM frontier_brain_mon) FROM frontier_brain",
+    expect: "7/6",
+  },
+  {
+    name: "Anabel's Silver team is Alakazam, Entei, Snorlax",
+    sql: "SELECT group_concat(p.name, ', ') FROM (SELECT * FROM frontier_brain_mon WHERE facility = 'tower' AND symbol = 'silver' ORDER BY slot) b JOIN pokemon p ON p.id = b.pokemon_id",
+    expect: "Alakazam, Entei, Snorlax",
+  },
 
   // Spot checks against the games
   {

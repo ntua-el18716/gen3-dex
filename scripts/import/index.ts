@@ -114,9 +114,12 @@ function main() {
     insert(schema.frontierSet, frontier.sets);
     insert(schema.frontierTrainer, frontier.trainers);
     insert(schema.frontierTrainerSet, frontier.trainerSets);
+    insert(schema.frontierTrainerRange, frontier.trainerRanges);
+    insert(schema.frontierBrain, frontier.brains);
+    insert(schema.frontierBrainMon, frontier.brainMons);
     insert(schema.meta, [
       ...SOURCES.map((s) => ({ key: `source.${s.name}`, value: s.commit })),
-      { key: "schema", value: "gen3-companion/1" },
+      { key: "schema", value: "gen3-companion/2" },
     ]);
   });
 

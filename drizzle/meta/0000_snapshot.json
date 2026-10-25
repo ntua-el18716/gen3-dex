@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "61f3139d-6827-46a6-8ab3-2e5e858ac5cf",
+  "id": "e82235ad-d32d-4b8f-b251-1521c0fb4259",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "ability": {
@@ -385,6 +385,308 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "frontier_brain": {
+      "name": "frontier_brain",
+      "columns": {
+        "facility": {
+          "name": "facility",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "trainer_class": {
+          "name": "trainer_class",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "silver_at": {
+          "name": "silver_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "gold_at": {
+          "name": "gold_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "repeat_every": {
+          "name": "repeat_every",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "streak_offset": {
+          "name": "streak_offset",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "frontier_brain_mon": {
+      "name": "frontier_brain_mon",
+      "columns": {
+        "facility": {
+          "name": "facility",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "symbol": {
+          "name": "symbol",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "slot": {
+          "name": "slot",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "pokemon_id": {
+          "name": "pokemon_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "item_id": {
+          "name": "item_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "nature_id": {
+          "name": "nature_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "fixed_iv": {
+          "name": "fixed_iv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ev_hp": {
+          "name": "ev_hp",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ev_attack": {
+          "name": "ev_attack",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ev_defense": {
+          "name": "ev_defense",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ev_speed": {
+          "name": "ev_speed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ev_sp_attack": {
+          "name": "ev_sp_attack",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ev_sp_defense": {
+          "name": "ev_sp_defense",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "move1_id": {
+          "name": "move1_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "move2_id": {
+          "name": "move2_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "move3_id": {
+          "name": "move3_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "move4_id": {
+          "name": "move4_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "frontier_brain_mon_facility_frontier_brain_facility_fk": {
+          "name": "frontier_brain_mon_facility_frontier_brain_facility_fk",
+          "tableFrom": "frontier_brain_mon",
+          "tableTo": "frontier_brain",
+          "columnsFrom": [
+            "facility"
+          ],
+          "columnsTo": [
+            "facility"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "frontier_brain_mon_pokemon_id_pokemon_id_fk": {
+          "name": "frontier_brain_mon_pokemon_id_pokemon_id_fk",
+          "tableFrom": "frontier_brain_mon",
+          "tableTo": "pokemon",
+          "columnsFrom": [
+            "pokemon_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "frontier_brain_mon_item_id_item_id_fk": {
+          "name": "frontier_brain_mon_item_id_item_id_fk",
+          "tableFrom": "frontier_brain_mon",
+          "tableTo": "item",
+          "columnsFrom": [
+            "item_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "frontier_brain_mon_nature_id_nature_id_fk": {
+          "name": "frontier_brain_mon_nature_id_nature_id_fk",
+          "tableFrom": "frontier_brain_mon",
+          "tableTo": "nature",
+          "columnsFrom": [
+            "nature_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "frontier_brain_mon_move1_id_move_id_fk": {
+          "name": "frontier_brain_mon_move1_id_move_id_fk",
+          "tableFrom": "frontier_brain_mon",
+          "tableTo": "move",
+          "columnsFrom": [
+            "move1_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "frontier_brain_mon_move2_id_move_id_fk": {
+          "name": "frontier_brain_mon_move2_id_move_id_fk",
+          "tableFrom": "frontier_brain_mon",
+          "tableTo": "move",
+          "columnsFrom": [
+            "move2_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "frontier_brain_mon_move3_id_move_id_fk": {
+          "name": "frontier_brain_mon_move3_id_move_id_fk",
+          "tableFrom": "frontier_brain_mon",
+          "tableTo": "move",
+          "columnsFrom": [
+            "move3_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "frontier_brain_mon_move4_id_move_id_fk": {
+          "name": "frontier_brain_mon_move4_id_move_id_fk",
+          "tableFrom": "frontier_brain_mon",
+          "tableTo": "move",
+          "columnsFrom": [
+            "move4_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "frontier_brain_mon_facility_symbol_slot_pk": {
+          "columns": [
+            "facility",
+            "symbol",
+            "slot"
+          ],
+          "name": "frontier_brain_mon_facility_symbol_slot_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "frontier_set": {
       "name": "frontier_set",
       "columns": {
@@ -488,6 +790,13 @@
         },
         "ev_sp_defense": {
           "name": "ev_sp_defense",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "open_level_only": {
+          "name": "open_level_only",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
@@ -637,6 +946,13 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "fixed_iv": {
+          "name": "fixed_iv",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
         }
       },
       "indexes": {
@@ -650,6 +966,79 @@
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "frontier_trainer_range": {
+      "name": "frontier_trainer_range",
+      "columns": {
+        "challenge": {
+          "name": "challenge",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "last_battle": {
+          "name": "last_battle",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "first_trainer_id": {
+          "name": "first_trainer_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "last_trainer_id": {
+          "name": "last_trainer_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "frontier_trainer_range_first_trainer_id_frontier_trainer_id_fk": {
+          "name": "frontier_trainer_range_first_trainer_id_frontier_trainer_id_fk",
+          "tableFrom": "frontier_trainer_range",
+          "tableTo": "frontier_trainer",
+          "columnsFrom": [
+            "first_trainer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "frontier_trainer_range_last_trainer_id_frontier_trainer_id_fk": {
+          "name": "frontier_trainer_range_last_trainer_id_frontier_trainer_id_fk",
+          "tableFrom": "frontier_trainer_range",
+          "tableTo": "frontier_trainer",
+          "columnsFrom": [
+            "last_trainer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "frontier_trainer_range_challenge_last_battle_pk": {
+          "columns": [
+            "challenge",
+            "last_battle"
+          ],
+          "name": "frontier_trainer_range_challenge_last_battle_pk"
+        }
+      },
       "uniqueConstraints": {},
       "checkConstraints": {}
     },

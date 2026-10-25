@@ -50,6 +50,45 @@ CREATE TABLE `evolution` (
 );
 --> statement-breakpoint
 CREATE INDEX `evolution_to_idx` ON `evolution` (`to_pokemon_id`);--> statement-breakpoint
+CREATE TABLE `frontier_brain` (
+	`facility` text PRIMARY KEY NOT NULL,
+	`name` text NOT NULL,
+	`trainer_class` text NOT NULL,
+	`silver_at` integer NOT NULL,
+	`gold_at` integer NOT NULL,
+	`repeat_every` integer NOT NULL,
+	`streak_offset` integer NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE `frontier_brain_mon` (
+	`facility` text NOT NULL,
+	`symbol` text NOT NULL,
+	`slot` integer NOT NULL,
+	`pokemon_id` integer NOT NULL,
+	`item_id` integer,
+	`nature_id` integer NOT NULL,
+	`fixed_iv` integer NOT NULL,
+	`ev_hp` integer NOT NULL,
+	`ev_attack` integer NOT NULL,
+	`ev_defense` integer NOT NULL,
+	`ev_speed` integer NOT NULL,
+	`ev_sp_attack` integer NOT NULL,
+	`ev_sp_defense` integer NOT NULL,
+	`move1_id` integer,
+	`move2_id` integer,
+	`move3_id` integer,
+	`move4_id` integer,
+	PRIMARY KEY(`facility`, `symbol`, `slot`),
+	FOREIGN KEY (`facility`) REFERENCES `frontier_brain`(`facility`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`pokemon_id`) REFERENCES `pokemon`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`item_id`) REFERENCES `item`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`nature_id`) REFERENCES `nature`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`move1_id`) REFERENCES `move`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`move2_id`) REFERENCES `move`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`move3_id`) REFERENCES `move`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`move4_id`) REFERENCES `move`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
 CREATE TABLE `frontier_set` (
 	`id` integer PRIMARY KEY NOT NULL,
 	`key` text NOT NULL,
@@ -66,6 +105,7 @@ CREATE TABLE `frontier_set` (
 	`ev_speed` integer NOT NULL,
 	`ev_sp_attack` integer NOT NULL,
 	`ev_sp_defense` integer NOT NULL,
+	`open_level_only` integer NOT NULL,
 	FOREIGN KEY (`pokemon_id`) REFERENCES `pokemon`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`move1_id`) REFERENCES `move`(`id`) ON UPDATE no action ON DELETE no action,
 	FOREIGN KEY (`move2_id`) REFERENCES `move`(`id`) ON UPDATE no action ON DELETE no action,
@@ -81,10 +121,21 @@ CREATE TABLE `frontier_trainer` (
 	`id` integer PRIMARY KEY NOT NULL,
 	`key` text NOT NULL,
 	`name` text NOT NULL,
-	`trainer_class` text NOT NULL
+	`trainer_class` text NOT NULL,
+	`fixed_iv` integer NOT NULL
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `frontier_trainer_key_unique` ON `frontier_trainer` (`key`);--> statement-breakpoint
+CREATE TABLE `frontier_trainer_range` (
+	`challenge` integer NOT NULL,
+	`last_battle` integer NOT NULL,
+	`first_trainer_id` integer NOT NULL,
+	`last_trainer_id` integer NOT NULL,
+	PRIMARY KEY(`challenge`, `last_battle`),
+	FOREIGN KEY (`first_trainer_id`) REFERENCES `frontier_trainer`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`last_trainer_id`) REFERENCES `frontier_trainer`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
 CREATE TABLE `frontier_trainer_set` (
 	`trainer_id` integer NOT NULL,
 	`set_id` integer NOT NULL,

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   evalExpression,
   expandListMacros,
+  findArrayBody,
   parseConstants,
   parseDesignatedArray,
   parseList,
@@ -82,6 +83,21 @@ describe("designated initializers", () => {
       "MOVE_DEFENSE_CURL",
       "MOVE_NONE",
       "MOVE_NONE",
+    ]);
+  });
+
+  it("finds the body of multi-dimensional arrays", () => {
+    const src = `static const u16 sRanges[][2] =
+{
+    {A_FIRST, A_LAST}, // 0 - 99
+    {B_FIRST, B_LAST},
+};`;
+    const rows = splitTopLevel(findArrayBody(src, "sRanges"))
+      .filter((row) => row !== "")
+      .map(parseList);
+    expect(rows).toEqual([
+      ["A_FIRST", "A_LAST"],
+      ["B_FIRST", "B_LAST"],
     ]);
   });
 });
