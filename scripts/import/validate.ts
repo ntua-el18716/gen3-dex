@@ -109,6 +109,19 @@ const CHECKS: Check[] = [
     expect: "110-199,372-881",
   },
   {
+    name: "Pike tiers and Pyramid floors: wild chances sum to 100%",
+    sql: `SELECT count(*) FROM (
+            SELECT sum(rate) s FROM pike_wild_mon GROUP BY level_mode, tier
+            UNION ALL SELECT sum(rate) FROM pyramid_floor_rate GROUP BY floor
+          ) WHERE s != 100`,
+    expect: 0,
+  },
+  {
+    name: "Pyramid: 20 rounds of 8 wild Pokémon per level mode",
+    sql: "SELECT count(*) FROM pyramid_wild_mon",
+    expect: 320,
+  },
+  {
     name: "882 Frontier sets",
     sql: "SELECT count(*) FROM frontier_set",
     expect: 882,

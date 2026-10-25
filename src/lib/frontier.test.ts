@@ -7,6 +7,10 @@ import {
   factoryOpponentIv,
   frontierFriendship,
   opponentLevel,
+  pikeWildLevel,
+  pikeWildTier,
+  pyramidRound,
+  pyramidWildLevels,
   type FactoryIvRow,
 } from "./frontier";
 
@@ -116,5 +120,37 @@ describe("Battle Factory IVs", () => {
   it("gives the Factory Head the row two challenges ahead", () => {
     expect(factoryBrainIv(table, 21)).toBe(15); // Silver: challenge 2 → row 4
     expect(factoryBrainIv(table, 42)).toBe(31); // Gold: challenge 5 → row 7
+  });
+});
+
+describe("Battle Pike", () => {
+  it("changes tier after 20, 40 and 60 challenges of 14 rooms", () => {
+    expect(pikeWildTier(280)).toBe(0);
+    expect(pikeWildTier(281)).toBe(1);
+    expect(pikeWildTier(560)).toBe(1);
+    expect(pikeWildTier(840)).toBe(2);
+    expect(pikeWildTier(841)).toBe(3);
+  });
+
+  it("computes wild levels, skipping the delta below level 60", () => {
+    expect(pikeWildLevel("50", 4)).toBe(46);
+    expect(pikeWildLevel("open", 4, 100)).toBe(96);
+    expect(pikeWildLevel("open", 4, 62)).toBe(60);
+    expect(pikeWildLevel("open", 4, 55)).toBe(60);
+  });
+});
+
+describe("Battle Pyramid", () => {
+  it("cycles through 20 rounds of 7 floors", () => {
+    expect(pyramidRound(0)).toBe(0);
+    expect(pyramidRound(7)).toBe(1);
+    expect(pyramidRound(139)).toBe(19);
+    expect(pyramidRound(140)).toBe(0);
+  });
+
+  it("gives levels ±5 around the listed level, or below the opponent level", () => {
+    expect(pyramidWildLevels("50", 35)).toEqual({ min: 30, max: 40 });
+    expect(pyramidWildLevels("open", 15, 100)).toEqual({ min: 80, max: 90 });
+    expect(pyramidWildLevels("open", 15, 50)).toEqual({ min: 40, max: 50 });
   });
 });

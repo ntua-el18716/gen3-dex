@@ -3,6 +3,9 @@
  * each trainer can draw from, which trainers each challenge draws from,
  * and the Frontier Brains.
  */
+import { readFileSync } from "node:fs";
+import path from "node:path";
+
 import {
   BATTLES_PER_CHALLENGE,
   FACTORY_BRAIN_IV_OFFSET,
@@ -11,6 +14,8 @@ import {
   LEVEL_50,
   MAX_FRIENDSHIP,
   MIN_OPEN_LEVEL,
+  PIKE_ROOMS_PER_CHALLENGE,
+  PYRAMID_ROUNDS,
 } from "../../../src/lib/frontier";
 import {
   FRONTIER_FACILITIES,
@@ -34,6 +39,7 @@ import {
   type Constants,
 } from "../lib/c-parse";
 import { titleCase } from "../lib/text";
+import { DATA_SRC_DIR } from "../sources";
 import { trainerClassNames } from "./trainers";
 
 const E = "emerald" as const;
@@ -220,6 +226,7 @@ export function importFrontier(lookups: Lookups) {
     trainerSets,
     trainerRanges: importTrainerRanges(towerSrc, constants),
     ...importFactory(towerSrc, constants, setIds),
+    ...importPikeAndPyramid(lookups, constants),
     ...importBrains(lookups, utilSrc, constants, classNames),
   };
 }
@@ -334,6 +341,157 @@ function importFactory(
       );
 
   return { factorySetRanges: setRanges, factoryIvs: ivs };
+}
+
+type WildJsonGroup = {
+  label: string;
+  fields?: { type: string; encounter_rates: number[] }[];
+  encounters: { land_mons?: { mons: { species: string }[] } }[];
+};
+
+/**
+ * Battle Pike and Battle Pyramid wild Pokémon. The real tables are in C;
+ * wild_encounters.json only has placeholder headers whose slots say which
+ * table entry each grass slot picks (Pike: by species; Pyramid: species
+ * number − 1, so SPECIES_BULBASAUR = entry 0).
+ */
+function importPikeAndPyramid(lookups: Lookups, constants: Constants) {
+  const expectConstant = (name: string, value: number) => {
+    if (constant(constants, name) !== value)
+      throw new Error(`${name} is not ${value} (see src/lib/frontier.ts)`);
+  };
+  expectConstant("NUM_PIKE_ROOMS", PIKE_ROOMS_PER_CHALLENGE);
+  expectConstant("TOTAL_PYRAMID_ROUNDS", PYRAMID_ROUNDS);
+
+  const json = JSON.parse(
+    readFileSync(
+      path.resolve(DATA_SRC_DIR, "pokeemerald/src/data/wild_encounters.json"),
+      "utf8",
+    ),
+  ) as { wild_encounter_groups: WildJsonGroup[] };
+  const groups = json.wild_encounter_groups;
+  const landRates = groups
+    .flatMap((g) => g.fields ?? [])
+    .find((f) => f.type === "land_mons")?.encounter_rates;
+  if (!landRates) throw new Error("No land encounter rates");
+  const header = (label: string) => {
+    const g = groups.find((x) => x.label === label);
+    if (!g) throw new Error(`${label} not found`);
+    return g.encounters.map((e) => e.land_mons!.mons.map((m) => m.species));
+  };
+  /** Sums the grass-slot rates per table entry. */
+  const rates = (slots: string[], entryOf: (species: string) => number) => {
+    const out = new Map<number, number>();
+    slots.forEach((species, i) => {
+      const entry = entryOf(species);
+      out.set(entry, (out.get(entry) ?? 0) + landRates[i]!);
+    });
+    return out;
+  };
+  const moves = (list: string) => {
+    const [m1, m2, m3, m4] = parseList(list).map((m) =>
+      lookups.optionalMove(m),
+    );
+    return {
+      move1Id: m1 ?? null,
+      move2Id: m2 ?? null,
+      move3Id: m3 ?? null,
+      move4Id: m4 ?? null,
+    };
+  };
+  /** Struct entries of each array named in a pointer table. */
+  const tables = (src: string, pointerTable: string) => {
+    const arrays = parseNamedArrays(src);
+    return parseList(`{${findArrayBody(src, pointerTable)}}`).map((name) => {
+      const body = arrays.get(name);
+      if (body === undefined) throw new Error(`${name} not found`);
+      return splitTopLevel(body)
+        .filter((e) => e.trim() !== "")
+        .map((e) => parseStructFields(e));
+    });
+  };
+
+  // Pike
+  const pikeSrc = readForGame(E, "src/battle_pike.c");
+  for (const pattern of [
+    /winStreak <= 20 \* NUM_PIKE_ROOMS[\s\S]*winStreak <= 40 \* NUM_PIKE_ROOMS[\s\S]*winStreak <= 60 \* NUM_PIKE_ROOMS/,
+    /monLevel = FRONTIER_MAX_LEVEL_50 - wildMons\[headerId\]\[pikeMonId\]\.levelDelta/,
+  ])
+    if (!pattern.test(pikeSrc))
+      throw new Error(`battle_pike.c no longer matches ${pattern}`);
+  const pikeHeaders = header("gBattlePikeWildMonHeaders");
+  const pikeWildMons = (
+    [
+      ["50", "sLvl50Mons"],
+      ["open", "sLvlOpenMons"],
+    ] as const
+  ).flatMap(([levelMode, pointerTable]) =>
+    tables(pikeSrc, pointerTable).flatMap((mons, tier) => {
+      const species = mons.map((f) => f.species!);
+      const slotRates = rates(pikeHeaders[tier]!, (s) => {
+        const entry = species.indexOf(s);
+        if (entry === -1)
+          throw new Error(`Pike tier ${tier}: ${s} not in table`);
+        return entry;
+      });
+      return mons.map((f, slot) => ({
+        levelMode,
+        tier,
+        slot,
+        pokemonId: lookups.pokemon(f.species!),
+        levelDelta: Number(f.levelDelta),
+        rate: slotRates.get(slot) ?? 0,
+        ...moves(f.moves!),
+      }));
+    }),
+  );
+
+  // Pyramid
+  const pyramidSrc = readForGame(E, "src/battle_pyramid.c");
+  for (const pattern of [
+    /pyramidWinStreaks\[lvl\] \/ FRONTIER_STAGES_PER_CHALLENGE\) % TOTAL_PYRAMID_ROUNDS/,
+    /lvl -= wildMons\[id\]\.lvl;\s*lvl = lvl - 5 \+ \(Random\(\) % 11\)/,
+    /lvl = wildMons\[id\]\.lvl - 5 \+ \(\(Random\(\) % 11\)\)/,
+  ])
+    if (!pattern.test(pyramidSrc))
+      throw new Error(`battle_pyramid.c no longer matches ${pattern}`);
+  const pyramidWildMons = (
+    [
+      ["50", "battle_pyramid_level_50_wild_mons.h", "sLevel50WildMonPointers"],
+      [
+        "open",
+        "battle_pyramid_open_level_wild_mons.h",
+        "sOpenLevelWildMonPointers",
+      ],
+    ] as const
+  ).flatMap(([levelMode, file, pointerTable]) => {
+    const rounds = tables(
+      readForGame(E, `src/data/battle_frontier/${file}`),
+      pointerTable,
+    );
+    if (rounds.length !== PYRAMID_ROUNDS)
+      throw new Error(`Expected ${PYRAMID_ROUNDS} Pyramid rounds in ${file}`);
+    return rounds.flatMap((mons, round) =>
+      mons.map((f, slot) => ({
+        levelMode,
+        round,
+        slot,
+        pokemonId: lookups.pokemon(f.species!),
+        level: Number(f.lvl),
+        abilityNum:
+          f.abilityNum === "ABILITY_RANDOM" ? null : Number(f.abilityNum),
+        ...moves(f.moves!),
+      })),
+    );
+  });
+  const pyramidFloorRates = header("gBattlePyramidWildMonHeaders").flatMap(
+    (slots, i) =>
+      [...rates(slots, (s) => constant(constants, s) - 1)]
+        .sort(([a], [b]) => a - b)
+        .map(([slot, rate]) => ({ floor: i + 1, slot, rate })),
+  );
+
+  return { pikeWildMons, pyramidWildMons, pyramidFloorRates };
 }
 
 /** Frontier Brains: who, when (sFrontierBrainStreakAppearances), and their teams. */

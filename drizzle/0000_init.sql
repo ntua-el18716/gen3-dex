@@ -239,6 +239,25 @@ CREATE TABLE `nature` (
 	`decreased_stat` text
 );
 --> statement-breakpoint
+CREATE TABLE `pike_wild_mon` (
+	`level_mode` text NOT NULL,
+	`tier` integer NOT NULL,
+	`slot` integer NOT NULL,
+	`pokemon_id` integer NOT NULL,
+	`level_delta` integer NOT NULL,
+	`rate` integer NOT NULL,
+	`move1_id` integer,
+	`move2_id` integer,
+	`move3_id` integer,
+	`move4_id` integer,
+	PRIMARY KEY(`level_mode`, `tier`, `slot`),
+	FOREIGN KEY (`pokemon_id`) REFERENCES `pokemon`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`move1_id`) REFERENCES `move`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`move2_id`) REFERENCES `move`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`move3_id`) REFERENCES `move`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`move4_id`) REFERENCES `move`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
 CREATE TABLE `pokedex_text` (
 	`pokemon_id` integer NOT NULL,
 	`game` text NOT NULL,
@@ -287,6 +306,32 @@ CREATE TABLE `pokemon` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `pokemon_key_unique` ON `pokemon` (`key`);--> statement-breakpoint
+CREATE TABLE `pyramid_floor_rate` (
+	`floor` integer NOT NULL,
+	`slot` integer NOT NULL,
+	`rate` integer NOT NULL,
+	PRIMARY KEY(`floor`, `slot`)
+);
+--> statement-breakpoint
+CREATE TABLE `pyramid_wild_mon` (
+	`level_mode` text NOT NULL,
+	`round` integer NOT NULL,
+	`slot` integer NOT NULL,
+	`pokemon_id` integer NOT NULL,
+	`level` integer NOT NULL,
+	`ability_num` integer,
+	`move1_id` integer,
+	`move2_id` integer,
+	`move3_id` integer,
+	`move4_id` integer,
+	PRIMARY KEY(`level_mode`, `round`, `slot`),
+	FOREIGN KEY (`pokemon_id`) REFERENCES `pokemon`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`move1_id`) REFERENCES `move`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`move2_id`) REFERENCES `move`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`move3_id`) REFERENCES `move`(`id`) ON UPDATE no action ON DELETE no action,
+	FOREIGN KEY (`move4_id`) REFERENCES `move`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
 CREATE TABLE `static_encounter` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`game` text NOT NULL,

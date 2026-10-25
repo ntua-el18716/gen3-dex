@@ -125,9 +125,12 @@ function main() {
     insert(schema.frontierBrainMon, frontier.brainMons);
     insert(schema.factorySetRange, frontier.factorySetRanges);
     insert(schema.factoryIv, frontier.factoryIvs);
+    insert(schema.pikeWildMon, frontier.pikeWildMons);
+    insert(schema.pyramidWildMon, frontier.pyramidWildMons);
+    insert(schema.pyramidFloorRate, frontier.pyramidFloorRates);
     insert(schema.meta, [
       ...SOURCES.map((s) => ({ key: `source.${s.name}`, value: s.commit })),
-      { key: "schema", value: "gen3-companion/4" },
+      { key: "schema", value: "gen3-companion/5" },
     ]);
   });
 

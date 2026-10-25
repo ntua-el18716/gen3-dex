@@ -178,3 +178,59 @@ export function factoryBrainIv(
   const { challenge } = battlePosition(battle);
   return factoryFixedIv(table, challenge + FACTORY_BRAIN_IV_OFFSET, false);
 }
+
+// ---------------------------------------------------------------------------
+// Battle Pike (battle_pike.c) and Battle Pyramid (battle_pyramid.c)
+// ---------------------------------------------------------------------------
+
+/** NUM_PIKE_ROOMS: the Pike streak counts rooms, 14 per challenge. */
+export const PIKE_ROOMS_PER_CHALLENGE = 14;
+/** TOTAL_PYRAMID_ROUNDS: the Pyramid's wild tables cycle after this many. */
+export const PYRAMID_ROUNDS = 20;
+
+/**
+ * GetBattlePikeWildMonHeaderId: which wild table the Pike uses after
+ * `roomsCleared` rooms (up to 20 challenges' worth → 0, 40 → 1, 60 → 2).
+ */
+export function pikeWildTier(roomsCleared: number): number {
+  const challenges = roomsCleared / PIKE_ROOMS_PER_CHALLENGE;
+  if (challenges <= 20) return 0;
+  if (challenges <= 40) return 1;
+  if (challenges <= 60) return 2;
+  return 3;
+}
+
+/**
+ * A Pike wild Pokémon's level: 50 − levelDelta in Level 50. In Open Level,
+ * the highest level in the party − levelDelta, but at least 60; if the party
+ * is below 60 the game skips the delta entirely and uses 60.
+ */
+export function pikeWildLevel(
+  mode: LevelMode,
+  levelDelta: number,
+  highestPartyLevel = MIN_OPEN_LEVEL,
+): number {
+  if (mode === "50") return LEVEL_50 - levelDelta;
+  if (highestPartyLevel < MIN_OPEN_LEVEL) return MIN_OPEN_LEVEL;
+  return Math.max(highestPartyLevel - levelDelta, MIN_OPEN_LEVEL);
+}
+
+/** The Pyramid round (wild table) after `floorsCleared` floors: cycles through 20. */
+export function pyramidRound(floorsCleared: number): number {
+  return Math.floor(floorsCleared / BATTLES_PER_CHALLENGE) % PYRAMID_ROUNDS;
+}
+
+/**
+ * GenerateBattlePyramidWildMon: the level range of a Pyramid wild Pokémon,
+ * ±5 around the listed level (Level 50) or around the opponent level minus
+ * the listed value (Open Level).
+ */
+export function pyramidWildLevels(
+  mode: LevelMode,
+  listed: number,
+  highestPartyLevel = MIN_OPEN_LEVEL,
+): { min: number; max: number } {
+  const centre =
+    mode === "50" ? listed : opponentLevel(mode, highestPartyLevel) - listed;
+  return { min: centre - 5, max: centre + 5 };
+}

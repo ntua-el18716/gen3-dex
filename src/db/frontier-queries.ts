@@ -7,6 +7,8 @@ import { alias } from "drizzle-orm/sqlite-core";
 
 import {
   battlePosition,
+  pikeWildTier,
+  pyramidRound,
   type FactoryIvRow,
   type LevelMode,
 } from "@/lib/frontier";
@@ -25,7 +27,10 @@ import {
   item,
   move,
   nature,
+  pikeWildMon,
   pokemon,
+  pyramidFloorRate,
+  pyramidWildMon,
   type FrontierFacility,
   type Stat,
 } from "./schema";
@@ -312,4 +317,109 @@ export function getFactorySets(
 /** The Factory IV table, for factoryOpponentIv / factoryBrainIv in src/lib/frontier.ts. */
 export function getFactoryIvTable(db: Db): FactoryIvRow[] {
   return db.select().from(factoryIv).orderBy(asc(factoryIv.challenge)).all();
+}
+
+/** Aliased move tables, for joining four move-id columns to names. */
+function moveAliases() {
+  return [
+    alias(move, "m1"),
+    alias(move, "m2"),
+    alias(move, "m3"),
+    alias(move, "m4"),
+  ] as const;
+}
+
+/**
+ * The Battle Pike's wild Pokémon after `roomsCleared` rooms, with each one's
+ * chance (%) and level delta (see pikeWildLevel for the actual level).
+ */
+export function getPikeWildMons(
+  db: Db,
+  { levelMode, roomsCleared }: { levelMode: LevelMode; roomsCleared: number },
+) {
+  const tier = pikeWildTier(roomsCleared);
+  const [m1, m2, m3, m4] = moveAliases();
+  const mons = db
+    .select({
+      pokemonId: pikeWildMon.pokemonId,
+      species: pokemon.name,
+      levelDelta: pikeWildMon.levelDelta,
+      rate: pikeWildMon.rate,
+      move1: m1.name,
+      move2: m2.name,
+      move3: m3.name,
+      move4: m4.name,
+    })
+    .from(pikeWildMon)
+    .innerJoin(pokemon, eq(pokemon.id, pikeWildMon.pokemonId))
+    .leftJoin(m1, eq(m1.id, pikeWildMon.move1Id))
+    .leftJoin(m2, eq(m2.id, pikeWildMon.move2Id))
+    .leftJoin(m3, eq(m3.id, pikeWildMon.move3Id))
+    .leftJoin(m4, eq(m4.id, pikeWildMon.move4Id))
+    .where(
+      and(eq(pikeWildMon.levelMode, levelMode), eq(pikeWildMon.tier, tier)),
+    )
+    .orderBy(asc(pikeWildMon.slot))
+    .all()
+    .map(({ move1, move2, move3, move4, ...m }) => ({
+      ...m,
+      moves: [move1, move2, move3, move4].filter((x): x is string => !!x),
+    }));
+  return { tier, mons };
+}
+
+/**
+ * The Battle Pyramid's wild Pokémon on `floor` (1–7) after `floorsCleared`
+ * floors, with each one's chance (%), listed level (see pyramidWildLevels)
+ * and ability (0/1, null = random). Pokémon that never appear on that floor
+ * are left out.
+ */
+export function getPyramidWildMons(
+  db: Db,
+  {
+    levelMode,
+    floorsCleared,
+    floor,
+  }: { levelMode: LevelMode; floorsCleared: number; floor: number },
+) {
+  const round = pyramidRound(floorsCleared);
+  const [m1, m2, m3, m4] = moveAliases();
+  const mons = db
+    .select({
+      pokemonId: pyramidWildMon.pokemonId,
+      species: pokemon.name,
+      level: pyramidWildMon.level,
+      abilityNum: pyramidWildMon.abilityNum,
+      rate: pyramidFloorRate.rate,
+      move1: m1.name,
+      move2: m2.name,
+      move3: m3.name,
+      move4: m4.name,
+    })
+    .from(pyramidWildMon)
+    .innerJoin(pokemon, eq(pokemon.id, pyramidWildMon.pokemonId))
+    .innerJoin(
+      pyramidFloorRate,
+      and(
+        eq(pyramidFloorRate.slot, pyramidWildMon.slot),
+        eq(pyramidFloorRate.floor, floor),
+      ),
+    )
+    .leftJoin(m1, eq(m1.id, pyramidWildMon.move1Id))
+    .leftJoin(m2, eq(m2.id, pyramidWildMon.move2Id))
+    .leftJoin(m3, eq(m3.id, pyramidWildMon.move3Id))
+    .leftJoin(m4, eq(m4.id, pyramidWildMon.move4Id))
+    .where(
+      and(
+        eq(pyramidWildMon.levelMode, levelMode),
+        eq(pyramidWildMon.round, round),
+      ),
+    )
+    .orderBy(asc(pyramidWildMon.slot))
+    .all()
+    .map(({ move1, move2, move3, move4, ...m }) => ({
+      ...m,
+      moves: [move1, move2, move3, move4].filter((x): x is string => !!x),
+    }));
+  return { round, mons };
 }

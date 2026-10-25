@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "fcff69f4-e3fa-4411-8642-106ee9c9f353",
+  "id": "da9541de-3b97-4932-9480-1ea424798c4d",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "ability": {
@@ -1708,6 +1708,161 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "pike_wild_mon": {
+      "name": "pike_wild_mon",
+      "columns": {
+        "level_mode": {
+          "name": "level_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tier": {
+          "name": "tier",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "slot": {
+          "name": "slot",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "pokemon_id": {
+          "name": "pokemon_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "level_delta": {
+          "name": "level_delta",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "rate": {
+          "name": "rate",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "move1_id": {
+          "name": "move1_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "move2_id": {
+          "name": "move2_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "move3_id": {
+          "name": "move3_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "move4_id": {
+          "name": "move4_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "pike_wild_mon_pokemon_id_pokemon_id_fk": {
+          "name": "pike_wild_mon_pokemon_id_pokemon_id_fk",
+          "tableFrom": "pike_wild_mon",
+          "tableTo": "pokemon",
+          "columnsFrom": [
+            "pokemon_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "pike_wild_mon_move1_id_move_id_fk": {
+          "name": "pike_wild_mon_move1_id_move_id_fk",
+          "tableFrom": "pike_wild_mon",
+          "tableTo": "move",
+          "columnsFrom": [
+            "move1_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "pike_wild_mon_move2_id_move_id_fk": {
+          "name": "pike_wild_mon_move2_id_move_id_fk",
+          "tableFrom": "pike_wild_mon",
+          "tableTo": "move",
+          "columnsFrom": [
+            "move2_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "pike_wild_mon_move3_id_move_id_fk": {
+          "name": "pike_wild_mon_move3_id_move_id_fk",
+          "tableFrom": "pike_wild_mon",
+          "tableTo": "move",
+          "columnsFrom": [
+            "move3_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "pike_wild_mon_move4_id_move_id_fk": {
+          "name": "pike_wild_mon_move4_id_move_id_fk",
+          "tableFrom": "pike_wild_mon",
+          "tableTo": "move",
+          "columnsFrom": [
+            "move4_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "pike_wild_mon_level_mode_tier_slot_pk": {
+          "columns": [
+            "level_mode",
+            "tier",
+            "slot"
+          ],
+          "name": "pike_wild_mon_level_mode_tier_slot_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "pokedex_text": {
       "name": "pokedex_text",
       "columns": {
@@ -2047,6 +2202,200 @@
         }
       },
       "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "pyramid_floor_rate": {
+      "name": "pyramid_floor_rate",
+      "columns": {
+        "floor": {
+          "name": "floor",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "slot": {
+          "name": "slot",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "rate": {
+          "name": "rate",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "pyramid_floor_rate_floor_slot_pk": {
+          "columns": [
+            "floor",
+            "slot"
+          ],
+          "name": "pyramid_floor_rate_floor_slot_pk"
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "pyramid_wild_mon": {
+      "name": "pyramid_wild_mon",
+      "columns": {
+        "level_mode": {
+          "name": "level_mode",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "round": {
+          "name": "round",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "slot": {
+          "name": "slot",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "pokemon_id": {
+          "name": "pokemon_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "level": {
+          "name": "level",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "ability_num": {
+          "name": "ability_num",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "move1_id": {
+          "name": "move1_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "move2_id": {
+          "name": "move2_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "move3_id": {
+          "name": "move3_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "move4_id": {
+          "name": "move4_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "pyramid_wild_mon_pokemon_id_pokemon_id_fk": {
+          "name": "pyramid_wild_mon_pokemon_id_pokemon_id_fk",
+          "tableFrom": "pyramid_wild_mon",
+          "tableTo": "pokemon",
+          "columnsFrom": [
+            "pokemon_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "pyramid_wild_mon_move1_id_move_id_fk": {
+          "name": "pyramid_wild_mon_move1_id_move_id_fk",
+          "tableFrom": "pyramid_wild_mon",
+          "tableTo": "move",
+          "columnsFrom": [
+            "move1_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "pyramid_wild_mon_move2_id_move_id_fk": {
+          "name": "pyramid_wild_mon_move2_id_move_id_fk",
+          "tableFrom": "pyramid_wild_mon",
+          "tableTo": "move",
+          "columnsFrom": [
+            "move2_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "pyramid_wild_mon_move3_id_move_id_fk": {
+          "name": "pyramid_wild_mon_move3_id_move_id_fk",
+          "tableFrom": "pyramid_wild_mon",
+          "tableTo": "move",
+          "columnsFrom": [
+            "move3_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "pyramid_wild_mon_move4_id_move_id_fk": {
+          "name": "pyramid_wild_mon_move4_id_move_id_fk",
+          "tableFrom": "pyramid_wild_mon",
+          "tableTo": "move",
+          "columnsFrom": [
+            "move4_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "pyramid_wild_mon_level_mode_round_slot_pk": {
+          "columns": [
+            "level_mode",
+            "round",
+            "slot"
+          ],
+          "name": "pyramid_wild_mon_level_mode_round_slot_pk"
+        }
+      },
       "uniqueConstraints": {},
       "checkConstraints": {}
     },

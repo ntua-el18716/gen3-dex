@@ -737,6 +737,68 @@ export const factoryIv = sqliteTable("factory_iv", {
   lastBattleIv: integer("last_battle_iv").notNull(),
 });
 
+/**
+ * Battle Pike: the wild Pokémon in the rooms with a wild battle
+ * (battle_pike.c). `tier` depends on the rooms cleared in the streak
+ * (pikeWildTier); `rate` is the chance (%) of each when one appears. Level:
+ * see pikeWildLevel in src/lib/frontier.ts. Ability is random; IVs random.
+ */
+export const pikeWildMon = sqliteTable(
+  "pike_wild_mon",
+  {
+    levelMode: text("level_mode", { enum: FRONTIER_LEVEL_MODES }).notNull(),
+    tier: integer("tier").notNull(),
+    slot: integer("slot").notNull(),
+    pokemonId: integer("pokemon_id")
+      .notNull()
+      .references(() => pokemon.id),
+    levelDelta: integer("level_delta").notNull(),
+    rate: integer("rate").notNull(),
+    move1Id: integer("move1_id").references(() => move.id),
+    move2Id: integer("move2_id").references(() => move.id),
+    move3Id: integer("move3_id").references(() => move.id),
+    move4Id: integer("move4_id").references(() => move.id),
+  },
+  (t) => [primaryKey({ columns: [t.levelMode, t.tier, t.slot] })],
+);
+
+/**
+ * Battle Pyramid: each round's 8 wild Pokémon (round = floors cleared / 7,
+ * cycling through 20 rounds). `level` is the listed level in Level 50 (the
+ * actual one is ±5) and, in Open Level, how far below the opponent level
+ * it is (pyramidWildLevels). `abilityNum` 0/1 = first/second ability, null =
+ * random.
+ */
+export const pyramidWildMon = sqliteTable(
+  "pyramid_wild_mon",
+  {
+    levelMode: text("level_mode", { enum: FRONTIER_LEVEL_MODES }).notNull(),
+    round: integer("round").notNull(),
+    slot: integer("slot").notNull(),
+    pokemonId: integer("pokemon_id")
+      .notNull()
+      .references(() => pokemon.id),
+    level: integer("level").notNull(),
+    abilityNum: integer("ability_num"),
+    move1Id: integer("move1_id").references(() => move.id),
+    move2Id: integer("move2_id").references(() => move.id),
+    move3Id: integer("move3_id").references(() => move.id),
+    move4Id: integer("move4_id").references(() => move.id),
+  },
+  (t) => [primaryKey({ columns: [t.levelMode, t.round, t.slot] })],
+);
+
+/** Chance (%) of each of the round's 8 Pokémon (`slot`) on each Pyramid floor (1–7). */
+export const pyramidFloorRate = sqliteTable(
+  "pyramid_floor_rate",
+  {
+    floor: integer("floor").notNull(),
+    slot: integer("slot").notNull(),
+    rate: integer("rate").notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.floor, t.slot] })],
+);
+
 /** Which sets each Frontier trainer can draw from. */
 export const frontierTrainerSet = sqliteTable(
   "frontier_trainer_set",

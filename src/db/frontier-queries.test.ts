@@ -10,7 +10,9 @@ import {
   getFactoryIvTable,
   getFactorySets,
   getFrontierBrain,
+  getPikeWildMons,
   getPossibleSets,
+  getPyramidWildMons,
   getSetDetails,
   getTrainersForBattle,
 } from "./frontier-queries";
@@ -189,6 +191,63 @@ describe.skipIf(!existsSync(DB_PATH))("Battle Frontier queries", () => {
         [31, 31],
         [31, 31],
       ]);
+    });
+  });
+
+  describe("getPikeWildMons", () => {
+    it("picks the tier from rooms cleared, with chances that sum to 100", () => {
+      const early = getPikeWildMons(db, { levelMode: "50", roomsCleared: 0 });
+      expect(early.tier).toBe(0);
+      expect(early.mons.map((m) => [m.species, m.rate])).toEqual([
+        ["Seviper", 26],
+        ["Milotic", 26],
+        ["Dusclops", 48],
+      ]);
+      expect(early.mons[0]!.moves).toEqual([
+        "Toxic",
+        "Glare",
+        "Body Slam",
+        "Sludge Bomb",
+      ]);
+      const late = getPikeWildMons(db, {
+        levelMode: "open",
+        roomsCleared: 841,
+      });
+      expect(late.tier).toBe(3);
+      expect(late.mons[2]!.species).toBe("Wobbuffet");
+    });
+  });
+
+  describe("getPyramidWildMons", () => {
+    it("gives the round's Pokémon that can appear on the floor", () => {
+      const first = getPyramidWildMons(db, {
+        levelMode: "50",
+        floorsCleared: 0,
+        floor: 1,
+      });
+      expect(first.round).toBe(0);
+      expect(first.mons.map((m) => [m.species, m.level, m.rate])).toEqual([
+        ["Plusle", 35, 60],
+        ["Minun", 35, 20],
+        ["Pikachu", 37, 15],
+        ["Electabuzz", 37, 5],
+      ]);
+      const top = getPyramidWildMons(db, {
+        levelMode: "50",
+        floorsCleared: 0,
+        floor: 7,
+      });
+      expect(top.mons.reduce((sum, m) => sum + m.rate, 0)).toBe(100);
+      expect(top.mons.at(-1)!.species).toBe("Jolteon");
+    });
+
+    it("cycles back to round 0 after 20 rounds", () => {
+      const again = getPyramidWildMons(db, {
+        levelMode: "open",
+        floorsCleared: 140,
+        floor: 1,
+      });
+      expect(again.round).toBe(0);
     });
   });
 });
