@@ -48,11 +48,22 @@ PokeAPI serves current-gen data, so everything comes from the pret decompilation
   - FireRed keeps unused Hoenn trainer slots filled with DUMMY_TRAINER_MON; skipped.
 - Known gaps / later:
   - Ruby and Sapphire share one trainer table, so both villain teams' trainers are in both games' data. The playthrough guide needs curated per-game trainer lists (story order, locations), which live in map scripts, not data files.
-  - Battle Frontier: which trainers appear at which streak, and the Frontier Brains' teams, are in code (`frontier_util.c`, `battle_tower.c`), not imported yet. Battle Pyramid/Pike wild Pokémon skipped. Battle Tents not imported.
+  - Battle Frontier: the Tower/Palace/Arena rules are imported (see "Battle Frontier data" below). Not yet: the Dome (tournament seeding), Factory teams (rentals; its trainers use the same ranges), Pike and Pyramid rules and wild Pokémon, Battle Tents, special opponents (record-mixed players, e-Reader, Apprentice).
   - Altering Cave: only the default encounter table (Mystery Event variants skipped).
   - FRLG special tutors (Blast Burn, Frenzy Plant, Hydro Cannon) are taught by scripts, so not in `learnset`.
   - Sprites: Deoxys has its normal-form sprite only; Castform normal form; Unown "A".
 - Stylianos also has his own **Battle Frontier CSV** from another source, location TBD. Cross-check it against `frontier_set` later.
+
+## Battle Frontier data (imported 2026-10-25, by Claude at his request)
+
+Read from pokeemerald's code (`battle_tower.c`, `frontier_util.c`; facility files and `data/maps/BattleFrontier_*/scripts.inc` are now in the sparse checkout). Applies to the Tower, Palace and Arena (their scripts all use `SetNextFacilityOpponent` + `FillFrontierTrainerParty`).
+
+- Tables (schema comment explains the rules): `frontier_trainer.fixed_iv` (parsed from `GetFrontierTrainerFixedIvs`), `frontier_set.open_level_only` (index > `FRONTIER_MONS_HIGH_TIER`), `frontier_trainer_range` (8 challenges × normal/7th battle), `frontier_brain` (name, Symbol schedule), `frontier_brain_mon` (fixed teams; none for the Factory, whose pret entry is unused).
+- Rules as code: `src/lib/frontier.ts` (`battlePosition`, `opponentLevel`, `brainBattle`, `frontierStats`); the importer fails if its constants disagree with pret.
+- Queries: `src/db/frontier-queries.ts` — `getTrainersForBattle`, `getPossibleSets` (the predictor: battle + level mode + species/trainer → sets with possible IVs), `getSetDetails`, `getFrontierBrain`. Tested in `frontier-queries.test.ts`.
+- Facts worth knowing: battle 7 of each challenge draws harder trainers; from battle 57 on it's always trainers 200–299 (IVs 21 or 31); Anabel is battle 35 (Silver) and 70 (Gold), then every 35 once both Symbols are won; Brains only in singles; Pokémon with Frustration have 0 friendship.
+- The migration was regenerated as a single `drizzle/0000_init.sql` (the importer only ever builds fresh databases; incremental `ALTER TABLE … NOT NULL` doesn't work in SQLite). `meta.schema` = `gen3-companion/2`.
+- Next for step 5: the Frontier screens (picker for facility/battle/level → possible trainers and sets with stats), then Dome/Factory/Pike/Pyramid rules, then damage calc.
 
 ## Existing code (reference only, don't extend)
 
