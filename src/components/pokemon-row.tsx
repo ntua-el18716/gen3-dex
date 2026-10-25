@@ -11,7 +11,7 @@ export const POKEMON_ROW_HEIGHT = 72;
 export function PokemonRow({ pokemon }: { pokemon: PokemonListItem }) {
   return (
     <View
-      className="flex-row items-center gap-3 border-b border-neutral-200 bg-white px-4"
+      className="flex-row items-center gap-3 border-b border-neutral-200 px-4"
       style={{ height: POKEMON_ROW_HEIGHT }}
     >
       {/* Sprites are 64×64; showing them at native size keeps the pixels sharp. */}

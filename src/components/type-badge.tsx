@@ -25,12 +25,27 @@ const BACKGROUND: Record<PokemonType, string> = {
   dark: "bg-type-dark",
 };
 
-export function TypeBadge({ type }: { type: PokemonType }) {
+export function TypeBadge({
+  type,
+  small = false,
+}: {
+  type: PokemonType;
+  /** Narrower and smaller text, for move lists. */
+  small?: boolean;
+}) {
   return (
     <View
-      className={`w-20 items-center rounded-full py-0.5 ${BACKGROUND[type]}`}
+      className={`items-center rounded-full ${
+        small ? "w-14 py-px" : "w-20 py-0.5"
+      } ${BACKGROUND[type]}`}
     >
-      <Text className="text-xs font-bold uppercase text-white">{type}</Text>
+      <Text
+        className={`font-bold uppercase text-white ${
+          small ? "text-[10px]" : "text-xs"
+        }`}
+      >
+        {type}
+      </Text>
     </View>
   );
 }

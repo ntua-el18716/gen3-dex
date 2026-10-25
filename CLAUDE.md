@@ -84,7 +84,11 @@ PokeAPI serves current-gen data, so everything comes from the pret decompilation
     - **Game selection is per game (5 options), not per pair** — R/S, FR/LG differ (Dex text, encounters, Deoxys). A global "current game" (React context) drives the screens; where both games of a pair have identical data, show it once labelled e.g. "FR/LG".
     - **Detail screen = SmartDex-style swipeable pages/tabs**: 1) overview (sprite + shiny toggle, types, stats, Dex entries), 2) moves (level-up, TM/HM, tutor, egg), later locations and evolution/breeding. Exact split to be refined.
     - Filters wanted: by type, by game's Dex, sorting by stats.
-  - Next: detail screen (`src/app/pokemon/[id].tsx`) — Claude explains dynamic routes / `useLocalSearchParams` / `Link` and the queries, **he writes the screen**. Then current-game context, then filters/sorting. Light theme only so far (dark mode later).
+  - Detail screen: done by Claude at his request (2026-10-25); **he wants a walkthrough of it afterwards** (dynamic routes, `useLocalSearchParams`, `Link asChild`, context, the swipe pager, the queries). Not yet checked on a device.
+    - `src/app/pokemon/[id].tsx` loads data with `getPokemonDetail` / `getPokedexEntries` / `getLearnset` (`src/db/queries.ts`, tested on the real DB) and renders `SwipeTabs` (`src/components/swipe-tabs.tsx`, horizontal paging ScrollView, no extra library) with `components/pokemon/overview-page.tsx` and `moves-page.tsx`.
+    - Current game: `src/state/current-game.tsx` (context, default Emerald, not persisted yet) + `components/game-picker.tsx` on the list and detail screens. `src/lib/games.ts` mirrors the `game` table (tested).
+    - `src/lib/pokemon-format.ts`: units, gender odds as the game computes them (ratio/256, so 12.1% ♀ not 12.5%). `statRange()` in `stats.ts` gives min/max at Lv 50/100.
+  - Next: filters/sorting on the list (type, game's Dex, stats); persist the current game (`expo-sqlite/kv-store`?); locations and evolution pages. Light theme only so far (dark mode later).
 - Quality gates before calling anything done: `npm run lint`, `npm run typecheck`, `npm test`, `npm run format:check`. Also follow `AGENTS.md` (from the Expo template): `npx expo install` for packages, versioned Expo docs over memory.
 
 ## Practical notes
