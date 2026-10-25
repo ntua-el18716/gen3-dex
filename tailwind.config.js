@@ -2,6 +2,9 @@
 module.exports = {
   content: ["./src/**/*.{js,jsx,ts,tsx}"],
   presets: [require("nativewind/preset")],
+  // NativeWind's web runtime sets the colour scheme itself, which throws under
+  // the default "media" mode. Native platforms ignore this setting.
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
