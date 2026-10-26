@@ -76,6 +76,17 @@ Read from pokeemerald's code (`battle_tower.c`, `frontier_util.c`; facility file
 - Not covered: Jirachi/Celebi (bonus discs), the Johto starters' Hoenn Dex condition is a note only, Game Corner coin prices.
 - Map names also got nicer (`Room1` → "Room 1", "Steven's", "Cave of Origin").
 
+## Release build (set up 2026-10-26, by Claude)
+
+- `npm run apk` (`scripts/apk/build-apk.ts`): `expo prebuild --platform android` (android/ is gitignored, never hand-edited; prebuild's rewrite of the `android`/`ios` npm scripts is undone), then `gradlew app:assembleRelease` → `dist/gen3-companion-<app.json version>.apk`. A clean build takes ~25–35 min on the laptop (prebuild recreates android/, so Gradle rebuilds the app module each time; native caches survive).
+- Package id `com.stylianos.gen3companion` (app.json). Don't change it after a release: it's the app's identity for updates.
+- Signing: `plugins/with-release-signing.js` (config plugin) adds a release signingConfig from Gradle properties `GEN3_UPLOAD_STORE_FILE/STORE_PASSWORD/KEY_ALIAS/KEY_PASSWORD`; falls back to the debug key if unset. On the laptop they're in `~/.gradle/gradle.properties`; keystore at `~/.android-keys/gen3-companion.jks` (PKCS12, alias `gen3-companion`, SHA-256 E2:19:3A:61:…:47:6F). Never commit either; Stylianos must back them up.
+- Windows: the SDK's default CMake 3.22.1 ships ninja 1.10, which fails on the native modules' >260-char paths even with LongPathsEnabled=1. Installed `cmdline-tools/latest` + `cmake;3.31.6` (ninja 1.12.1); the build script writes `android/local.properties` `cmake.dir=` to the newest CMake 3.30+ on Windows.
+- CI (`.github/workflows/ci.yml`, job `apk`, pushes only): builds the APK, uploads it as an artifact, attaches it to a GitHub Release on `v*` tags. Signs with the release key when these repo secrets exist: `GEN3_KEYSTORE_BASE64` (the .jks, base64), `GEN3_UPLOAD_STORE_PASSWORD`, `GEN3_UPLOAD_KEY_ALIAS` (`gen3-companion`), `GEN3_UPLOAD_KEY_PASSWORD` (same as the store password: PKCS12). Not yet run on GitHub (unpushed).
+- Verified on the emulator (2026-10-26): release APK launches without a dev server, the bundled DB opens, an update installs over the previous build (same key), and `src/db/provider.tsx` deletes the previous DB copy (remembers the last name in the kv-store under `db.lastName`; copies from before this change aren't known and stay until the app is reinstalled).
+- APK is ~110 MB: native libs for 4 ABIs (arm64-v8a, armeabi-v7a, x86, x86_64). For a release, `-PreactNativeArchitectures=arm64-v8a,armeabi-v7a` would shrink it a lot (but then it won't run on the x86_64 emulator).
+- Bumping versions: `expo.version` (versionName) and `expo.android.versionCode` (must increase for updates) in app.json.
+
 ## Existing code (reference only, don't extend)
 
 - `PokeApp/gen3-dex/` — earlier Next.js 15 + Drizzle + Postgres (Neon) attempt. Its WIP is committed ("checkpoint 0"; `.env` is not tracked). Reusable assets: `public/pokemon-images/` (892 PNGs), `public/pokeball*.svg` (per-version Pokéballs), `components/pokemon-types-svg/` (type icons). Its `.env` holds a Neon URL — never print or commit it.
@@ -93,7 +104,7 @@ Read from pokeemerald's code (`battle_tower.c`, `frontier_util.c`; facility file
 
 ## Progress
 
-> **Start here (next session):** gift and one-time encounters are done (2026-10-25, see "Gifts and one-time encounters"). Open items for Claude: none queued — ask Stylianos. His side: the practice plan exercises (P1–P7) and, when he has time, the Battle Frontier **screens** as a guided exercise (data and queries are ready: see "Battle Frontier data"). He hasn't pushed yet (25+ local commits) — remind him.
+> **Start here (next session, updated 2026-10-26):** Done since the last pointer: gifts/one-time encounters, Battle Factory rules, Pike/Pyramid wild Pokémon, a signed release APK (`npm run apk`, verified on the emulator), old-DB-copy cleanup, README refresh. **Waiting on Stylianos:** (1) `git push` (35+ local commits); (2) add the four CI signing secrets (steps in "Release build" below); (3) back up `~/.android-keys/gen3-companion.jks` + `~/.gradle/gradle.properties`. Claude's possible next items: Battle Dome rules; shrinking the APK (ABI filter); first CI run fixes after the push. His side: practice plan P1–P7, then the Frontier screens as a guided exercise.
 
 - **Step 1 (scaffold): done** (2026-10-24). Expo SDK 58, React Native 0.88, Expo Router, TypeScript strict, blank app (`src/app/_layout.tsx` with a Stack, `src/app/index.tsx`). ESLint (`eslint-config-expo` + `eslint-config-prettier`), Prettier defaults.
   - Old `gen3-dex` WIP: committed as "checkpoint 0" (2026-10-24); its stray `.q.cjs` is in that commit too. Type icons and Pokéball SVGs from the old project could still be copied in (sprites now come from pret instead).
