@@ -63,7 +63,8 @@
     "import": "tsx scripts/import/index.ts",
     "test": "vitest run",
     "db:generate": "drizzle-kit generate",
-    "sprites": "tsx scripts/sprites/build-sprites.ts"
+    "sprites": "tsx scripts/sprites/build-sprites.ts",
+    "apk": "tsx scripts/apk/build-apk.ts"
   },
   "private": true,
   "allowScripts": {
