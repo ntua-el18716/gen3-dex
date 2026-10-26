@@ -1,9 +1,14 @@
 import { drizzle } from "drizzle-orm/expo-sqlite";
 import { Asset } from "expo-asset";
-import { SQLiteProvider, useSQLiteContext } from "expo-sqlite";
+import {
+  deleteDatabaseAsync,
+  SQLiteProvider,
+  useSQLiteContext,
+} from "expo-sqlite";
 import { Suspense, useMemo, type ReactNode } from "react";
 
 import { LoadingScreen } from "@/components/loading-screen";
+import { readPreference, writePreference } from "@/lib/preferences";
 
 import { DbContext } from "./context";
 import * as schema from "./schema";
@@ -19,6 +24,18 @@ const DB_ASSET = require("../../assets/db/gen3.db");
  */
 const hash = Asset.fromModule(DB_ASSET).hash;
 const DB_NAME = hash ? `gen3-${hash}.db` : "gen3.db";
+const LAST_DB_KEY = "db.lastName";
+
+/**
+ * Each update leaves the previous copy (~9 MB) behind. Once the new one has
+ * opened, delete the one we opened last time; failing to is harmless.
+ */
+async function deletePreviousCopy() {
+  const previous = readPreference(LAST_DB_KEY);
+  if (previous && previous !== DB_NAME)
+    await deleteDatabaseAsync(previous).catch(() => {});
+  writePreference(LAST_DB_KEY, DB_NAME);
+}
 
 export function DatabaseProvider({ children }: { children: ReactNode }) {
   return (
@@ -26,6 +43,7 @@ export function DatabaseProvider({ children }: { children: ReactNode }) {
       <SQLiteProvider
         databaseName={DB_NAME}
         assetSource={{ assetId: DB_ASSET, forceOverwrite: !hash }}
+        onInit={deletePreviousCopy}
         useSuspense
       >
         <DrizzleProvider>{children}</DrizzleProvider>
