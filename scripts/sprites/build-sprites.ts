@@ -21,6 +21,11 @@ import { deflateSync, inflateSync } from "node:zlib";
 import { DATA_SRC_DIR } from "../import/sources";
 
 const GRAPHICS = path.resolve(DATA_SRC_DIR, "pokeemerald/graphics/pokemon");
+/** FireRed/LeafGreen redrew many sprites (mostly Kanto); used in FR/LG. */
+const FRLG_GRAPHICS = path.resolve(
+  DATA_SRC_DIR,
+  "pokefirered/graphics/pokemon",
+);
 const OUT = path.resolve("assets/sprites");
 const GENERATED = path.resolve("src/generated/sprites.ts");
 
@@ -139,6 +144,109 @@ export function cropToFirstFrame(png: Buffer): Buffer {
   return Buffer.concat(out);
 }
 
+/** PNG scanline filters (spec §9), undone; bpp = bytes per pixel. */
+function unfilter(data: Buffer, rowBytes: number, rows: number, bpp: number) {
+  const out = Buffer.alloc(rowBytes * rows);
+  for (let y = 0; y < rows; y++) {
+    const filter = data[y * (rowBytes + 1)]!;
+    const src = y * (rowBytes + 1) + 1;
+    const dst = y * rowBytes;
+    for (let x = 0; x < rowBytes; x++) {
+      const a = x >= bpp ? out[dst + x - bpp]! : 0;
+      const b = y > 0 ? out[dst - rowBytes + x]! : 0;
+      const c = x >= bpp && y > 0 ? out[dst - rowBytes + x - bpp]! : 0;
+      let pred = 0;
+      if (filter === 1) pred = a;
+      else if (filter === 2) pred = b;
+      else if (filter === 3) pred = (a + b) >> 1;
+      else if (filter === 4) {
+        const p = a + b - c;
+        const pa = Math.abs(p - a);
+        const pb = Math.abs(p - b);
+        const pc = Math.abs(p - c);
+        pred = pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
+      }
+      out[dst + x] = (data[src + x]! + pred) & 0xff;
+    }
+  }
+  return out;
+}
+
+/** The palette index of every pixel of an indexed PNG, row by row. */
+export function readIndices(png: Buffer) {
+  const chunks: { type: string; data: Buffer }[] = [];
+  for (let offset = 8; offset < png.length;) {
+    const length = png.readUInt32BE(offset);
+    chunks.push({
+      type: png.toString("ascii", offset + 4, offset + 8),
+      data: png.subarray(offset + 8, offset + 8 + length),
+    });
+    offset += 12 + length;
+  }
+  const header = chunks.find((c) => c.type === "IHDR")!.data;
+  const width = header.readUInt32BE(0);
+  const height = header.readUInt32BE(4);
+  const bitDepth = header[8]!;
+  if (header[9] !== 3 || header[12] !== 0)
+    throw new Error("Expected a non-interlaced indexed PNG");
+  const rowBytes = Math.ceil((width * bitDepth) / 8);
+  const raw = unfilter(
+    inflateSync(
+      Buffer.concat(chunks.filter((c) => c.type === "IDAT").map((c) => c.data)),
+    ),
+    rowBytes,
+    height,
+    1,
+  );
+  const perByte = 8 / bitDepth;
+  const indices = new Uint8Array(width * height);
+  for (let y = 0; y < height; y++)
+    for (let x = 0; x < width; x++) {
+      const byte = raw[y * rowBytes + Math.floor(x / perByte)]!;
+      const shift = 8 - bitDepth * ((x % perByte) + 1);
+      indices[y * width + x] = (byte >> shift) & ((1 << bitDepth) - 1);
+    }
+  return { chunks, header, width, height, indices };
+}
+
+/**
+ * Scales an indexed PNG up by an integer factor, each pixel becoming a
+ * factor×factor block (output: 8-bit indexed, same palette and
+ * transparency). Android smooths images it scales up, which blurs pixel
+ * art; shipping big sprites means the app only ever scales them down.
+ */
+export function upscale(png: Buffer, factor: number): Buffer {
+  const { chunks, header, width, height, indices } = readIndices(png);
+  const outWidth = width * factor;
+  const outHeight = height * factor;
+  const scaled = Buffer.alloc((outWidth + 1) * outHeight);
+  for (let y = 0; y < outHeight; y++) {
+    const row = y * (outWidth + 1); // filter byte 0 (none), then pixels
+    const src = Math.floor(y / factor) * width;
+    for (let x = 0; x < outWidth; x++)
+      scaled[row + 1 + x] = indices[src + Math.floor(x / factor)]!;
+  }
+
+  const newHeader = Buffer.from(header);
+  newHeader.writeUInt32BE(outWidth, 0);
+  newHeader.writeUInt32BE(outHeight, 4);
+  newHeader[8] = 8;
+  const out: Buffer[] = [png.subarray(0, 8)];
+  let wroteData = false;
+  for (const c of chunks) {
+    if (c.type === "IHDR") out.push(chunk("IHDR", newHeader));
+    else if (c.type === "IDAT") {
+      if (!wroteData)
+        out.push(chunk("IDAT", deflateSync(scaled, { level: 9 })));
+      wroteData = true;
+    } else out.push(chunk(c.type, c.data));
+  }
+  return Buffer.concat(out);
+}
+
+/** Sprites are stored at this multiple of the games' 64×64. */
+export const SPRITE_SCALE = 4;
+
 /** Parses a JASC-PAL file: "JASC-PAL", "0100", count, then "r g b" lines. */
 export function parseJascPalette(text: string): [number, number, number][] {
   const lines = text.split(/\r?\n/).map((l) => l.trim());
@@ -148,6 +256,33 @@ export function parseJascPalette(text: string): [number, number, number][] {
     .slice(3, 3 + count)
     .map((l) => l.split(/\s+/).map(Number) as [number, number, number]);
 }
+
+/**
+ * Whether FR/LG draw a species differently from Emerald (other pixels or
+ * palette). Only those get FR/LG sprites, which keeps the app smaller.
+ */
+export function differs(
+  emerald: { png: Buffer; palette: string },
+  frlg: { png: Buffer; palette: string },
+): boolean {
+  const a = readIndices(cropToFirstFrame(emerald.png));
+  const b = readIndices(cropToFirstFrame(frlg.png));
+  if (a.width !== b.width || a.height !== b.height) return true;
+  if (a.indices.some((v, i) => v !== b.indices[i])) return true;
+  return (
+    JSON.stringify(parseJascPalette(emerald.palette)) !==
+    JSON.stringify(parseJascPalette(frlg.palette))
+  );
+}
+
+const FRLG_VARIANTS = [
+  { dir: "frlg-front", palette: "normal.pal" },
+  { dir: "frlg-front-shiny", palette: "shiny.pal" },
+] as const;
+
+/** "frlg-front-shiny" → "frlgFrontShiny". */
+const camel = (dir: string) =>
+  dir.replace(/-(\w)/g, (_, c: string) => c.toUpperCase());
 
 // --- Build ------------------------------------------------------------------
 
@@ -161,8 +296,9 @@ function main() {
   db.close();
 
   rmSync(OUT, { recursive: true, force: true });
-  for (const v of VARIANTS)
+  for (const v of [...VARIANTS, ...FRLG_VARIANTS])
     mkdirSync(path.join(OUT, v.dir), { recursive: true });
+  const frlgIds: number[] = [];
 
   for (const { id, key } of pokemon) {
     const name = key.replace(/^SPECIES_/, "").toLowerCase();
@@ -174,13 +310,39 @@ function main() {
       );
       writeFileSync(
         path.join(OUT, v.dir, `${id}.png`),
-        withPalette(cropToFirstFrame(png), palette),
+        upscale(withPalette(cropToFirstFrame(png), palette), SPRITE_SCALE),
       );
+    }
+
+    const frlg = path.join(FRLG_GRAPHICS, folders.images, "front.png");
+    const frlgPalettes = path.join(FRLG_GRAPHICS, folders.palettes);
+    const read = (dir: string, file: string) =>
+      readFileSync(path.join(dir, file), "utf8");
+    if (
+      differs(
+        {
+          png: readFileSync(path.join(GRAPHICS, folders.images, "front.png")),
+          palette: read(path.join(GRAPHICS, folders.palettes), "normal.pal"),
+        },
+        { png: readFileSync(frlg), palette: read(frlgPalettes, "normal.pal") },
+      )
+    ) {
+      frlgIds.push(id);
+      for (const v of FRLG_VARIANTS) {
+        const palette = parseJascPalette(read(frlgPalettes, v.palette));
+        writeFileSync(
+          path.join(OUT, v.dir, `${id}.png`),
+          upscale(
+            withPalette(cropToFirstFrame(readFileSync(frlg)), palette),
+            SPRITE_SCALE,
+          ),
+        );
+      }
     }
   }
 
-  const entries = (dir: string) =>
-    pokemon
+  const entries = (dir: string, ids = pokemon) =>
+    ids
       .map(
         ({ id }) =>
           `  ${id}: require("../../assets/sprites/${dir}/${id}.png"),`,
@@ -193,13 +355,22 @@ type SpriteMap = Record<number, ImageSourcePropType>;
 
 ${VARIANTS.map(
   (v) =>
-    `export const ${v.dir.replace(/-(\w)/g, (_, c: string) => c.toUpperCase())}Sprites: SpriteMap = {\n${entries(v.dir)}\n};`,
+    `export const ${camel(v.dir)}Sprites: SpriteMap = {\n${entries(v.dir)}\n};`,
+).join("\n\n")}
+
+/** FireRed/LeafGreen's own sprites, only where they differ from Emerald's. */
+${FRLG_VARIANTS.map(
+  (v) =>
+    `export const ${camel(v.dir)}Sprites: Partial<SpriteMap> = {\n${entries(
+      v.dir,
+      pokemon.filter((p) => frlgIds.includes(p.id)),
+    )}\n};`,
 ).join("\n\n")}
 `;
   mkdirSync(path.dirname(GENERATED), { recursive: true });
   writeFileSync(GENERATED, source);
   console.log(
-    `✓ Wrote ${pokemon.length * VARIANTS.length} sprites to ${path.relative(process.cwd(), OUT)}`,
+    `✓ Wrote ${pokemon.length * VARIANTS.length} sprites (+${frlgIds.length * 2} FR/LG) to ${path.relative(process.cwd(), OUT)}`,
   );
 }
 

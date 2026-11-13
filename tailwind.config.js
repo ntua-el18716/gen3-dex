@@ -1,4 +1,5 @@
 const palette = require("./src/theme/palette.json");
+const typeColors = require("./src/theme/type-colors.json");
 
 /** `bg-surface` etc. read CSS variables that AppThemeProvider sets per scheme. */
 const themeColors = Object.fromEntries(
@@ -19,27 +20,9 @@ module.exports = {
     extend: {
       colors: {
         ...themeColors,
-        // The classic type colours (as used on Bulbapedia).
-        type: {
-          normal: "#A8A878",
-          fighting: "#C03028",
-          flying: "#A890F0",
-          poison: "#A040A0",
-          ground: "#E0C068",
-          rock: "#B8A038",
-          bug: "#A8B820",
-          ghost: "#705898",
-          steel: "#B8B8D0",
-          mystery: "#68A090",
-          fire: "#F08030",
-          water: "#6890F0",
-          grass: "#78C850",
-          electric: "#F8D030",
-          psychic: "#F85888",
-          ice: "#98D8D8",
-          dragon: "#7038F8",
-          dark: "#705848",
-        },
+        // The classic type colours (as used on Bulbapedia); shared with the
+        // TypeScript code, which needs them as strings for gradients.
+        type: typeColors,
         // One colour per game, for the game picker.
         game: {
           ruby: "#C0392B",

@@ -54,6 +54,7 @@ export const SOURCES: SourceRepo[] = [
       "/data/maps/*/map.json",
       "/data/scripts/",
       "/src/roamer.c",
+      "/graphics/pokemon/",
     ],
   },
   {

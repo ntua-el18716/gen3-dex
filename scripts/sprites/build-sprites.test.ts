@@ -6,11 +6,15 @@ import { describe, expect, it } from "vitest";
 import { DATA_SRC_DIR } from "../import/sources";
 import {
   cropToFirstFrame,
+  differs,
   parseJascPalette,
+  readIndices,
+  upscale,
   withPalette,
 } from "./build-sprites";
 
 const GRAPHICS = path.resolve(DATA_SRC_DIR, "pokeemerald/graphics/pokemon");
+const FRLG = path.resolve(DATA_SRC_DIR, "pokefirered/graphics/pokemon");
 const hasSources = (() => {
   try {
     readFileSync(path.join(GRAPHICS, "gengar/front.png"));
@@ -69,5 +73,33 @@ describe.skipIf(!hasSources)("sprite conversion", () => {
     expect(cropped.readUInt32BE(20)).toBe(64);
     // 64 rows of (1 filter byte + 32 bytes of 4-bit pixels).
     expect(inflateSync(chunks(cropped).get("IDAT")!).length).toBe(64 * 33);
+  });
+
+  it("upscales so each pixel becomes a block, keeping palette and transparency", () => {
+    const front = readFileSync(path.join(GRAPHICS, "gengar/front.png"));
+    const big = upscale(front, 4);
+    const src = readIndices(front);
+    const out = readIndices(big);
+    expect([out.width, out.height]).toEqual([256, 256]);
+    for (let y = 0; y < 256; y++)
+      for (let x = 0; x < 256; x++)
+        expect(out.indices[y * 256 + x]).toBe(
+          src.indices[Math.floor(y / 4) * 64 + Math.floor(x / 4)],
+        );
+    expect(chunks(big).get("PLTE")).toEqual(chunks(front).get("PLTE"));
+    expect(chunks(big).get("tRNS")).toEqual(chunks(front).get("tRNS"));
+  });
+
+  it("spots sprites FireRed/LeafGreen redrew", () => {
+    const load = (root: string, name: string) => ({
+      png: readFileSync(path.join(root, name, "front.png")),
+      palette: readFileSync(path.join(root, name, "normal.pal"), "utf8"),
+    });
+    expect(differs(load(GRAPHICS, "charizard"), load(FRLG, "charizard"))).toBe(
+      true,
+    );
+    expect(differs(load(GRAPHICS, "blaziken"), load(FRLG, "blaziken"))).toBe(
+      false,
+    );
   });
 });

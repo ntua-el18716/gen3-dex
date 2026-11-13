@@ -14,7 +14,9 @@ import {
 import { View } from "react-native";
 
 import { readPreference, writePreference } from "@/lib/preferences";
+import { useCurrentGame } from "@/state/current-game";
 
+import { GAME_ACCENTS, type Rgb } from "./colors";
 import palette from "./palette.json";
 
 /** "system" follows the device setting (app.json: userInterfaceStyle "automatic"). */
@@ -56,42 +58,55 @@ export function useThemePreference() {
 export type ColorToken = keyof (typeof palette)["light"];
 type Scheme = keyof typeof palette;
 
-const toRgb = ([r, g, b]: number[]) => `rgb(${r}, ${g}, ${b})`;
+// JSON imports type the triples as number[]; every entry has three values.
+const PALETTE = palette as unknown as Record<Scheme, Record<ColorToken, Rgb>>;
 
-const THEME_VARS = {
-  light: vars(cssVariables("light")),
-  dark: vars(cssVariables("dark")),
-};
-
-function cssVariables(scheme: Scheme) {
-  return Object.fromEntries(
-    Object.entries(palette[scheme]).map(([token, rgb]) => [
-      `--${token}`,
-      rgb.join(" "),
-    ]),
-  );
-}
+const toRgb = ([r, g, b]: Rgb) => `rgb(${r}, ${g}, ${b})`;
 
 function useScheme(): Scheme {
   // The system setting, or the user's choice once colorScheme.set() is called.
   return useColorScheme().colorScheme === "dark" ? "dark" : "light";
 }
 
+/**
+ * The palette as RGB triples, with the current game's colour as the accent
+ * (e.g. green in Emerald, orange in FireRed). For colour maths like tints.
+ */
+export function usePalette(): Record<ColorToken, Rgb> {
+  const scheme = useScheme();
+  const { game } = useCurrentGame();
+  return useMemo(
+    () => ({ ...PALETTE[scheme], accent: GAME_ACCENTS[scheme][game] }),
+    [scheme, game],
+  );
+}
+
 /** Real colour strings for props that can't take a className. */
 export function useColors(): Record<ColorToken, string> {
-  const scheme = useScheme();
+  const rgb = usePalette();
   return useMemo(
     () =>
       Object.fromEntries(
-        Object.entries(palette[scheme]).map(([t, rgb]) => [t, toRgb(rgb)]),
+        Object.entries(rgb).map(([t, c]) => [t, toRgb(c)]),
       ) as Record<ColorToken, string>,
-    [scheme],
+    [rgb],
   );
 }
 
 export function AppThemeProvider({ children }: { children: ReactNode }) {
   const scheme = useScheme();
+  const rgb = usePalette();
   const colors = useColors();
+  // The CSS variables behind bg-surface, text-accent etc.
+  const themeVars = useMemo(
+    () =>
+      vars(
+        Object.fromEntries(
+          Object.entries(rgb).map(([token, c]) => [`--${token}`, c.join(" ")]),
+        ),
+      ),
+    [rgb],
+  );
 
   const [preference, setPreferenceState] = useState(initialPreference);
   const setPreference = useCallback((next: ThemePreference) => {
@@ -131,7 +146,7 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
   return (
     <ThemePreferenceContext value={preferenceValue}>
       <ThemeProvider value={navigationTheme}>
-        <View style={THEME_VARS[scheme]} className="flex-1 bg-canvas">
+        <View style={themeVars} className="flex-1 bg-canvas">
           {children}
         </View>
         <StatusBar style={scheme === "dark" ? "light" : "dark"} />
