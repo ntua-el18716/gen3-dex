@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gen 3 Companion · Design mockup</title>
+<style>
+:root {
+  --canvas: #F4F6FA; --surface: #FFFFFF; --sunken: #ECF0F5; --line: #DEE4EC;
+  --ink: #111827; --ink-muted: #4B5563; --ink-subtle: #8C96A5;
+  --page: #E3E8EF; --accent: #059669; --on-accent: #fff;
+  --shadow: 0 1px 2px rgba(16,24,40,.06), 0 4px 12px rgba(16,24,40,.06);
+}
+html.dark {
+  --canvas: #0C0F16; --surface: #181C26; --sunken: #242A37; --line: #2C3342;
+  --ink: #EEF1F6; --ink-muted: #A8B2C2; --ink-subtle: #6E7A8E;
+  --page: #05070B; --shadow: 0 1px 2px rgba(0,0,0,.4);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+body { margin: 0; background: var(--page); color: var(--ink);
+  font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.num { font-variant-numeric: tabular-nums; }
+img.px { image-rendering: pixelated; image-rendering: crisp-edges; }
+.ti { width: 100%; height: 100%; display: block; }
+
+/* ---------- page chrome ---------- */
+.topbar { position: sticky; top: 0; z-index: 10; background: var(--page);
+  padding: 12px 16px; display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center;
+  border-bottom: 1px solid var(--line); }
+.topbar h1 { font-size: 15px; margin: 0; font-weight: 800; flex: 1 1 100%; }
+.topbar h1 span { color: var(--ink-subtle); font-weight: 600; }
+.games { display: flex; gap: 4px; background: var(--sunken); padding: 3px; border-radius: 99px; flex: 1; }
+.games button { flex: 1; border: 0; background: none; color: var(--ink-muted); font-weight: 800;
+  font-size: 13px; padding: 6px 0; border-radius: 99px; cursor: pointer; }
+.games button.on { background: var(--accent); color: #fff; }
+.chip-btn { border: 0; background: var(--sunken); color: var(--ink-muted); font-weight: 700;
+  font-size: 12px; padding: 8px 12px; border-radius: 99px; cursor: pointer; }
+main { max-width: 880px; margin: 0 auto; padding: 8px 12px 64px; }
+.sect { margin-top: 28px; }
+.sect > h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-subtle);
+  margin: 0 4px 4px; }
+.sect > p { margin: 0 4px 12px; color: var(--ink-muted); font-size: 14px; }
+.variants { display: flex; gap: 6px; margin: 0 4px 12px; }
+.variants button { border: 1px solid var(--line); background: var(--surface); color: var(--ink-muted);
+  font-weight: 700; font-size: 12px; padding: 6px 12px; border-radius: 99px; cursor: pointer; }
+.variants button.on { border-color: var(--accent); color: var(--accent); }
+.phone { width: 100%; max-width: 400px; margin: 0 auto; background: var(--canvas);
+  border-radius: 28px; overflow: hidden; border: 1px solid var(--line); position: relative; }
+.note { max-width: 400px; margin: 10px auto 0; font-size: 13px; color: var(--ink-muted); padding: 0 6px; }
+.note b { color: var(--ink); }
+
+/* ---------- shared bits ---------- */
+.type { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 92px;
+  padding: 3px 6px 3px 22px; border-radius: 99px; color: #fff; font-size: 11px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: .04em; }
+.type i { position: absolute; left: 3px; width: 17px; height: 17px; display: grid; place-items: center; border-radius: 99px;
+  background: rgba(255,255,255,.22); padding: 2px; }
+.type.dark-text { color: #1F2937; } .type.dark-text i { background: rgba(0,0,0,.12); }
+.types { display: flex; gap: 5px; flex-wrap: wrap; }
+.tdot { width: 26px; height: 26px; border-radius: 99px; display: grid; place-items: center; padding: 5px; color: #fff; flex: none; }
+.dexno { color: var(--ink-subtle); font-weight: 700; font-size: 12px; }
+.card { background: var(--surface); border-radius: 20px; padding: 16px; box-shadow: var(--shadow); }
+.card h3 { margin: 0 0 12px; font-size: 16px; font-weight: 800; display: flex; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; background: var(--sunken); padding: 3px; border-radius: 99px; }
+.seg button { border: 0; background: none; color: var(--ink-muted); font-weight: 700; font-size: 12px;
+  padding: 5px 12px; border-radius: 99px; cursor: pointer; }
+.seg button.on { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+.ball { position: absolute; pointer-events: none; color: var(--ink); opacity: .06; }
+
+/* ---------- list ---------- */
+.lhead { padding: 22px 16px 10px; }
+.lhead .row { display: flex; align-items: flex-end; justify-content: space-between; }
+.lhead h4 { margin: 0; font-size: 30px; font-weight: 900; letter-spacing: -.02em; }
+.lhead small { color: var(--ink-subtle); font-weight: 600; }
+.search { margin-top: 12px; display: flex; align-items: center; gap: 8px; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 14px; padding: 11px 12px; color: var(--ink-subtle); font-size: 15px; }
+.filters { display: flex; gap: 6px; margin-top: 10px; overflow: hidden; }
+.filters span { border: 1px solid var(--line); border-radius: 99px; padding: 5px 11px; font-size: 12px;
+  font-weight: 700; color: var(--ink-muted); white-space: nowrap; background: var(--surface); }
+.filters span.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.lbody { padding: 4px 12px 16px; display: flex; flex-direction: column; gap: 8px; }
+/* A: clean rows */
+.rowA { display: flex; align-items: center; gap: 12px; background: var(--surface); border-radius: 18px;
+  padding: 8px 14px 8px 8px; box-shadow: var(--shadow); }
+.rowA .tile { width: 64px; height: 64px; border-radius: 14px; display: grid; place-items: center; flex: none; }
+.rowA .mid { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.rowA .name { font-weight: 800; font-size: 16px; }
+.rowA .chev { color: var(--ink-subtle); font-size: 20px; }
+/* B: tinted cards */
+.rowB { position: relative; overflow: hidden; display: flex; align-items: center; border-radius: 18px;
+  padding: 9px 0 9px 14px; min-height: 72px; }
+.rowB .mid { flex: 1; display: flex; flex-direction: column; gap: 6px; z-index: 1; }
+.rowB .name { font-weight: 900; font-size: 16px; letter-spacing: -.01em; }
+.rowC .nrow { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.rowC { flex-direction: row-reverse; padding: 9px 14px 9px 0; }
+.rowC img { margin: -6px 10px -6px 10px !important; }
+.rowB img { width: 72px; height: 72px; margin: -6px 10px -6px 0; z-index: 1; }
+
+/* ---------- hero ---------- */
+.heroA { position: relative; overflow: hidden; padding: 16px 16px 20px; text-align: center; }
+.heroA .top { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 1; }
+.heroA .imgwrap { position: relative; display: grid; place-items: center; height: 212px; }
+.heroA h4 { margin: 0; font-size: 32px; font-weight: 900; letter-spacing: -.02em; }
+.heroA .cat { color: var(--ink-muted); font-size: 14px; margin: 2px 0 10px; }
+.heroA .types { justify-content: center; }
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 16px; }
+.facts div { background: color-mix(in srgb, var(--surface) 75%, transparent); border-radius: 14px; padding: 8px 4px; }
+.facts small { display: block; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-subtle); }
+.facts b { font-size: 15px; }
+.iconbtn { border: 0; background: color-mix(in srgb, var(--surface) 70%, transparent); color: var(--ink-muted);
+  font-weight: 800; font-size: 12px; padding: 6px 11px; border-radius: 99px; cursor: pointer; }
+.iconbtn.on { background: var(--accent); color: #fff; }
+.heroB { display: flex; gap: 14px; padding: 16px; align-items: center; }
+.heroB .tile { position: relative; overflow: hidden; width: 136px; height: 136px; border-radius: 24px; display: grid; place-items: center; flex: none; }
+.heroB h4 { margin: 2px 0 2px; font-size: 26px; font-weight: 900; letter-spacing: -.02em; }
+.heroB .cat { color: var(--ink-muted); font-size: 13px; margin-bottom: 8px; }
+.heroB .mini { display: flex; gap: 12px; margin-top: 10px; font-size: 13px; color: var(--ink-muted); }
+.heroB .mini b { color: var(--ink); }
+.tabs { display: flex; border-bottom: 1px solid var(--line); padding: 0 8px; background: var(--canvas); }
+.scrollphone { height: 640px; }
+.scroller { height: 100%; overflow-y: auto; scroll-snap-type: y proximity; }
+.snap { scroll-snap-align: start; height: 0; }
+.hhead { position: absolute; top: 0; left: 0; right: 0; z-index: 3; overflow: hidden; }
+.hh { position: absolute; }
+.hhead .back { left: 12px; top: 16px; font-size: 22px; color: var(--ink-muted); line-height: 1; z-index: 2; }
+.hname .no { font-size: .62em; font-weight: 700; color: var(--ink-subtle); margin-right: 10px; letter-spacing: 0; }
+#hthumb { right: 12px; top: 6px; opacity: 0; }
+.hhead { transition: box-shadow .15s; }
+.hhead #shiny { right: 14px; top: 12px; z-index: 2; }
+.hhead #hball { color: var(--ink); opacity: 1; }
+.hhead #hball .ball { position: static; }
+.hname { left: 50%; top: 0; transform-origin: 50% 0; font-size: 32px; font-weight: 900; letter-spacing: -.02em; white-space: nowrap; line-height: 1.15; }
+.hrest { left: 16px; right: 16px; text-align: center; }
+.hrest .cat { color: var(--ink-muted); font-size: 14px; margin: 0 0 10px; }
+.hrest .types { justify-content: center; }
+
+.minitypes .type { width: 25px; height: 25px; padding: 0; } .minitypes .type i { left: 4px; }
+.minitypes .type span { display: none; }
+#htabs { left: 0; right: 0; }
+.tabs span { flex: 1; text-align: center; padding: 12px 0 10px; font-size: 13px; font-weight: 800; color: var(--ink-subtle);
+  border-bottom: 2.5px solid transparent; }
+.tabs span.on { color: var(--ink); border-color: var(--accent); }
+.pad { padding: 14px 12px 18px; display: flex; flex-direction: column; gap: 12px; }
+
+/* ---------- overview ---------- */
+.dex { border-radius: 14px; padding: 10px 12px; }
+.dex.cur { background: var(--sunken); }
+.dex small { font-size: 11px; font-weight: 800; letter-spacing: .06em; color: var(--ink-subtle); }
+.dex.cur small { color: var(--accent); }
+.dex p { margin: 3px 0 0; font-size: 14px; color: var(--ink-muted); }
+.dex.cur p { color: var(--ink); }
+.stat { display: grid; grid-template-columns: 34px 30px 1fr 64px; align-items: center; gap: 8px; margin: 7px 0; font-size: 13px; }
+.stat .l { color: var(--ink-muted); font-weight: 600; }
+.stat .v { font-weight: 800; text-align: right; }
+.stat .bar { height: 8px; background: var(--sunken); border-radius: 99px; overflow: hidden; }
+.stat .bar div { height: 100%; border-radius: 99px; }
+.stat .r { text-align: right; color: var(--ink-subtle); font-size: 12px; }
+.total { display: flex; justify-content: space-between; border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; font-size: 13px; color: var(--ink-muted); }
+.total b { color: var(--ink); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mcard { background: var(--surface); border-radius: 18px; padding: 12px; box-shadow: var(--shadow); }
+.mcard small { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-subtle); }
+.mcard .big { font-size: 22px; font-weight: 900; margin-top: 2px; letter-spacing: -.01em; }
+.mcard .sub { font-size: 12px; color: var(--ink-muted); }
+.gbar { display: flex; height: 8px; border-radius: 99px; overflow: hidden; margin: 8px 0 4px; }
+.ab { padding: 8px 0; border-bottom: 1px solid var(--line); } .ab:last-child { border: 0; padding-bottom: 0; }
+.ab b { font-size: 14px; } .ab p { margin: 2px 0 0; font-size: 13px; color: var(--ink-muted); }
+
+/* ---------- moves ---------- */
+.mhead, .mA { display: grid; grid-template-columns: 30px 1fr 26px 22px 34px 38px; align-items: center; gap: 8px; }
+.mhead { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-subtle); padding: 0 12px 6px; }
+.mlist { background: var(--surface); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; }
+.mA { padding: 10px 12px; border-top: 1px solid var(--line); cursor: pointer; font-size: 14px; }
+.mA:first-child { border-top: 0; }
+.mA .lv { color: var(--ink-subtle); font-weight: 700; font-size: 13px; }
+.mA .nm { font-weight: 700; }
+.mA .n { text-align: right; font-weight: 600; color: var(--ink-muted); font-size: 13px; }
+.mlist.cards { background: none; box-shadow: none; overflow: visible; display: flex; flex-direction: column; gap: 6px; }
+.mheadC, .mC { display: grid; grid-template-columns: 36px 24px 1fr 22px 34px 40px; align-items: center; gap: 8px; }
+.mheadC { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-subtle); padding: 0 12px 6px 0; }
+.mC { background: var(--surface); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); padding-right: 12px;
+  min-height: 46px; cursor: pointer; font-size: 14px; }
+.mC .blk { align-self: stretch; display: grid; place-items: center; color: #fff; }
+.mC .blk svg { width: 20px; height: 20px; }
+.mC .blk.dark-text { color: #1F2937; }
+.mC .lv { color: var(--ink-subtle); font-weight: 700; font-size: 13px; }
+.mC .nm { font-weight: 700; }
+.mC .n { text-align: right; font-weight: 600; color: var(--ink-muted); font-size: 13px; }
+.mC .mx { grid-column: 2 / -1; padding: 0 0 10px; }
+.cat svg { width: 20px; height: 20px; display: block; }
+.mx { display: none; grid-column: 1 / -1; font-size: 13px; color: var(--ink-muted); padding: 6px 0 2px; }
+.mx .tags { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+.mx .tags span { background: var(--sunken); border-radius: 99px; padding: 3px 9px; font-size: 11px; font-weight: 700; color: var(--ink-muted); }
+.open .mx { display: block; }
+.mB { display: flex; gap: 12px; align-items: center; padding: 10px 12px 10px 0; border-top: 1px solid var(--line); cursor: pointer; }
+.mB:first-child { border-top: 0; }
+.mB .edge { width: 4px; align-self: stretch; border-radius: 0 4px 4px 0; }
+.mB .lvb { width: 38px; text-align: center; flex: none; }
+.mB .lvb small { display: block; font-size: 9px; font-weight: 800; color: var(--ink-subtle); letter-spacing: .08em; }
+.mB .lvb b { font-size: 16px; }
+.mB .mid { flex: 1; min-width: 0; }
+.mB .nm { font-weight: 800; font-size: 15px; }
+.mB .meta { display: flex; gap: 10px; align-items: center; margin-top: 4px; font-size: 12px; color: var(--ink-muted); }
+.mB .meta b { color: var(--ink); }
+.mB .mx { padding: 6px 0 0; }
+
+/* ---------- evolution / tab bar ---------- */
+.evo { display: flex; align-items: center; justify-content: space-between; gap: 4px; }
+.evo .st { text-align: center; flex: 1; }
+.evo .st .tile { width: 76px; height: 76px; margin: 0 auto 6px; border-radius: 20px; display: grid; place-items: center; }
+.evo .st b { font-size: 13px; }
+.evo .arr { text-align: center; color: var(--ink-subtle); font-size: 11px; font-weight: 800; flex: none; width: 46px; }
+.evo .arr div { font-size: 18px; line-height: 1; }
+.tabbar { display: flex; background: var(--surface); border-top: 1px solid var(--line); padding: 8px 0 12px; }
+.tabbar span { flex: 1; text-align: center; font-size: 11px; font-weight: 800; color: var(--ink-subtle); }
+.tabbar span svg { display: block; margin: 0 auto 2px; width: 24px; height: 24px; }
+.tabbar span.on { color: var(--accent); }
+.tabbar span.on .pill { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.tabbar .pill { width: 56px; height: 30px; margin: 0 auto 2px; border-radius: 99px; display: grid; place-items: center; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>Gen 3 Companion <span>· design mockup (real data)</span></h1>
+  <div class="games" id="games"></div>
+  <button class="chip-btn" id="theme">☾ Dark</button>
+</div>
+<main>
+  <section class="sect">
+    <h2>Principles</h2>
+    <p><b>Clean canvas, colour as information.</b> Type colours mark Pokémon and moves; the game you pick
+      becomes the accent (try the buttons above). Authentic GBA sprites, shown crisp. Numbers line up.
+      Every section has variants: tap <b>A</b> / <b>B</b>.</p>
+  </section>
+
+  <section class="sect">
+    <h2>1 · Pokédex list</h2>
+    <div class="variants" data-for="list"></div>
+    <div class="phone" id="list"></div>
+    <div class="note" id="list-note"></div>
+  </section>
+
+  <section class="sect">
+    <h2>2 · Pokémon page (scroll inside it)</h2>
+    <p>Scroll inside it: the header shrinks and crops the big sprite as it fades, the name slides up into a centred title, and a thumbnail appears. Snaps open or closed if you let go halfway.
+      Stats with real Lv 50/100 ranges, plus values computed with the game's own formulas.</p>
+    <div class="phone scrollphone"><div class="hhead" id="hhead"></div>
+      <div class="scroller" id="scroller">
+        <div class="snap"></div><div id="sp1"></div><div class="snap"></div><div id="sp2"></div>
+        <div class="pad" id="overview"></div></div></div>
+  </section>
+
+  <section class="sect">
+    <h2>3 · Moves tab (Emerald, level-up)</h2>
+    <div class="variants" data-for="moves"></div>
+    <div class="phone"><div class="pad" id="moves"></div></div>
+    <div class="note"><b>C</b> = each move is a small card; its type colour is the block on the left, with the type icon. Tap a move to expand it.</div>
+  </section>
+
+  <section class="sect">
+    <h2>4 · Evolution + tab bar</h2>
+    <div class="phone"><div class="pad"><div class="card" id="evo"></div></div><div id="tabbar"></div></div>
+  </section>
+</main>
+<script>
+const DATA = {"list":[{"id":1,"name":"Bulbasaur","hoenn":null,"t1":"grass","t2":"poison","img":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAMFBMVEXNzaz///+D7sVi1aQ5lHsYSkr/amLeSkG9KSDNzc0QEBC9/3Oc1UpzrDFSYin/AP92lJ+uAAAAAXRSTlMAQObYZgAAAYtJREFUSInt0z9OwzAUBnAP7YLUoRKVoGNaDkBes0PzDCITorFU5QAdOAB/9laq2FmYikiXSJygOYKzMblO1bltOAM2A0tfsoN4q3/6vmdHYex//ug01kU1WKrNuhJo9akqhdaFUkkV2OpVLjel543dTspCy9KWpV6mUq50VgrkciFlVshZSUOaLdJU6lVW0mGBTcgKVd5gE/JCXZNAy60NyHOlOAl20twy+4jelUIqohbImItcdIJVzCng43wAIBywQBCg30PXM6QXKPRJAI4jDEAeog/7HTXXMcAEIIYoKGDOO9DvhhZwmO1XoOt0POfq2QIkQO3FdaDXfT2OkXMSHPUB3OCpaUAQh/s7+BdvAHB+2zQbzA7mxC1PLBDCrMCJDRm7ceB77DOQoO6D7xnAhYmgABOxeSUuhhOMyY/JwnYiLu8fJ2GA4JEdOLwbjR7G5p380zOyA6fT6RijOWJALlFPfLNFxFiUHNIAoySp+jOZ+UizqnM2APp+PxWtVrsywCxX3fA/v36+AIf6qfv18GXxAAAAAElFTkSuQmCC"},{"id":4,"name":"Charmander","hoenn":null,"t1":"fire","t2":null,"img":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAMFBMVEXNzawQEBC0tLT/////5pz/1WrmrFrVQQj2lAj/xWL/lEHeUiCUMQAYSjFBpHuUzd74L0WcAAAAAXRSTlMAQObYZgAAAa9JREFUSIntlLFOwzAQht0pFfVA1rZPAuoWFtQRlwixkoUlWzKyVOEVUrowcs6CKobWGRqlVKqdJ0DiAVh4ARYuhiIkjqww9JazdJ/s37//hLFd/d/i1X7zfAFZI6FTgNuGeecOAWjYgqcTCbBsPEFVcN8AAOQDTQIOcyLGDgCygc4pIKzn7AmBZ60IlU4YhdheEHilgcgCGwD5JikgSmqA1y6AIgAnTpI2Y61JPc/V8ucGse+jSC4z9MEQt4iuhZ9g11JVh4rwwRn74hR7q18pZQggEsm4BhhXqqJExluAFTgnRLb9KL6yKy7ONCUijuLQLh6E0JK4Bjppe/7oVROgrNzYczs3q2EKlFOfAM9WxyANJWIztQCsht1CKULE3ALMPfHcQFFOdFJ7xp7nHY1IgKfT7wChcg7FFjCKUomBRkJ7njgHSankmJWiL4UQC/w4qOQbDJORF2KkfwHwpVVvsg6CLtAAMzWQBUGP1oBxWl/mAFWAIHnPmgjqUGJkyOeyRGGUGxR9Qz24FbpAfS7TlNe2ZuUMRxyoTH3s4Lp9xsqyLH4BvrDmf+Gu/qLeARQq4rERumfcAAAAAElFTkSuQmCC"},{"id":6,"name":"Charizard","hoenn":null,"t1":"fire","t2":"flying","img":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAMFBMVEXV1dXuUkHFMSAprL0ge5QYQWr/5pz/1Wr/pFoQEBD/xWL/lEHeYiCUMQDV1dX///+qh23HAAAAAXRSTlMAQObYZgAAA+xJREFUSImVlD9o41Ycxx+mi8EaMmUqpF5Ch07xDZ0tDYUbApWG0Hh157uh9kFvyWIVGhAUl3vEInPlu+HG+D3RW64g9FPxFQqV9V493xC6FQK9tL/fk2LJSa6lb0hEfp98f/9/jP2fl/2HvfOi+oBX9wOrF5uP5X12axHcfIl7nHV0IW8ApuCORFYIkdRisC2B/y1ECkENyC0JqxAS+KwJxKopYQlIuHdEgNa6BI6gARSSTz0CtBbRHBltxZ5q+CgSj16on8eLUIkIIIy9L4IGMCX7YBVpefH3OyETTkAdhCWnru14qyiay/V3f8lkyYrMGzSSlp5t294swlzxYbksmXneRe3htUvAmSjtQAA6lcsasDeABICEWRT1Jg1LkoDtHF3CJYAGrLIBjoNbgHfF3+U8VADBNpAaDwgMsjzs5ugkURXQaoRgG6fhRx8b4NcK2KuAfr8E2r/sEAB3gF6v5zgEvNn5RGYAHO0uxUBAB2NEBcctAS0xSgrBOV7WSaCC5zjHWf7mQ5VQolgnF0emVQH9g77tuu4A1npdJBgDIGBjL2qgZ6OC560yLYPCAC4CLRMkAgcHBw4qYMfnOLgF5pF77kP00O2WSRDwwCEJzgNWCIzS9R5iEt3ungE+nX6OaXCcuwE2ogJoHCqgH7APeg8OGWtPPZVZ1NLs0CGgddIl4DP87B9SwG1PaWV6vuwEBjghgD69sihTnZZDERDQavknexVQvTCtpiZoM1yQro8SxevmhsQEYCE4s66Dlj+ZnDCrsWOWWM3jlIBZsPqBtSaj/W2gQEBSJUGFq2SJwO4WYKVyJeSMgOz35+hm8mh3XAGZ1q+YErGIYQaj0dfJWsGPwf6j3ceMLek+RFEk8UhkQiUwHA6/TGI8CGx/Z3evlMatE+JCiEJw/hMCwye4oZjmzmPTz3QRUXZKyCIXMjdAjG1j1ktqJ7o29vgMQxBS//w9unhizk0Rlw7EXMhUYJXjWMA1J+Ap9UqLZQWIGE9Cgr9zSM7RPhw9DVg7TMsFVyQfWCrE7Qd+9c2fKDA6TTjt4AYQWgFut1TJlf8V2kffKrPmNYBZ0c/Mf+aP6Clcn6RaDJVSj+GMcoXf/AnZx1iv5GYMFEh8cEbFQmBMwCkezs2B6UCapgCFAbLJZEICUJ8w1gbTPhFFFIk/Ho9RAPLGGJn+JmIxnxOAEqeYQvOWt0tALIyC75M9awwqYzn91YwrIMBD2PZAxDPfnxkAr5gFCrKZ3iYszmniJSlbJmgRsFvPrFxIX+gDp+ftbUCJuvqI/MFvA2ulM3VTnjbdgVseri+v15d3HDeKwc/fnufvtxMStP9F4P3vH2Wo9JIgZPU/AAAAAElFTkSuQmCC"},{"id":25,"name":"Pikachu","hoenn":156,"t1":"electric","t2":null,"img":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAMFBMVEXNzbT//////3v/7gDuvQDFiwCDUgD/AP//AP//AP//SkrmAAC0AABqamoQEBD/AP9rriIfAAAAAXRSTlMAQObYZgAAAdZJREFUSIntlDFPg0AUx2+QG/kIDhC/gO/qYtOFB5sMAh2NKcjYD2Yc3XTTyXR0xTQpdtCUz+C7QmnhXtvBzfgSkub+P/7vf8frCfG3yj4GVPPfAqvqSIRiF2Ds7OKjXbSrggPeN4v2agfeAaBZtLyi4PIsIKx/RFB8cEDUADHAFbvlBpAAMGJ3fKLCBP1xSkDIGQgLE8dxFenI6kJkDpXW6waJ0QJqQE3rrO5tD0jh3HFU5am1YLnQB+JK5z9dqPVmrkH1AGt0qoFVDcSuwqALyNGKAN2CBMtR2AeyQQkZIZePOD/xAA3gC8ADiODpGZcpvW8A3x4MZjOPgGAyRhOQ9gvA7B7gaTaJnEwDYQeY5AS8PQAMX1MYaCCYdwxcRV9pSBAE9JR9nT620oKuFFRo6iJDP2oIQAJ6x0gjif5GV7jsBVxXiVsD8ut3IIu0NQiF5Cw2EZR/K2mbhoVsI8TTBeLUMLC2GVNOF9sIASIz9jLf7IFOgUkoJmdpC5Tc3CeDi6YDhnbCWGT1SepJCZd5bFpYiJkH9STlU+6/meF6Sqhy/jorsWyAPZeZrBrdZ9/XVVV35ih2y14yo9QlPm8OX6cySQ4aCDk+BviHIuo6euX/1776AQcQxQAcCes7AAAAAElFTkSuQmCC"},{"id":94,"name":"Gengar","hoenn":null,"t1":"ghost","t2":"poison","img":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAMFBMVEXV1dX////e3t57e3v/tHvuYkrNOSD/AP//AP//AP//AP/Fg7SsYpSDQXtKKUoQEBBaEbL9AAAAAXRSTlMAQObYZgAAAmtJREFUSIntlLFu2zAQhvkAFQ3ba5fGaxOgeYc+gr12aje3b9flKBtoRh6NAA2yiJSNFOgiifaSqTDcIyVKlOQXKNAbBEL87vjz55GM/Y8uEtMNrwOyJfbtv+MpBmBfpyfb5pfVKgKYromcZVt2oAGvQOTxGhU6ItnaLK0o0WYg1L4HaATIC1WBKU6UDoDmEAPcoEw1ojEmtaWfN6c+oJHmHWCMBlrA9CQQYBBBoPKAJ3sSSIShjcgaIMIMVmDsnFOBpkIdQ6BEkBK7+Z6E5JHxEpEqdEAswSQ7xgUpa1ao3Cd2IbM79kbQHpoCHtgcoz1mlmVpBq6AVsZ6CrbtfGI28lF+X2eugMTnL8NdJOlGpvJptdbORPV5NRKZAaTw9HFFa2vxvKyBKvLhTw28fiVg942A3Jfgh6CzAFAiX75Sav7703LtZR4vpQ06uRQoqsjEO5NbI7AKOiYaM2G7+ZdbEitx15lVEvByF2r8ulEEON8vQehZETBfWB/3i5nvGfItCwA3hcD5bHFDcf9u/tYZ5nxtvZiYAtRiOp9SfJjOle8ZFZt5LgAfAnAb1F46qyYFiJ8NMAtdFR2n80qoHwsPXJ13AJoH0vj+Sv3mvDDqN2PsoQ8kAHFD0nENAO6NiUuMKwyA/s3zIkQPGNw8Vg5EjAAL0Lt4oyVK6voA+HMYqORI5xmA+p3oX14udi2g6zvYBxLAMlipUYrhC8SoP3LdShg/USyjnNCTDiBPxkDeEOU1oHSycusRq31D9rdZOYH5xYet3D4HRrlU97r7S8eruKNrG1rzrRvwkdWcKjeijm5QjZwcRJTwT8RfEQvz2DNB8RMAAAAASUVORK5CYII="},{"id":248,"name":"Tyranitar","hoenn":null,"t1":"rock","t2":"dark","img":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAMFBMVEXNzaz////F7sWk1aRzpHM5Ujn/AP9itP9KnOYge70ASovVUgCUKQDFxcVzc3MQEBAa6DgdAAAAAXRSTlMAQObYZgAAA8VJREFUSIl1lbFuG0cQhi8Ar5UgmCkZAXtUTciz15rG7WxjIFj6dheI4uIeQ36BIMwDBBHdqEoRNnmAvIIBFU5rKAcjrURYx8ZFNjN3pG5PhLc6ar7959/Z2VGS0Botknb55Cur2KSMjGZfA8pNqoko5vwjPdQZiU2KVTLKGBiVhzqpWCQONwXMOZ7pQwtCJ977DAxly2BzaCEzqccSgLgM5AEwEtncoaaQ9gJYZrA0A5A3CiSiApAEjPQiMrAoCCgfoF1S4SYZFdkmBkqRSdHAjtAbisdGy7NCQDFDeCTIbR5bPBNCirnaA/Cc3L6MgakQRdZAvHDxREHkKgpLOahlSkD2Wg0E6KS+F3FCzE+eZvDROZzIqk+S6tTp03Gk9xBlSUXmcu9VBxguqVYyKviI6l+9b0C3pQiBADs8Rwl5eH8Djm9i3gKUKL7SQi6O/7qRDknChNDaHB4UXhMwDQRIFmCnhlqzz0Kfb25mgeyZNs4ZvBtk+ebNaZhTuY2S7ARxizhsHO+Pu44wWwbIDz7tvM6dDAxIvRNIo9M2AXIG6JQZS7QCaZ+H3gP8aNssZSa16yKuBwoCLhzHczFVWHUOfNXXu8jyq58Y0PQpjecypP2VIN3pxXJpW8ATgHwbdnfWo39SkQu4eLvkHDoXCg0V2yfO74BvnSpF/tvlknOQWE7AJrFbbToPRxOVU1+uVu/WFu7uyAI2tNVWzuwUxkiP5+Lycrn8FeoTRSINncJqNN2tfpJaCPihBdSLMd1V4J2WylkFFnjGzzq/YmBFOcZY4Q7Q7Uc9luiFu/r57XL57nd4MfkXuWFSutTuyu7uzn06dWvyuF57qG9P24ClcbC/83qRnkmq0/KXa2Xvm1PtqWMeBdgFv5RXLQC5w3tEv4VIoGtMc0UeH+jvGtCHh1bgZQ8cg/xjtbrmdrLgaa/EQVeNKpBf1us/udQ2p75xzTBDUVp4tVpxX2qw1N1bMwBoSFjKcd2OoFzQ89hiE2c4bgFtuxkl6I2gcTEQitLshwPdiyCMmd5C+DwzajcfVAsYAqrewuzz1HeDENEKMSWDehsfkjcZbOMMaPKI1WDI0DRm27zs8yl9eTTxDKkstZnZAfSESckNHq/VfDedhIaGverBDKHqcqiJgMGUSjRNKNSLtGLENpxCD8Yx2Bw192daUZU1C/XPkpaiNqmaR1c0fpD+yfVlqM/bCoT+2BXVQT9KHH138mEcx2kLnv+NH/cSdT2pT0wcPzpR55PvP97uft6H/0IYjKx6cltPQoj3DBfx9/vo/5Mxs3nW36z3AAAAAElFTkSuQmCC"},{"id":257,"name":"Blaziken","hoenn":6,"t1":"fire","t2":"fighting","img":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAMFBMVEWUxZT/9vbNtLSslJSUc3v/e1LeYjG0QTFKKUHu1azNtJyUe1r/5pz/1WrmrFoAAAAbg3hpAAAAAXRSTlMAQObYZgAAA05JREFUeNqVlkFrE0EYhucQ7GoO+Q8xl+Ihh+bQeqm0EZsi5uJsclFPmSyCySk7aUFTbE22sVJoFfNJwYs9ZBH8AaXpxYOBgBcVQWZPmhZKtwMGW9SyOrsbmzXZiHMa5n3m/d7Zmd1ZhP6zSf/QA5cXhupn65sa99HOLCAUeAkpqPkRaYQSrWdpgDc+xIOFwEbrSRpgw4eQ0udazc252jK0fIgHyxtNXK3MgR9xRoH11Cqtgx8hkeqmcqIOIcrpy6sn6u118CNGUvKJQepwURCDnoeEZarieVif8CPuplSSnYda1Qbgbf9CU8VyVYeysuwQq38DofxRUdefZrAy6kN8HY/rdZqRiZYAO8pfMSRaTwA8JYQQDQAeT8Bzr16hiTrAM3pKPPZYVCidE5VffT8mGXnJJnoBjdLiytoUwJr+4htO1OITAL0O3wgt8ZVmLQGg69Z1mKi+mO7NEMdyngdazWt7dV1Pxjvn18d1PX5qMAtXbnGUALhmFnWdW/HFsFbVLVe10CxMRThCgWbENHersxxZx5HRaFcPrP2AqUhU9F5H7pm0FBKjM6NR1LlkA1fD40uRqN2/lKS7tKTZi4pNWvejDrAYi225cUJZSrNHFkdIupocjyWdJ/hweircBeSsqlZoyeKhn534igMsjo1Nh9138gjLhCgVSktLPzszLXuaNDZ5bI1NukcCi6bQ0nE4ORN3tvv+BY7Q1qR76uwmr3IpNmN1nAoiasgxQ2Ws2gBHaOUtCjmDASFarkERZwSRR13V3oY/B6KAcYUQ12LQ2ynyKVlhMRAYEVMVLZtxavS3AsaY5EP5gg8gligTjnjBJ4RIQJRuqfzgBGTB7Q2oIQmdCOcRkZL01SjcFNuE/AH1hkyIY6xi/IX01SgftHuA98OBjGyQvhplZpCcC5DcAKDxGzAdYITkWLsP2GasbR46QDvH2rl8P2C4QPDDHWYMBQwBHHr14D5jhrHv9BljzGx7QzT2xeA+77ox0/QAwS3H4fAPYHiBhnkgJpmnDp9MT4hgw3Y1ex28KUUwY8eyHYKPRMrGIfeucod1PxjbNmB6LXYsZPWYMcY+N/wuSLTFGHvHzD3/G3hbY5+shul/TWvo0UcUsviwv4Du7F/pugEN27KMiAAAAABJRU5ErkJggg=="},{"id":282,"name":"Gardevoir","hoenn":31,"t1":"psychic","t2":null,"img":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAMFBMVEWcpFLu7v/Fzd6ktM2DlLR7UlJzKTn/nIPmUjmDzf/////N/6yU5pRzvXMxe0oQEBD6IaPTAAAAAXRSTlMAQObYZgAAAl9JREFUSIl9lTGP0zAUxzPkRhI5t4PyLoibqERvQAwHDZkJCzOfgm8A6n0Qdj6AW/gAdQB1Qmqcht6CxMUthYGBxjynvqa9s/OWSP3//P8/20+u4xjLE+bfr0vMaFF26BXF+mgnPEYbYmU1YDSbIfHFZsDzCR1PKB1ZLDYKUMT4kyWBc9XEmNKJ0cLjorGgMzr7agQqIitlMaIjY5sVX5B7gqmMsQUopiStkZhkRuAqKwR5MvzHaG4DFoQ8/vshZ3lWGgFWLMjx8H2dX2XGbSJACOkPHvJqbtLxqgpxGZKgV3DzUftZLsRvOJFiadRxnwgs+6kjbde94Z8RqK3T4Ph8JpaPaltAY0EFRKUd8Kucfid37YDjyRqP4lmHxSLsBrwCgftRB8CBkAev7UDFp0BOh+/swHwDcHrxxp5QetNuYHW04d8uXloTCgeBH0Mb4PG5c/RW2BMqXiIA1oQ7TE1SDK9sATlToxhDz6yLnKlZdsEMeBVj2gAi00j9pLwxSMAC+JIy6bgJCQBOnhp7kNJNBjgMaJEaZDdJGlk5wPNbGVokWwPor26uJrtSBhAdNtGu1gY3gL3lWj8EDDpEl20T7p7c5EN4CLT5wZk6RYiDYB9ww53aHCJEYRjCWQvEoOUtFiWDAOuFuO4S7xYJ0I1G2w2HYQvETVs93UWsv8fiEJC/ArAAKiGSzjqSDRHpjs93ABqk2K+/chQB8jaAy3Wt0UqstwlVIfQ20/bAfFnjE9gknXNeGIYOdSH+INHHPybTS+xLRUgAwbnlJZZYjlS6+SnXtTF3sB8lyy59r/4DvWlhizGoJOoAAAAASUVORK5CYII="},{"id":376,"name":"Metagross","hoenn":192,"t1":"steel","t2":"psychic","img":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAMFBMVEUxpFLNzc2srKyUi5RzanPe3t6DSkr/amrVSlKDzf/F3v9apP9Kg9U5YrQxOXMQEBCdZlluAAAAAXRSTlMAQObYZgAAAw1JREFUSIntlLFu20gQhrdwaxEWkAfwWrjuYsR0auHgXBfESACVeR2/w4bRPYAAtwcIQ8a1oFnykE4hl3QcN4bIXcZKYcMiN0NHVhzbSn9Bplrg/zjz78wsGfsd/8toHS8O5mHdKbIFqOzDuloAjioeIqpUl4tjrYvyrqwcpZeA1dq09A/6+sAqs8zrEFGI8kcgS6tsCWgqIo5uAx8GWaZVydaVUv+RnVrr8W2gfnMYGV1kxYfBYHBoFWUwY/97DedMHKKtzZU/aCLTRhubwHegnggf59aCh6QrYnWFOUQ3eisVIomSMBoOYSQKRDiyKOewrFGkwsNIhXjloRBBMoYjrLL50kRLFaKPtsqxSoZDD4IxVEg245saVXom/MhmCj/+6XkAvpKVIqMSspsKl2TBUSrlPAYAlO1tpbRBhdc1aAgTD48dq0745qsYfHzf5pWqdY5ovgFm1MfSGvuM80evEXGz3TEEzBHzJkWdFhijzfSVevak11P4foPvJ1ab/AbQlQ++VdYHe/qUiI32ts2jayCJrgEJvp8pNYbPB6e93svNzoHNZT3PUUoCHFP1wQ+iKgG4uKj+7rXbf1zUqOoqQRnSPRx91gcIormM4d+Dy9MNzp8foExvAZcE5GFF9mH49oRz/hilIkBhEMoGEIkHCVryhBhyvsd5odJ9bQiQtEOsFhPxDtHuagJOeCfc4Y/T0y51MoHrhzAdjUTfx8zt1kW6s/UcP3GuZ7RSc0nAMQG+EDHg8az88sJ1X2itd7a6tbF1QkBKKaaBEFOfhsGcPXeXllbN3K6jy+m7AtKCNncKEy8mgFri7takp8YtHcNyaCZLnVqH+J8xymZusy6z1paMXlDJcqRFbQANE7pE2IzFuf2YWjkBoWGtEOI+ARm7GzPyOytZjMEwQJngvfd83j13CZgGMUhFLu8BTnnedegSQyEE7dl9YOGpAXxcuHwoWt+AcMWPi7G1YkRA+mlVArbm0r/A7LmrgY7juuVaZ5XO2P7aFvV+ezXA2JNO0/ufxF8//ZzdmdGvGV8B9JF1rCpfHt0AAAAASUVORK5CYII="},{"id":384,"name":"Rayquaza","hoenn":200,"t1":"dragon","t2":"flying","img":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAMFBMVEWcnP85UjlBg0FKg3NavYuU3rQAAAAxUqxKnL32YmLFlGLe1e7////ezQD/7gAYGBi04iL0AAAAAXRSTlMAQObYZgAAA5tJREFUeNp9lbFv20YUxu+gpZv4ciegdAwQMLw3h0cNLZASFz4OLlAJjHhr/Td08p/QbIVQd1C3QlO1FIHHFAiKdrOBDPKaLElXQQJpBDGaXnGkaJEJozdRuh+/7+Hu3UfGqkK2v3rmwe6H6gS83XPm7QeGtB/gme60mNSPgy4B1jPpXgHGa6A3oG6A0tqg04FxogeVQbeAA8oXBzGu9wEqQ9W91RzAcwYxRt0AmH9S4IMYP+GA5rvV6qVbjz5xlq7SDLsFekjk1gcxKgsdwDCjR0dHRISqGFEHMTSPj8mVLoiutwRvNXAcAwiiGIneUEX4XlOAXoLTiBFxdF0RDWDw+PjRf/ecBbr6+tptKj/Xu4OuGqBvzlFtCd0E+pmGg8Vi8dvsHBEEIj4kAp+o3HxX9t81C6y1szmiKolrGqYa/Nm0Ary+Mzo78+ciJM2Fk1ATf0btyXh79g7V0KSMOwkwmj4GlCeM8RggqpsSaA3f27N3EeOJux5CWchIfgB8/v0vEWOFG25uB6eSJMVxA+BPfvxpw1jfSQyMmRSkMQwb4/fZE3++5sAK47EbgwhSI8bjhsMPtxGXBEGSQoCIQhFiuBsv/ivMN3BJim5SPUa351K05u9gYenw8vAvOZYyzh1Q5C2gbwfmvr260ERSg/gYAGHM6f2gIFB0+LdGQYVuAgo3wxSeXYQxSv3HVQmMG4BKTCT96QvEHMPgGZBQJVDfgR4Zk+Ygi8BGqK4sSKVIjtHWAmFiMtpUM5ery6eHfypFmgLWEKB4U44kBPY5XF0g0JjWLQHMETGy+JW3Dp6jUEdtgAgFKpvj7xvG2NpiSF8ob+eQUQzglm31p7BIOtBNQPMpWFu/IzAPx1E9LyEZIi3wS9iFrYgwj8Ltb0mJuwQY0rS+2UKBxTzUNUAESQJEdFI1zhFpie9x6yGINGXZBGQNCAxfLZVYbj14SBAmiTEK/BIAohG9jvjDrQdHbTQMXUopWDPuvN6McM3Ectt2rmY/Z0qUQXYKriVaLSOXnVh13UfwZyYuRaBMgtHSnTRHlJXEBhU4EZlMCqJvV6NlOSpc1IC70U7khNLCpdRrjFy3XKHS9US6aJhNRVrQiFbVegmcVBIH2uUGCJy8f7Vaoa33S6hpBdzOFZQJZgJEezdpKOrz6t/Oq3hKtN3s7oIf3AWAI8p8amW57xXx3QHbBeIisK2M9plspFCQL+yHXxnWb8YUtx1fAsv+BwJQX5p1kXQxAAAAAElFTkSuQmCC"}],"typeColors":{"normal":"#A8A878","fighting":"#C03028","flying":"#A890F0","poison":"#A040A0","ground":"#E0C068","rock":"#B8A038","bug":"#A8B820","ghost":"#705898","steel":"#B8B8D0","fire":"#F08030","water":"#6890F0","grass":"#78C850","electric":"#F8D030","psychic":"#F85888","ice":"#98D8D8","dragon":"#7038F8","dark":"#705848","???":"#68A090"},"icons":{"normal":"<svg class=\"ti\" viewBox=\"0 0 512 512\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M481 256C481 380.264 380.264 481 256 481C131.736 481 31 380.264 31 256C31 131.736 131.736 31 256 31C380.264 31 481 131.736 481 256ZM384.571 256C384.571 327.008 327.008 384.571 256 384.571C184.992 384.571 127.429 327.008 127.429 256C127.429 184.992 184.992 127.429 256 127.429C327.008 127.429 384.571 184.992 384.571 256Z\" fill=\"currentColor\"/>\n</svg>\n","fighting":"<svg class=\"ti\" viewBox=\"0 0 512 512\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M88.2336 42.5656C94.4299 18.1014 116.593 0 142.983 0C162.778 0 180.195 10.1847 190.279 25.6H206.792C217.051 15.0716 231.384 8.53333 247.245 8.53333C270.499 8.53333 290.471 22.5882 299.129 42.6667H312.954C321.617 37.2585 331.853 34.1333 342.818 34.1333C366.073 34.1333 386.044 48.1882 394.702 68.2667H432.297C432.618 68.2667 432.919 68.3532 433.178 68.5041C434.895 68.347 436.634 68.2667 438.391 68.2667C469.582 68.2667 494.866 93.5514 494.866 124.742V294.086L494.867 294.4L494.866 294.714V297.153C494.866 298.186 494.838 299.215 494.782 300.239C491.384 417.717 385.749 512 255.933 512C123.974 512 17 414.577 17 294.4C17 236.391 41.9249 183.683 82.5535 144.675C82.4522 201.228 83.4074 259.694 87.8107 258.691C99.6011 256.003 90.3891 80.8395 88.2336 42.5656Z\" fill=\"currentColor\"/>\n</svg>\n","flying":"<svg class=\"ti\" viewBox=\"0 0 512 512\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M178.712 477.733C253.715 477.733 317.927 436.048 344.436 376.956C344.76 376.235 238.007 404.699 241.411 394.637C242.931 390.144 308.371 366.238 356.048 338.354C383.451 322.327 396.07 288.4 396.07 288.4C396.07 288.4 349.903 310.815 326.564 316.501C279.532 327.961 238.131 326.727 238.131 325.533C238.131 322.951 306.876 309.889 402.424 251.664C447.367 224.277 459.574 177.103 459.574 177.103C459.574 177.103 410.163 206.535 380.293 216.252C309.457 239.295 244.815 246.239 244.815 243.121C244.815 236.445 301.702 220.802 362.016 191.577C393.376 176.382 420.535 156.53 452.008 134.453C503.506 98.332 511.999 34 511.999 34C511.999 34 461.207 66.7601 436.42 77.6394C334.141 122.531 243.829 146.079 178.712 151.177C80.416 158.873 0 227.456 0 316.501C0 405.547 80.0119 477.733 178.712 477.733Z\" fill=\"currentColor\"/>\n</svg>\n","poison":"<svg class=\"ti\" viewBox=\"0 0 512 512\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M427.821 393.449C479.524 352.108 512 292.376 512 225.95C512 101.161 397.385 0 256 0C114.615 0 0 101.161 0 225.95C0 289.978 30.1737 347.786 78.6553 388.901C75.7171 399.046 74.1052 410.081 74.1052 421.62C74.1052 471.535 104.267 512 141.474 512C165.65 512 186.852 494.915 198.737 469.254C210.622 494.915 231.824 512 256 512C278.038 512 297.604 497.804 309.895 475.857C322.186 497.804 341.752 512 363.789 512C400.996 512 431.158 471.535 431.158 421.62C431.158 411.784 429.986 402.314 427.821 393.449ZM404.211 230.431C404.211 293.785 336.346 345.144 252.632 345.144C168.917 345.144 101.053 293.785 101.053 230.431C101.053 167.077 168.917 115.718 252.632 115.718C336.346 115.718 404.211 167.077 404.211 230.431Z\" fill=\"currentColor\"/>\n</svg>\n","ground":"<svg class=\"ti\" viewBox=\"0 0 512 512\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M112.764 439.754C112.625 439.754 112.528 439.617 112.574 439.486L243.289 70.134C243.318 70.0537 243.394 70 243.479 70H383.021C383.106 70 383.183 70.0541 383.211 70.1349L511.987 439.487C512.032 439.618 511.935 439.754 511.797 439.754H116.692H112.764ZM0.201306 441.199C0.0609122 441.199 -0.0362852 441.059 0.0129607 440.928L97.3526 181.056C97.3821 180.977 97.4571 180.925 97.541 180.925H182.118C182.258 180.925 182.355 181.064 182.307 181.195L88.1823 441.067C88.1535 441.146 88.0779 441.199 87.9932 441.199H0.201306Z\" fill=\"currentColor\"/>\n</svg>\n","rock":"<svg class=\"ti\" viewBox=\"0 0 512 512\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M395.138 244.757C395.109 244.717 395.097 244.667 395.105 244.618L427.769 54.1518C427.784 54.0641 427.861 54 427.949 54H438.287C438.367 54 438.437 54.0517 438.461 54.1277L512.051 287.131C512.074 287.203 512.049 287.283 511.989 287.33L457.73 329.693C457.649 329.756 457.532 329.74 457.471 329.657L395.138 244.757ZM-1 371.022C-1 371.101 -0.949204 371.171 -0.874109 371.196L110.975 407.767C111.029 407.785 111.089 407.776 111.136 407.744L361.145 235.144C361.187 235.115 361.215 235.07 361.222 235.02L388.032 55.1284C388.049 55.018 387.963 54.9188 387.852 54.9188H166.406C166.351 54.9188 166.3 54.943 166.265 54.9849L-0.957974 256.714C-0.98514 256.747 -1 256.788 -1 256.831V371.022ZM157.583 417.085L279.776 457.112C279.831 457.13 279.892 457.121 279.939 457.087L425.418 352.734C425.499 352.677 425.519 352.566 425.464 352.484L370.928 271.329C370.871 271.244 370.757 271.222 370.673 271.28L157.583 417.085Z\" fill=\"currentColor\"/>\n</svg>\n","bug":"<svg class=\"ti\" fill=\"none\" viewBox=\"0 0 512 512\" xmlns=\"http://www.w3.org/2000/svg\"><path clip-rule=\"evenodd\" d=\"m342.198.501279c.373-.5317158 1.105-.660937 1.637-.288625l36.354 25.455546c.532.3723.661 1.1051.289 1.6368l-50.599 72.2623c24.599 7.8587 41.358 16.3357 41.358 16.3357s-40.964 70.462-110.443 70.462-118.85-65.672-118.85-65.672 17.506-11.172 43.456-20.7539l-55.5-66.1415c-.417-.4973-.352-1.2386.145-1.6558l33.997-28.52715c.498-.41723 1.239-.35238 1.656.14487l70.272 83.74688c6.017-.6806 12.147-1.061 18.333-1.061 8.891 0 17.771.6759 26.44 1.8229zm13.746 189.200721c18.541-13.242 46.597-47.804 46.597-47.804s71.664 56.79 71.664 177.206c0 120.415-123.896 192.888-123.896 192.888s-59.195-59.781-73.727-135.562c-14.531-75.781 21.496-159.927 21.496-159.927s39.324-13.559 57.866-26.801zm-199.683 0c-18.541-13.242-46.597-47.804-46.597-47.804s-71.664 56.79-71.664 177.206c0 120.415 123.896 192.888 123.896 192.888s59.195-59.781 73.727-135.562c14.531-75.781-21.496-159.927-21.496-159.927s-39.324-13.559-57.866-26.801z\" fill=\"currentColor\" fill-rule=\"evenodd\"/></svg>","ghost":"<svg class=\"ti\" viewBox=\"0 0 512 512\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M368.952 510.227C322.769 512.591 269.896 512.591 251.928 510.227C111.77 491.788 0 389.313 0 250.8C0 112.287 114.615 0 256 0C397.385 0 512 112.287 512 250.8C512 315.221 487.207 373.969 446.46 418.387C435.395 430.448 450.577 438.908 466.002 447.504C481.13 455.935 496.492 464.496 487.564 476.712C477.726 490.173 424.392 507.389 368.952 510.227ZM220 219.45C220 241.092 202.091 258.637 180 258.637C157.909 258.637 140 241.092 140 219.45C140 204.935 148.055 192.264 160.024 185.491C160.713 204.362 176.229 219.449 195.269 219.449H220C220 219.449 220 219.45 220 219.45ZM343.976 185.491C343.287 204.362 327.771 219.449 308.731 219.449H284C284 219.449 284 219.45 284 219.45C284 241.092 301.909 258.637 324 258.637C346.091 258.637 364 241.092 364 219.45C364 204.935 355.945 192.264 343.976 185.491Z\" fill=\"currentColor\"/>\n</svg>\n","steel":"<svg class=\"ti\" viewBox=\"0 0 512 512\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M0.0511107 254.527C-0.0170046 254.411 -0.0170388 254.267 0.0510196 254.15L128.795 34.1843C128.862 34.0702 128.985 34 129.117 34H384.294C384.427 34 384.55 34.0708 384.617 34.1859L511.949 254.152C512.016 254.267 512.016 254.41 511.949 254.525L384.617 474.244C384.55 474.359 384.427 474.43 384.294 474.43H129.117C128.985 474.43 128.862 474.36 128.795 474.246L0.0511107 254.527ZM374.617 254.215C374.617 319.703 321.528 372.792 256.04 372.792C190.552 372.792 137.463 319.703 137.463 254.215C137.463 188.726 190.552 135.638 256.04 135.638C321.528 135.638 374.617 188.726 374.617 254.215Z\" fill=\"currentColor\"/>\n</svg>\n","fire":"<svg class=\"ti\" viewBox=\"0 0 512 512\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M352.258 395.394C358.584 372.263 346.305 324.71 346.305 324.71C346.305 324.71 337.399 363.449 323.483 377.767C311.611 389.98 297.066 398.451 276.206 400.677C293.261 392.393 304.99 375.12 304.99 355.155C304.99 327.129 281.878 304.409 253.368 304.409C224.858 304.409 201.745 327.129 201.745 355.155C201.745 362.809 203.47 370.068 206.557 376.576C188.725 362.37 185.921 339.594 185.921 339.594C185.921 339.594 166.009 422.264 220.875 461.152C275.74 500.04 383.219 466.614 383.219 466.614C383.219 466.614 229.41 574.837 115.436 457.05C17.2568 355.584 89.8111 222.003 89.8111 222.003C89.8111 222.003 86.6777 234.395 86.6777 248.78C86.6777 263.165 94.477 274.11 94.477 274.11C94.477 274.11 117.742 225.071 135.848 205.128C152.984 186.254 174.465 170.946 193.019 157.724C207.301 147.546 219.849 138.604 227.343 130.223C268.62 84.0687 243.311 0 243.311 0C243.311 0 289.841 41.02 302.831 93.9978C307.783 114.192 304.597 137.169 301.749 157.716C297.125 191.072 293.388 218.025 326.793 216.276C380.775 213.449 333.866 130.223 333.866 130.223C333.866 130.223 456.318 194.583 447.17 307.145C438.021 419.707 313.324 445.297 313.324 445.297C313.324 445.297 345.931 418.525 352.258 395.394Z\" fill=\"currentColor\"/>\n</svg>\n","water":"<svg class=\"ti\" viewBox=\"0 0 512 512\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M422.172 346.515C422.172 437.897 347.813 511.977 256.086 511.977C164.359 511.977 90 437.897 90 346.515C90 257.639 247.102 13.5479 255.718 0.22781C255.915 -0.0759384 256.258 -0.0759358 256.454 0.227813C265.07 13.5479 422.172 257.639 422.172 346.515ZM228.4 458.931C144.12 440.49 158.542 347.13 158.542 347.13C158.542 347.13 181.556 403.488 237.405 421.744C293.253 439.999 360.745 413.225 360.745 413.225C360.745 413.225 312.68 477.371 228.4 458.931Z\" fill=\"currentColor\"/>\n</svg>\n","grass":"<svg class=\"ti\" fill=\"none\" viewBox=\"0 0 512 512\" xmlns=\"http://www.w3.org/2000/svg\"><path clip-rule=\"evenodd\" d=\"m97.4121 440.649c-1.7574-1.653-3.4954-3.338-5.2132-5.056-90.68455-90.684-90.68453-237.713 0-328.397 90.6841-90.6849 379.6401-96.7516 379.6401-96.7516s39.442 334.4646-51.242 425.1486c-80.54 80.54-205.522 89.55-296.005 27.031l72.908-89.471 116.55-25.163-95.139-9.511 60.462-61.562 68.824-15.077-54.422-16.117 54.422-98.176-77.41 86.828-29.893-42.183 10.523 69.648-53.917 60.782-24.993-76.9v102.268z\" fill=\"currentColor\" fill-rule=\"evenodd\"/></svg>","electric":"<svg class=\"ti\" viewBox=\"0 0 512 512\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M152.56 0.583659C152.461 0.29796 152.674 0 152.976 0H332.805C332.998 0 333.169 0.125587 333.226 0.309782L415.824 267.171C415.911 267.454 415.7 267.741 415.403 267.741H295.684C295.538 267.741 295.433 267.88 295.473 268.021L364.135 509.726C364.269 510.195 363.654 510.501 363.361 510.111L96.5295 155.267C96.3115 154.977 96.5184 154.563 96.881 154.563H205.536C205.687 154.563 205.793 154.414 205.743 154.271L152.56 0.583659Z\" fill=\"currentColor\"/>\n</svg>\n","psychic":"<svg class=\"ti\" viewBox=\"0 0 512 512\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M455.925 425.184C455.925 425.184 391.365 476.963 262.893 455.536C165.423 439.279 113.437 331.833 113.437 274.079C113.437 137.149 214.783 105.988 283.3 105.988C351.816 105.988 396.513 172.788 396.513 224.508C396.513 276.228 359.933 321.466 303.006 321.466C246.08 321.466 229.22 281.501 229.22 244.758C229.22 208.016 258.947 195.071 286.058 195.071C313.169 195.071 322.452 218.217 322.452 238.11C322.452 258.004 307.017 265.128 294.143 265.128C281.269 265.128 279.996 258.633 275.069 251.807C270.141 244.982 281.353 219.146 262.893 219.146C244.433 219.146 240.992 248.847 240.992 248.847C240.992 248.847 247.722 306.18 303.006 305.191C358.291 304.201 384.518 261.461 376.896 219.146C369.274 176.83 328.207 131.865 256.133 140.951C184.059 150.037 154.632 222.861 167.603 300.685C180.574 378.51 273.807 423.602 347.112 407.379C420.418 391.156 493.429 338.086 493.429 203.533C493.429 68.9789 376.896 -11.9002 237.941 1.42913C98.9859 14.7584 12.729 136.242 18.2502 282.207C23.7714 428.172 162.275 507.669 279.394 511.766C396.513 515.864 468.312 448.067 468.312 448.067C468.312 448.067 484.459 433.668 478.128 422.424C471.798 411.18 455.925 425.184 455.925 425.184Z\" fill=\"currentColor\"/>\n</svg>\n","ice":"<svg class=\"ti\" viewBox=\"0 0 512 512\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M384.304 39.0418L385.879 177.392L265.209 235.319L263.721 104.69L384.304 39.0418Z\" fill=\"currentColor\"/>\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M505.269 257.047L385.814 325.374L266.288 256.939L385.752 194.187L505.269 257.047Z\" fill=\"currentColor\"/>\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M245.04 257.047L125.585 325.374L6.05861 256.939L125.523 194.187L245.04 257.047Z\" fill=\"currentColor\"/>\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M124.243 38.4753L248.229 99.881L245.059 233.697L127.993 175.719L124.243 38.4753Z\" fill=\"currentColor\"/>\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M387.678 473.525L263.692 412.119L266.862 278.302L383.928 336.281L387.678 473.525Z\" fill=\"currentColor\"/>\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M128.525 474.77L126.949 336.42L247.62 278.493L249.108 409.121L128.525 474.77Z\" fill=\"currentColor\"/>\n</svg>\n","dragon":"<svg class=\"ti\" viewBox=\"0 0 512 512\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M280.702 254.881C284.172 252.765 287.116 248.331 289.49 243.403C320.735 256.173 342.692 286.349 342.692 321.54C342.692 368.29 303.942 406.189 256.142 406.189C236.52 406.189 218.423 399.802 203.906 389.039C199.144 386.784 195.226 384.618 192.02 382.845C187.047 380.096 183.786 378.293 181.744 378.575C175.775 379.398 177.508 384.89 179.083 389.879C180.152 393.268 181.149 396.425 179.606 397.727C177.992 399.091 172.764 394.106 166.655 388.282C158.339 380.353 148.391 370.868 143.7 373.717C139.991 375.97 143.592 382.081 148 389.561L148.327 390.116C150.189 393.278 152.347 396.498 154.316 399.436C158.319 405.407 161.543 410.219 159.93 411.033C157.98 412.017 144.394 402.847 132.945 390.116C128.526 385.203 124.246 379.877 120.268 374.928L120.268 374.927C111.561 364.093 104.307 355.068 100.235 356.137C95.3365 357.423 99.0421 367.527 104.487 377.25C107.033 381.797 110.028 386.427 112.621 390.436L112.621 390.437C116.654 396.671 119.715 401.402 118.605 401.984C117.107 402.767 103.926 389.914 94.9734 373.717C89.6559 364.096 85.1909 353.464 81.5761 344.857C77.656 335.522 74.7359 328.569 72.8131 327.869C66.1325 325.438 66.1325 339.059 68.8119 358.718C69.1614 361.283 69.6819 363.973 70.3228 366.712C96.307 450.785 176.128 512 270.567 512C386.084 512 479.728 420.412 479.728 307.432C479.728 199.9 394.899 111.747 287.12 103.494C287.256 98.4284 289.9 88.383 289.9 88.383C289.9 88.383 308.927 42.3472 309.933 32.5099C309.999 31.857 310.078 31.1475 310.163 30.3919C311.348 19.7629 313.553 0 296.551 0C287.471 0 283.249 6.75464 278.42 14.4799L278.42 14.48C276.566 17.4457 274.622 20.5545 272.28 23.479C255.412 44.5436 227.048 70.8488 210.965 84.8631C176.971 114.484 143.619 138.828 124.167 153.026L124.167 153.026L124.166 153.027C115.319 159.484 109.348 163.843 107.5 165.644C93.574 179.22 43.6418 269.286 43.6418 269.286C43.6418 269.286 27.4943 298.182 33.2338 304.043C38.9733 309.903 52.8141 308.56 52.8141 308.56C52.8141 308.56 238.755 265.903 255.402 262.539C259.884 261.633 263.048 261.11 265.477 260.709C272.072 259.62 273.256 259.424 280.702 254.881ZM149.235 200.064C139.254 209.551 122.701 232.196 122.701 232.196C122.701 232.196 153.465 234.091 170.408 217.986C187.352 201.88 183.47 174.433 183.47 174.433C183.47 174.433 159.215 190.577 149.235 200.064Z\" fill=\"currentColor\"/>\n</svg>\n","dark":"<svg class=\"ti\" viewBox=\"0 0 512 512\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">\n<path fill-rule=\"evenodd\" clip-rule=\"evenodd\" d=\"M229.379 452.85C239.106 454.339 249.068 455.111 259.212 455.111C367.214 455.111 454.767 367.558 454.767 259.556C454.767 151.553 367.214 64 259.212 64C251.966 64 244.811 64.3941 237.77 65.1621C291.345 105.751 326.767 176.062 326.767 256C326.767 340.04 287.616 413.44 229.379 452.85ZM255.656 512C397.041 512 511.656 397.385 511.656 256C511.656 114.615 397.041 0 255.656 0C114.271 0 -0.34375 114.615 -0.34375 256C-0.34375 397.385 114.271 512 255.656 512Z\" fill=\"currentColor\"/>\n</svg>\n","???":""},"hero":{"id":6,"name":"Charizard","category":"Flame","t1":"fire","t2":"flying","height":"1.7 m","weight":"90.5 kg","img":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAMFBMVEXV1dXuUkHFMSAprL0ge5QYQWr/5pz/1Wr/pFoQEBD/xWL/lEHeYiCUMQDV1dX///+qh23HAAAAAXRSTlMAQObYZgAAA+xJREFUSImVlD9o41Ycxx+mi8EaMmUqpF5Ch07xDZ0tDYUbApWG0Hh157uh9kFvyWIVGhAUl3vEInPlu+HG+D3RW64g9FPxFQqV9V493xC6FQK9tL/fk2LJSa6lb0hEfp98f/9/jP2fl/2HvfOi+oBX9wOrF5uP5X12axHcfIl7nHV0IW8ApuCORFYIkdRisC2B/y1ECkENyC0JqxAS+KwJxKopYQlIuHdEgNa6BI6gARSSTz0CtBbRHBltxZ5q+CgSj16on8eLUIkIIIy9L4IGMCX7YBVpefH3OyETTkAdhCWnru14qyiay/V3f8lkyYrMGzSSlp5t294swlzxYbksmXneRe3htUvAmSjtQAA6lcsasDeABICEWRT1Jg1LkoDtHF3CJYAGrLIBjoNbgHfF3+U8VADBNpAaDwgMsjzs5ugkURXQaoRgG6fhRx8b4NcK2KuAfr8E2r/sEAB3gF6v5zgEvNn5RGYAHO0uxUBAB2NEBcctAS0xSgrBOV7WSaCC5zjHWf7mQ5VQolgnF0emVQH9g77tuu4A1npdJBgDIGBjL2qgZ6OC560yLYPCAC4CLRMkAgcHBw4qYMfnOLgF5pF77kP00O2WSRDwwCEJzgNWCIzS9R5iEt3ungE+nX6OaXCcuwE2ogJoHCqgH7APeg8OGWtPPZVZ1NLs0CGgddIl4DP87B9SwG1PaWV6vuwEBjghgD69sihTnZZDERDQavknexVQvTCtpiZoM1yQro8SxevmhsQEYCE4s66Dlj+ZnDCrsWOWWM3jlIBZsPqBtSaj/W2gQEBSJUGFq2SJwO4WYKVyJeSMgOz35+hm8mh3XAGZ1q+YErGIYQaj0dfJWsGPwf6j3ceMLek+RFEk8UhkQiUwHA6/TGI8CGx/Z3evlMatE+JCiEJw/hMCwye4oZjmzmPTz3QRUXZKyCIXMjdAjG1j1ktqJ7o29vgMQxBS//w9unhizk0Rlw7EXMhUYJXjWMA1J+Ap9UqLZQWIGE9Cgr9zSM7RPhw9DVg7TMsFVyQfWCrE7Qd+9c2fKDA6TTjt4AYQWgFut1TJlf8V2kffKrPmNYBZ0c/Mf+aP6Clcn6RaDJVSj+GMcoXf/AnZx1iv5GYMFEh8cEbFQmBMwCkezs2B6UCapgCFAbLJZEICUJ8w1gbTPhFFFIk/Ho9RAPLGGJn+JmIxnxOAEqeYQvOWt0tALIyC75M9awwqYzn91YwrIMBD2PZAxDPfnxkAr5gFCrKZ3iYszmniJSlbJmgRsFvPrFxIX+gDp+ftbUCJuvqI/MFvA2ulM3VTnjbdgVseri+v15d3HDeKwc/fnufvtxMStP9F4P3vH2Wo9JIgZPU/AAAAAElFTkSuQmCC","shiny":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAMFBMVEXNzazuUkHFMSDeYmq9QUqcICnu7pze1YPNvWoQEBCDnJxie3tBWlogOTnV1dX////s61wyAAAAAXRSTlMAQObYZgAAA+xJREFUSImVlD9o41Ycxx+mi8EaMmUqpF5Ch07xDZ0tDYUbApWG0Hh157uh9kFvyWIVGhAUl3vEInPlu+HG+D3RW64g9FPxFQqV9V493xC6FQK9tL/fk2LJSa6lb0hEfp98f/9/jP2fl/2HvfOi+oBX9wOrF5uP5X12axHcfIl7nHV0IW8ApuCORFYIkdRisC2B/y1ECkENyC0JqxAS+KwJxKopYQlIuHdEgNa6BI6gARSSTz0CtBbRHBltxZ5q+CgSj16on8eLUIkIIIy9L4IGMCX7YBVpefH3OyETTkAdhCWnru14qyiay/V3f8lkyYrMGzSSlp5t294swlzxYbksmXneRe3htUvAmSjtQAA6lcsasDeABICEWRT1Jg1LkoDtHF3CJYAGrLIBjoNbgHfF3+U8VADBNpAaDwgMsjzs5ugkURXQaoRgG6fhRx8b4NcK2KuAfr8E2r/sEAB3gF6v5zgEvNn5RGYAHO0uxUBAB2NEBcctAS0xSgrBOV7WSaCC5zjHWf7mQ5VQolgnF0emVQH9g77tuu4A1npdJBgDIGBjL2qgZ6OC560yLYPCAC4CLRMkAgcHBw4qYMfnOLgF5pF77kP00O2WSRDwwCEJzgNWCIzS9R5iEt3ungE+nX6OaXCcuwE2ogJoHCqgH7APeg8OGWtPPZVZ1NLs0CGgddIl4DP87B9SwG1PaWV6vuwEBjghgD69sihTnZZDERDQavknexVQvTCtpiZoM1yQro8SxevmhsQEYCE4s66Dlj+ZnDCrsWOWWM3jlIBZsPqBtSaj/W2gQEBSJUGFq2SJwO4WYKVyJeSMgOz35+hm8mh3XAGZ1q+YErGIYQaj0dfJWsGPwf6j3ceMLek+RFEk8UhkQiUwHA6/TGI8CGx/Z3evlMatE+JCiEJw/hMCwye4oZjmzmPTz3QRUXZKyCIXMjdAjG1j1ktqJ7o29vgMQxBS//w9unhizk0Rlw7EXMhUYJXjWMA1J+Ap9UqLZQWIGE9Cgr9zSM7RPhw9DVg7TMsFVyQfWCrE7Qd+9c2fKDA6TTjt4AYQWgFut1TJlf8V2kffKrPmNYBZ0c/Mf+aP6Clcn6RaDJVSj+GMcoXf/AnZx1iv5GYMFEh8cEbFQmBMwCkezs2B6UCapgCFAbLJZEICUJ8w1gbTPhFFFIk/Ho9RAPLGGJn+JmIxnxOAEqeYQvOWt0tALIyC75M9awwqYzn91YwrIMBD2PZAxDPfnxkAr5gFCrKZ3iYszmniJSlbJmgRsFvPrFxIX+gDp+ftbUCJuvqI/MFvA2ulM3VTnjbdgVseri+v15d3HDeKwc/fnufvtxMStP9F4P3vH2Wo9JIgZPU/AAAAAElFTkSuQmCC","abilities":[{"name":"Blaze","description":"Ups Fire moves in a pinch."}],"dex":[{"game":"emerald","text":"A Charizard flies about in search of strong opponents. It breathes intense flames that can melt any material. However, it will never torch a weaker foe."},{"game":"firered","text":"Its wings can carry this Pokémon close to an altitude of 4,600 feet. It blows out fire at very high temperatures."},{"game":"leafgreen","text":"It spits fire that is hot enough to melt boulders. It may cause forest fires by blowing flames."},{"game":"ruby","text":"Charizard flies around the sky in search of powerful opponents. It breathes fire of such great heat that it melts anything. However, it never turns its fiery breath on any opponent weaker than itself."},{"game":"sapphire","text":"Charizard flies around the sky in search of powerful opponents. It breathes fire of such great heat that it melts anything. However, it never turns its fiery breath on any opponent weaker than itself."}],"stats":[{"label":"HP","base":78,"r50":[138,185],"r100":[266,360]},{"label":"Atk","base":84,"r50":[80,149],"r100":[155,293]},{"label":"Def","base":78,"r50":[74,143],"r100":[144,280]},{"label":"SpA","base":109,"r50":[102,177],"r100":[200,348]},{"label":"SpD","base":85,"r50":[81,150],"r100":[157,295]},{"label":"Spe","base":100,"r50":[94,167],"r100":[184,328]}],"total":534,"catchRate":45,"catchPct":"6.2","femalePct":"12.1","eggSteps":"5,120","eggGroups":["monster","dragon"],"evYield":"3 SpA","growth":"medium-slow","friendship":70},"moves":[{"level":1,"name":"Scratch","type":"normal","power":40,"accuracy":100,"pp":35,"description":"Scratches the foe with sharp claws.","makes_contact":1,"cat":"physical"},{"level":1,"name":"Growl","type":"normal","power":0,"accuracy":100,"pp":40,"description":"Growls cutely to reduce the foe's Attack.","makes_contact":0,"cat":"status"},{"level":1,"name":"Ember","type":"fire","power":40,"accuracy":100,"pp":25,"description":"A weak fire attack that may inflict a burn.","makes_contact":0,"cat":"special"},{"level":1,"name":"SmokeScreen","type":"normal","power":0,"accuracy":100,"pp":20,"description":"Lowers the foe's accuracy using smoke, ink, etc.","makes_contact":0,"cat":"status"},{"level":7,"name":"Ember","type":"fire","power":40,"accuracy":100,"pp":25,"description":"A weak fire attack that may inflict a burn.","makes_contact":0,"cat":"special"},{"level":13,"name":"SmokeScreen","type":"normal","power":0,"accuracy":100,"pp":20,"description":"Lowers the foe's accuracy using smoke, ink, etc.","makes_contact":0,"cat":"status"},{"level":20,"name":"Rage","type":"normal","power":20,"accuracy":100,"pp":20,"description":"Raises the user's Attack every time it is hit.","makes_contact":1,"cat":"physical"},{"level":27,"name":"Scary Face","type":"normal","power":0,"accuracy":90,"pp":10,"description":"Frightens with a scary face to sharply reduce Speed.","makes_contact":0,"cat":"status"},{"level":34,"name":"Flamethrower","type":"fire","power":95,"accuracy":100,"pp":15,"description":"A powerful fire attack that may inflict a burn.","makes_contact":0,"cat":"special"},{"level":36,"name":"Wing Attack","type":"flying","power":60,"accuracy":100,"pp":35,"description":"Strikes the foe with wings spread wide.","makes_contact":1,"cat":"physical"},{"level":44,"name":"Slash","type":"normal","power":70,"accuracy":100,"pp":20,"description":"Slashes with claws, etc. Has a high critical-hit ratio.","makes_contact":1,"cat":"physical"},{"level":54,"name":"Dragon Rage","type":"dragon","power":1,"accuracy":100,"pp":10,"description":"Launches shock waves that always inflict 40 HP damage.","makes_contact":0,"cat":"special"},{"level":64,"name":"Fire Spin","type":"fire","power":15,"accuracy":70,"pp":15,"description":"Traps the foe in a ring of fire for 2 to 5 turns.","makes_contact":0,"cat":"special"}],"evo":[{"id":4,"name":"Charmander","img":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAMFBMVEXNzawQEBC0tLT/////5pz/1WrmrFrVQQj2lAj/xWL/lEHeUiCUMQAYSjFBpHuUzd74L0WcAAAAAXRSTlMAQObYZgAAAa9JREFUSIntlLFOwzAQht0pFfVA1rZPAuoWFtQRlwixkoUlWzKyVOEVUrowcs6CKobWGRqlVKqdJ0DiAVh4ARYuhiIkjqww9JazdJ/s37//hLFd/d/i1X7zfAFZI6FTgNuGeecOAWjYgqcTCbBsPEFVcN8AAOQDTQIOcyLGDgCygc4pIKzn7AmBZ60IlU4YhdheEHilgcgCGwD5JikgSmqA1y6AIgAnTpI2Y61JPc/V8ucGse+jSC4z9MEQt4iuhZ9g11JVh4rwwRn74hR7q18pZQggEsm4BhhXqqJExluAFTgnRLb9KL6yKy7ONCUijuLQLh6E0JK4Bjppe/7oVROgrNzYczs3q2EKlFOfAM9WxyANJWIztQCsht1CKULE3ALMPfHcQFFOdFJ7xp7nHY1IgKfT7wChcg7FFjCKUomBRkJ7njgHSankmJWiL4UQC/w4qOQbDJORF2KkfwHwpVVvsg6CLtAAMzWQBUGP1oBxWl/mAFWAIHnPmgjqUGJkyOeyRGGUGxR9Qz24FbpAfS7TlNe2ZuUMRxyoTH3s4Lp9xsqyLH4BvrDmf+Gu/qLeARQq4rERumfcAAAAAElFTkSuQmCC"},{"id":5,"name":"Charmeleon","img":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAMFBMVEXNzaz///9qamr/AP//5pz/1WrmrFrVQQj2lAj/AP//tGL/akrVSiCUIBC0tLQQEBDOIZnWAAAAAXRSTlMAQObYZgAAAoVJREFUSIntlL9r21AQx1+0OIOFsdcmMs7YEvpPOFtXpYF69pSCl6IsGU089C+RCt1zz3TrYN2rVCge9AP9AWmJOidGvXtKHElWC91zBsvmPve977v3noR4jv+MNOTvWWe2L5xZGxBpoOM4wnHaCNNV/HAurpyLxcLZBbpeoAUWi8V8Pj/blYhBA/uUt227BfCXGXsUHc5f7ZrogkTtUjgfbNu5vGzmIw+kyunXEWmcvXXisJ6PXQCQ5MLoH9NKFh9hWQNWrgcQAzcZWaHodGaRV5OIXO96iYDUwxgch3osNQly4H47AJkL49V3K9OArEp0ffnpd98nYHSztJJc11SBPX/5eUhAaFg3MkUe2cr7UgFSH7IEaaEiu0NE1TTRdXmVAFzaI4BXY7rw1GOl8xK19j0BORdBXlmEpHIsM1n5EFFFIfYTDDZpQt3D3v0GVQmoLWAiFpufSlFtcEedCi2r9/8RUGb8gvO4zZtQAfaK0IyBARU/5AmQTwD/JyBYnxOUlcc7bgIHeBi8mZIGeSWPpg+oqkCUpkkxHk8QUx6HmUhZ2y1hehDgj/GJngZuEvR9zKuAKIqUgPE7DQSPU6vbZMCe6BzPO2jmJQMn9laiAbz0sAQmqEqg3sGw5ANwijQC6qHqwOiQytYaeH/tAWYqq3d4XVhB3iWT9uk53QEM0sYahDHMBdK1tKd8SWTQEKCgitVXEphGLl+ypoCOSE4pYhcaG7WNGNYM8PFVrcAdIBEb2L4KmtHj3c4EzVS1WqALRLud8xHdWWQZR66uJaBdwRisNJCQh7RVYfQLMzqyR36Ku3PiKEa3/Arpp1Zy226y4NbGsBgUfwFKK3mPPv8AnqMt/gAfH8m5zTX4hAAAAABJRU5ErkJggg=="},{"id":6,"name":"Charizard","img":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABABAMAAABYR2ztAAAAMFBMVEXV1dXuUkHFMSAprL0ge5QYQWr/5pz/1Wr/pFoQEBD/xWL/lEHeYiCUMQDV1dX///+qh23HAAAAAXRSTlMAQObYZgAAA+xJREFUSImVlD9o41Ycxx+mi8EaMmUqpF5Ch07xDZ0tDYUbApWG0Hh157uh9kFvyWIVGhAUl3vEInPlu+HG+D3RW64g9FPxFQqV9V493xC6FQK9tL/fk2LJSa6lb0hEfp98f/9/jP2fl/2HvfOi+oBX9wOrF5uP5X12axHcfIl7nHV0IW8ApuCORFYIkdRisC2B/y1ECkENyC0JqxAS+KwJxKopYQlIuHdEgNa6BI6gARSSTz0CtBbRHBltxZ5q+CgSj16on8eLUIkIIIy9L4IGMCX7YBVpefH3OyETTkAdhCWnru14qyiay/V3f8lkyYrMGzSSlp5t294swlzxYbksmXneRe3htUvAmSjtQAA6lcsasDeABICEWRT1Jg1LkoDtHF3CJYAGrLIBjoNbgHfF3+U8VADBNpAaDwgMsjzs5ugkURXQaoRgG6fhRx8b4NcK2KuAfr8E2r/sEAB3gF6v5zgEvNn5RGYAHO0uxUBAB2NEBcctAS0xSgrBOV7WSaCC5zjHWf7mQ5VQolgnF0emVQH9g77tuu4A1npdJBgDIGBjL2qgZ6OC560yLYPCAC4CLRMkAgcHBw4qYMfnOLgF5pF77kP00O2WSRDwwCEJzgNWCIzS9R5iEt3ungE+nX6OaXCcuwE2ogJoHCqgH7APeg8OGWtPPZVZ1NLs0CGgddIl4DP87B9SwG1PaWV6vuwEBjghgD69sihTnZZDERDQavknexVQvTCtpiZoM1yQro8SxevmhsQEYCE4s66Dlj+ZnDCrsWOWWM3jlIBZsPqBtSaj/W2gQEBSJUGFq2SJwO4WYKVyJeSMgOz35+hm8mh3XAGZ1q+YErGIYQaj0dfJWsGPwf6j3ceMLek+RFEk8UhkQiUwHA6/TGI8CGx/Z3evlMatE+JCiEJw/hMCwye4oZjmzmPTz3QRUXZKyCIXMjdAjG1j1ktqJ7o29vgMQxBS//w9unhizk0Rlw7EXMhUYJXjWMA1J+Ap9UqLZQWIGE9Cgr9zSM7RPhw9DVg7TMsFVyQfWCrE7Qd+9c2fKDA6TTjt4AYQWgFut1TJlf8V2kffKrPmNYBZ0c/Mf+aP6Clcn6RaDJVSj+GMcoXf/AnZx1iv5GYMFEh8cEbFQmBMwCkezs2B6UCapgCFAbLJZEICUJ8w1gbTPhFFFIk/Ho9RAPLGGJn+JmIxnxOAEqeYQvOWt0tALIyC75M9awwqYzn91YwrIMBD2PZAxDPfnxkAr5gFCrKZ3iYszmniJSlbJmgRsFvPrFxIX+gDp+ftbUCJuvqI/MFvA2ulM3VTnjbdgVseri+v15d3HDeKwc/fnufvtxMStP9F4P3vH2Wo9JIgZPU/AAAAAElFTkSuQmCC"}],"evoLevels":[{"f":4,"level":16},{"f":5,"level":36}]};
+const GAMES = [["ruby","R","#C0392B"],["sapphire","S","#2563EB"],["emerald","E","#059669"],["firered","FR","#EA580C"],["leafgreen","LG","#65A30D"]];
+const GAME_NAMES = { ruby:"Ruby", sapphire:"Sapphire", emerald:"Emerald", firered:"FireRed", leafgreen:"LeafGreen" };
+const DARK_TEXT = new Set(["electric","ice","steel","ground"]);
+const state = { game: "emerald", list: "B", hero: "A", moves: "A", level: 50, shiny: false };
+const $ = (id) => document.getElementById(id);
+const tc = (t) => DATA.typeColors[t];
+const pad3 = (n) => "#" + String(n).padStart(3, "0");
+const typeChip = (t) => `<span class="type ${DARK_TEXT.has(t) ? "dark-text" : ""}" style="background:${tc(t)}"><i>${DATA.icons[t] || ""}</i><span>${t}</span></span>`;
+const typeChips = (a, b) => `<div class="types">${typeChip(a)}${b ? typeChip(b) : ""}</div>`;
+const tint = (t, pct = 22) => `background: color-mix(in srgb, ${tc(t)} ${pct}%, var(--surface))`;
+const ball = (size, style) => `<svg class="ball" style="${style}" width="${size}" height="${size}" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="10"><circle cx="50" cy="50" r="45"/><path d="M5 50h27M68 50h27"/><circle cx="50" cy="50" r="16"/></svg>`;
+const CAT = {
+  physical: `<svg viewBox="0 0 24 24"><path fill="#E8553E" d="M12 1l2.6 6.2L21 5l-2.2 6.4L23 14l-6.4.9L17 22l-5-4.3L7 22l.4-7.1L1 14l4.2-2.6L3 5l6.4 2.2z"/></svg>`,
+  special: `<svg viewBox="0 0 24 24" fill="none" stroke="#4F7CF0" stroke-width="2.6"><circle cx="12" cy="12" r="9.5"/><circle cx="12" cy="12" r="4.5"/></svg>`,
+  status: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5" fill="none" stroke="#9CA3AF" stroke-width="2.6"/><path d="M12 2.5a9.5 9.5 0 0 1 0 19z" fill="#9CA3AF"/></svg>`,
+};
+const statColor = (v) => v < 50 ? "#F87171" : v < 80 ? "#FB923C" : v < 100 ? "#FACC15" : v < 120 ? "#A3E635" : "#34D399";
+
+function variants() {
+  document.querySelectorAll(".variants").forEach((el) => {
+    const key = el.dataset.for;
+    el.innerHTML = ["A", "B", "C"].map((v) => `<button class="${state[key] === v ? "on" : ""}" data-v="${v}">Variant ${v}</button>`).join("");
+    el.querySelectorAll("button").forEach((b) => b.onclick = () => { state[key] = b.dataset.v; render(); });
+  });
+}
+
+function renderList() {
+  const head = `<div class="lhead"><div class="row"><div><h4>Pokédex</h4><small class="num">386 Pokémon · ${GAME_NAMES[state.game]}</small></div></div>
+    <div class="search">⌕ <span>Search name, number or type</span></div>
+    <div class="filters"><span class="on">All</span><span>Hoenn Dex</span><span>Type ▾</span><span>Sort: № ▾</span></div></div>`;
+  const rows = DATA.list.map((p) => state.list === "A"
+    ? `<div class="rowA"><div class="tile" style="${tint(p.t1)}"><img class="px" src="${p.img}" width="64" height="64"></div>
+        <div class="mid"><div><span class="name">${p.name}</span> <span class="dexno num">${pad3(p.id)}</span></div>${typeChips(p.t1, p.t2)}</div>
+        <span class="chev">›</span></div>`
+    : `<div class="rowB ${state.list === "C" ? "rowC" : ""}" style="background: linear-gradient(${state.list === "C" ? 250 : 110}deg, color-mix(in srgb, ${tc(p.t1)} 30%, var(--surface)), color-mix(in srgb, ${tc(p.t2 || p.t1)} 14%, var(--surface)))">
+        ${ball(96, state.list === "C" ? "left:-16px;top:-12px" : "right:-16px;top:-12px")}
+        <div class="mid"><div class="${state.list === "C" ? "nrow" : ""}"><span class="name">${p.name}</span> <span class="dexno num">${pad3(p.id)}</span></div>${typeChips(p.t1, p.t2)}</div>
+        <img class="px" src="${p.img}"></div>`).join("");
+  $("list").innerHTML = head + `<div class="lbody">${rows}</div>`;
+  $("list-note").innerHTML = state.list === "A"
+    ? "<b>A · Clean rows:</b> white cards, the type colour only behind the sprite. Calm, dense, easy to scan."
+    : state.list === "C" ? "<b>C · B mirrored:</b> sprite first, then name and types, number on the right edge."
+    : "<b>B · Tinted cards:</b> washed in the types' colours, number beside the name, 72px rows. Fits ~8 per screen.";
+}
+
+// Collapsing header: the big sprite stays centred, gets cropped by the
+// shrinking header and fades out; the name slides up into a centred title;
+// a small thumbnail fades in on the right. One progress value p drives it all.
+const HERO_FULL = 404;   // expanded height (without tabs)
+const HERO_MIN = 60;     // collapsed height
+const TABS_H = 42;
+const COLLAPSE = HERO_FULL - HERO_MIN;
+const lerp = (a, b, p) => a + (b - a) * p;
+const clamp01 = (x) => Math.min(1, Math.max(0, x));
+
+function renderHero() {
+  const h = DATA.hero;
+  const img = state.shiny ? h.shiny : h.img;
+  $("hhead").style.background = `linear-gradient(160deg, color-mix(in srgb, ${tc(h.t1)} 38%, var(--canvas)), color-mix(in srgb, ${tc(h.t2 || h.t1)} 16%, var(--canvas)) 75%)`;
+  $("hhead").innerHTML = `
+    <span class="hh back">‹</span>
+    <button class="hh iconbtn ${state.shiny ? "on" : ""}" id="shiny">✦ Shiny</button>
+    <div class="hh" id="hball">${ball(220, "position:static")}</div>
+    <img class="hh px" id="himg" src="${img}" width="192" height="192">
+    <div class="hh hname" id="hname"><span class="no num">${pad3(h.id)}</span>${h.name}</div>
+    <div class="hh hrest" id="hrest">
+      <div class="cat">${h.category} Pokémon</div>${typeChips(h.t1, h.t2)}
+      <div class="facts num"><div><small>Height</small><b>${h.height}</b></div><div><small>Weight</small><b>${h.weight}</b></div><div><small>Catch</small><b>${h.catchPct}%</b></div></div>
+    </div>
+    <img class="hh px" id="hthumb" src="${img}" width="48" height="48">
+    <div class="tabs hh" id="htabs"><span class="on">Overview</span><span>Moves</span><span>Evolution</span><span>Where</span></div>`;
+  $("shiny").onclick = () => { state.shiny = !state.shiny; renderHero(); };
+  onScroll();
+}
+
+function onScroll() {
+  const W = $("hhead").offsetWidth;
+  const y = $("scroller").scrollTop;
+  const p = clamp01(y / COLLAPSE);
+  const H = lerp(HERO_FULL, HERO_MIN, p);
+  $("hhead").style.height = H + TABS_H + "px";
+  $("hhead").style.boxShadow = p > 0.98 ? "0 4px 12px rgba(16,24,40,.12)" : "none";
+  $("htabs").style.top = H + "px";
+
+  // Big sprite: drifts up at half speed (so the header crops it), then fades.
+  const fade = 1 - clamp01((p - 0.3) / 0.55);
+  const img = $("himg");
+  img.style.left = (W - 192) / 2 + "px";
+  img.style.top = 40 - y * 0.5 + "px";
+  img.style.opacity = fade;
+  const hb = $("hball");
+  hb.style.left = (W - 220) / 2 + "px";
+  hb.style.top = 26 - y * 0.5 + "px";
+  hb.style.opacity = fade;
+
+  // Name: stays centred and slides up into the bar, shrinking a little.
+  const name = $("hname");
+  name.style.transform = `translate(-50%, ${lerp(236, 15, p)}px) scale(${lerp(1, 0.62, p)})`;
+
+  // Details fade out early; the thumbnail fades in at the end.
+  const rest = $("hrest");
+  rest.style.top = 284 - y + "px";
+  rest.style.opacity = 1 - clamp01(p * 2.2);
+  $("shiny").style.opacity = 1 - clamp01(p * 2.5);
+  $("shiny").style.pointerEvents = p > 0.4 ? "none" : "auto";
+  $("hthumb").style.opacity = clamp01((p - 0.7) / 0.3);
+}
+
+function renderOverview() {
+  const h = DATA.hero;
+  // Group identical Pokédex texts (e.g. R/S share one) and highlight the current game.
+  const groups = [];
+  for (const d of h.dex) { const g = groups.find((x) => x.text === d.text); g ? g.games.push(d.game) : groups.push({ text: d.text, games: [d.game] }); }
+  const order = GAMES.map((g) => g[0]);
+  groups.sort((a, b) => order.indexOf(a.games[0]) - order.indexOf(b.games[0]));
+  const short = { ruby: "R", sapphire: "S", emerald: "E", firered: "FR", leafgreen: "LG" };
+  const dex = groups.map((g) => `<div class="dex ${g.games.includes(state.game) ? "cur" : ""}"><small>${g.games.map((x) => short[x]).join("/")}</small><p>${g.text}</p></div>`).join("");
+  const key = state.level === 50 ? "r50" : "r100";
+  const stats = h.stats.map((s) => `<div class="stat num"><span class="l">${s.label}</span><span class="v">${s.base}</span>
+      <div class="bar"><div style="width:${(s.base / 255) * 100}%;background:${statColor(s.base)}"></div></div><span class="r">${s[key][0]}–${s[key][1]}</span></div>`).join("");
+  const male = 100 - h.femalePct;
+  $("overview").innerHTML = `
+    <div class="card"><h3>Pokédex</h3>${dex}</div>
+    <div class="card"><h3>Base stats <span class="seg" id="lvseg">${[50, 100].map((l) => `<button class="${state.level === l ? "on" : ""}" data-l="${l}">Lv ${l}</button>`).join("")}</span></h3>
+      ${stats}<div class="total num"><span>Total <b>${h.total}</b></span><span>Lv ${state.level}: worst–best IVs, EVs, nature</span></div></div>
+    <div class="grid2 num">
+      <div class="mcard"><small>Catch rate</small><div class="big">${h.catchPct}%</div><div class="sub">Poké Ball, full HP · rate ${h.catchRate}</div></div>
+      <div class="mcard"><small>Gender</small><div class="gbar"><div style="width:${male}%;background:#60A5FA"></div><div style="flex:1;background:#F472B6"></div></div><div class="sub">♂ ${male.toFixed(1)}% · ♀ ${h.femalePct}%</div></div>
+      <div class="mcard"><small>Hatch</small><div class="big">${h.eggSteps}</div><div class="sub">steps · ${h.eggGroups.map((g) => g[0] + g.slice(1).toLowerCase().replace("_", " ")).join(", ")}</div></div>
+      <div class="mcard"><small>EV yield</small><div class="big" style="font-size:18px">${h.evYield}</div><div class="sub">Friendship ${h.friendship}</div></div>
+    </div>
+    <div class="card"><h3>Abilities</h3>${h.abilities.map((a) => `<div class="ab"><b>${a.name}</b><p>${a.description}</p></div>`).join("")}</div>`;
+  document.querySelectorAll("#lvseg button").forEach((b) => b.onclick = () => { state.level = +b.dataset.l; renderOverview(); });
+}
+
+function renderMoves() {
+  const ex = (m) => `<div class="mx">${m.description}<div class="tags"><span>PP ${m.pp}</span><span>${m.cat}</span>${m.makes_contact ? "<span>Contact</span>" : ""}</div></div>`;
+  const rows = DATA.moves.map((m) => state.moves === "C"
+    ? `<div class="mC num"><span class="blk ${DARK_TEXT.has(m.type) ? "dark-text" : ""}" style="background:${tc(m.type)}">${DATA.icons[m.type] || ""}</span>
+        <span class="lv">${m.level || "–"}</span><span class="nm">${m.name}</span><span class="cat">${CAT[m.cat]}</span>
+        <span class="n">${m.power || "—"}</span><span class="n">${m.accuracy ? m.accuracy + "%" : "—"}</span>${ex(m)}</div>`
+    : state.moves === "A"
+    ? `<div class="mA num"><span class="lv">${m.level || "–"}</span><span class="nm">${m.name}</span>
+        <span class="tdot" style="background:${tc(m.type)}">${DATA.icons[m.type] || ""}</span><span class="cat">${CAT[m.cat]}</span>
+        <span class="n">${m.power || "—"}</span><span class="n">${m.accuracy ? m.accuracy + "%" : "—"}</span>${ex(m)}</div>`
+    : `<div class="mB num"><div class="edge" style="background:${tc(m.type)}"></div><div class="lvb"><small>LV</small><b>${m.level || "–"}</b></div>
+        <div class="mid"><div class="nm">${m.name}</div><div class="meta">${typeChip(m.type)}<span class="cat">${CAT[m.cat]}</span>
+        <span>Pow <b>${m.power || "—"}</b></span><span>Acc <b>${m.accuracy ? m.accuracy + "%" : "—"}</b></span></div>${ex(m)}</div></div>`).join("");
+  $("moves").innerHTML = `<div class="seg" style="align-self:flex-start"><button class="on">Level up</button><button>TM/HM</button><button>Tutor</button><button>Egg</button></div>
+    ${state.moves === "C" ? `<div><div class="mheadC"><span></span><span>Lv</span><span>Move</span><span></span><span style="text-align:right">Pow</span><span style="text-align:right">Acc</span></div>` : state.moves === "A" ? `<div><div class="mhead"><span>Lv</span><span>Move</span><span></span><span></span><span style="text-align:right">Pow</span><span style="text-align:right">Acc</span></div>` : "<div>"}
+    <div class="mlist ${state.moves === "C" ? "cards" : ""}">${rows}</div></div>`;
+  document.querySelectorAll(".mA, .mB, .mC").forEach((r) => r.onclick = () => r.classList.toggle("open"));
+}
+
+function renderEvo() {
+  const lv = (from) => (DATA.evoLevels.find((e) => e.f === from) || {}).level;
+  const st = (p) => `<div class="st"><div class="tile" style="${tint("fire", 20)}"><img class="px" src="${p.img}" width="64" height="64"></div><b>${p.name}</b><div class="dexno num">${pad3(p.id)}</div></div>`;
+  const e = DATA.evo;
+  $("evo").innerHTML = `<h3>Evolution</h3><div class="evo">${st(e[0])}<div class="arr"><div>→</div>Lv ${lv(4)}</div>${st(e[1])}<div class="arr"><div>→</div>Lv ${lv(5)}</div>${st(e[2])}</div>`;
+  const book = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 5c-1.1-.35-2.3-.5-3.5-.5-1.95 0-4.05.4-5.5 1.5-1.45-1.1-3.55-1.5-5.5-1.5S2.45 4.9 1 6v14.65c0 .25.25.5.5.5.1 0 .15-.05.25-.05C3.1 20.45 5.05 20 6.5 20c1.95 0 4.05.4 5.5 1.5 1.35-.85 3.8-1.5 5.5-1.5 1.65 0 3.35.3 4.75 1.05.1.05.15.05.25.05.25 0 .5-.25.5-.5V6c-.6-.45-1.25-.75-2-1zm0 13.5c-1.1-.35-2.3-.5-3.5-.5-1.7 0-4.15.65-5.5 1.5V8c1.35-.85 3.8-1.5 5.5-1.5 1.2 0 2.4.15 3.5.5v11.5z"/></svg>`;
+  const trophy = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94A5.01 5.01 0 0 0 11 15.9V19H7v2h10v-2h-4v-3.1a5.01 5.01 0 0 0 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>`;
+  $("tabbar").innerHTML = `<div class="tabbar"><span class="on"><div class="pill">${book}</div>Pokédex</span><span><div class="pill">${trophy}</div>Frontier</span></div>`;
+}
+
+function render() {
+  document.documentElement.style.setProperty("--accent", GAMES.find((g) => g[0] === state.game)[2]);
+  $("games").innerHTML = GAMES.map(([k, s]) => `<button class="${state.game === k ? "on" : ""}" data-g="${k}">${s}</button>`).join("");
+  $("games").querySelectorAll("button").forEach((b) => b.onclick = () => { state.game = b.dataset.g; render(); });
+  variants(); renderList(); renderHero(); renderOverview(); renderMoves(); renderEvo();
+}
+$("theme").onclick = () => {
+  const dark = document.documentElement.classList.toggle("dark");
+  $("theme").textContent = dark ? "☀ Light" : "☾ Dark";
+};
+$("sp1").style.height = COLLAPSE + "px";
+$("sp2").style.height = HERO_MIN + TABS_H + "px";
+render();
+$("scroller").addEventListener("scroll", onScroll);
+if (location.hash) { if (location.hash === "#half") $("scroller").style.scrollSnapType = "none"; $("scroller").scrollTop = location.hash === "#half" ? COLLAPSE / 2 : COLLAPSE + 200; onScroll(); }
+</script>
+</body>
+</html>

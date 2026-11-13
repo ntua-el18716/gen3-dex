@@ -1,5 +1,7 @@
 # Code walkthrough
 
+> **Note (2026-11-02):** parts of this tour predate the redesign. The detail screen no longer uses `SwipeTabs` (removed): it is `components/collapsible-pager.tsx` + `components/pokemon/hero-header.tsx` (Reanimated), and there are now League and Frontier tabs. See "Built 2026-11-02" in CLAUDE.md.
+
 A guided tour of the Gen 3 Companion app as it is after step 3 (Pokédex). Read it next to the code: every chapter points at real files. Each chapter ends with **Check yourself** questions; if you can answer them without looking, move on. Answers are in the code, not here.
 
 Suggested pace: one or two chapters per sitting. Chapters 1–4 are the foundation; 5–8 build on them; 9–10 are background.

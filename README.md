@@ -4,6 +4,14 @@ An offline-first companion app for the Generation 3 Pokémon games (Ruby, Sapphi
 
 > Work in progress. See [`CLAUDE.md`](./CLAUDE.md) for the project brief and plan.
 
+## What the app does
+
+Three tabs, all offline. The game you pick (R, S, E, FR, LG) drives the data and the app's accent colour.
+
+- **Pokédex**: every Pokémon with per-game Pokédex text, stats with real Lv 50/100 ranges, moves per learn method, evolution family, and where to find it, including gifts and one-time encounters. Values the games compute are shown as the game computes them: capture odds with Gen 3's integer formula, gender odds as ratio/256, hatch steps. Sprites are the games' own, crisp at any size, FireRed/LeafGreen's redrawn ones in those games.
+- **League**: gym leaders, Elite Four, Champion and rivals in story order, with full teams (held items, moves) and rematch teams. Rival teams follow the starter you picked.
+- **Battle Frontier**: pick a facility and your streak, and see which trainers you can face, every species they can send out, and each possible set with its real stats for the IVs it can have. The Frontier Brains' teams and schedules, the Factory's IV quirk, and the Pike's and Pyramid's wild Pokémon are included.
+
 ## Why not PokeAPI?
 
 Most Pokémon data sources describe the _current_ games. Gen 3 differs in many small ways: no Fairy type, Gen 6+ stat buffs, abilities added later, friendship values changed in Gen 8. This project reads the data straight from the [pret](https://github.com/pret) decompilations of the games themselves, so every number is the one the game uses.
@@ -33,6 +41,7 @@ Some of the most useful facts aren't in any data table:
 
 - **Battle Factory IVs come from the wrong streak.** Factory opponents' IVs are read from your _Battle Tower Level 50_ streak, not your Factory streak (`FillFactoryFrontierTrainerParty`). With no Tower progress, Factory opponents keep the weakest IVs however far you get. At a Tower streak of 56–62 the lookup reads past the end of its table, giving random IVs.
 - **The Battle Pyramid's wild Pokémon cycle.** The round is `(floors cleared / 7) % 20`, so after round 20 the easiest tables come back. Its intended IV boost after 140 floors indexes the wrong array, so the real game doesn't apply it reliably.
+- **Capture odds aren't catch rate / 255.** The game does it in integers with two square roots and four shake checks (`Cmd_handleballthrow`), so a catch rate of 45 at full HP is 6.25%, not the 5.9% many tools show.
 - **Versions differ more than expected.** Deoxys's form depends on the game (and so does its learnset between FireRed and LeafGreen), 203 Pokédex entries differ between Ruby and Sapphire, and Ruby only lets you into the Magma Hideout, Sapphire only the Aqua one.
 
 ## Getting started
@@ -61,6 +70,7 @@ Release builds are signed with your own key when these Gradle properties are set
 | `npm start`           | Start the Expo dev server                                        |
 | `npm run import`      | Fetch the pinned pret sources and rebuild `assets/db/gen3.db`    |
 | `npm run sprites`     | Rebuild the sprites from pret's graphics (run `import` first)    |
+| `npm run icons`       | Rebuild the type-icon module from `assets/type-icons/`           |
 | `npm run apk`         | Build the release APK into `dist/`                               |
 | `npm test`            | Unit tests (parser, game rules, stat formulas) + database checks |
 | `npm run lint`        | ESLint (Expo config + Prettier)                                  |
@@ -71,17 +81,21 @@ Release builds are signed with your own key when these Gradle properties are set
 ## Project structure
 
 ```
-src/app/          screens and layouts (Expo Router: every file is a route)
+src/app/          screens and layouts (Expo Router: every file is a route; tabs in (tabs)/)
+src/components/   UI components (the collapsing Pokémon page, League and Frontier cards)
 src/db/schema.ts  the database schema, shared with the importer
 src/db/*queries.ts typed queries (tested against the real database)
-src/lib/          game logic (stat formulas, damage class, Battle Frontier rules)
-src/generated/    generated code (sprite map); don't edit by hand
+src/lib/          game logic (stat formulas, capture odds, Battle Frontier rules, League lists)
+src/theme/        colours: palette, type colours, per-game accents
+src/generated/    generated code (sprite map, type icons); don't edit by hand
 scripts/import/   the pret → SQLite importer
 scripts/sprites/  the sprite generator
+scripts/icons/    the type-icon generator
 scripts/apk/      the release APK build
 plugins/          Expo config plugins (release signing)
 assets/db/        the generated database
 assets/sprites/   the generated sprites
+assets/type-icons/ the type icons (SVG)
 drizzle/          SQL migration generated from the schema
 ```
 

@@ -7,3 +7,4 @@ package-lock.json
 drizzle/meta
 src/generated
 assets/sprites
+docs/design/mockup.html
