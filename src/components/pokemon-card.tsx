@@ -1,12 +1,14 @@
 import { Link } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, Text, View } from "react-native";
 
 import type { PokemonListItem } from "@/db/queries";
 import { useColors } from "@/theme/theme";
 
-import { dexNumber } from "./pokemon-row";
+import { PokeballMark } from "./pokeball-mark";
+import { dexNumber, useTypeGradient } from "./pokemon-row";
 import { Sprite } from "./sprite";
-import { TYPE_TINT, TypeBadge } from "./type-badge";
+import { TypeBadge } from "./type-badge";
 
 /** One Pokémon in the wide-screen grid: a tile that opens its page. */
 export function PokemonCard({
@@ -17,6 +19,7 @@ export function PokemonCard({
   width: number;
 }) {
   const colors = useColors();
+  const gradient = useTypeGradient(pokemon);
   return (
     <Link
       href={{ pathname: "/pokemon/[id]", params: { id: pokemon.id } }}
@@ -24,10 +27,20 @@ export function PokemonCard({
     >
       <Pressable
         android_ripple={{ color: colors.sunken, foreground: true }}
-        className="overflow-hidden rounded-2xl border border-line bg-surface active:opacity-80"
+        className="overflow-hidden rounded-2xl active:opacity-80"
         style={{ width }}
       >
-        <View className={`items-center py-2 ${TYPE_TINT[pokemon.type1]}`}>
+        <LinearGradient
+          colors={gradient}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={{ position: "absolute", inset: 0 }}
+        />
+        <View className="items-center overflow-hidden py-2">
+          <PokeballMark
+            size={150}
+            style={{ position: "absolute", right: -30, bottom: -30 }}
+          />
           <Text className="self-start px-3 text-xs font-semibold text-ink-muted">
             {dexNumber(pokemon.id)}
           </Text>
