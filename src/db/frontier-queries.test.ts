@@ -7,6 +7,8 @@ import { afterAll, describe, expect, it } from "vitest";
 import { frontierStats } from "@/lib/frontier";
 
 import {
+  getDomeSets,
+  getDomeTrainers,
   getFactoryIvTable,
   getFactorySets,
   getFrontierBrain,
@@ -248,6 +250,28 @@ describe.skipIf(!existsSync(DB_PATH))("Battle Frontier queries", () => {
         floor: 1,
       });
       expect(again.round).toBe(0);
+    });
+  });
+
+  describe("Battle Dome", () => {
+    it("draws opponents from two trainer ranges", () => {
+      const first = getDomeTrainers(db, 0);
+      expect(first.regular.length).toBeGreaterThan(0);
+      expect(first.harder.length).toBeGreaterThan(0);
+      expect(Math.max(...first.harder.map((t) => t.id))).toBeGreaterThan(
+        Math.max(...first.regular.map((t) => t.id)),
+      );
+    });
+
+    it("predicts sets from both ranges, like the Tower's", () => {
+      const sets = getDomeSets(db, {
+        streak: 10,
+        levelMode: "open",
+        pokemonId: METAGROSS,
+      });
+      expect(sets.length).toBeGreaterThan(0);
+      expect(sets.every((s) => s.pokemonId === METAGROSS)).toBe(true);
+      expect(sets.every((s) => s.possibleIvs.length > 0)).toBe(true);
     });
   });
 });

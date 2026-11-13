@@ -7,6 +7,7 @@ import { alias } from "drizzle-orm/sqlite-core";
 
 import {
   battlePosition,
+  domeRangeChallenges,
   pikeWildTier,
   pyramidRound,
   type FactoryIvRow,
@@ -32,6 +33,7 @@ import {
   pyramidFloorRate,
   pyramidWildMon,
   type FrontierFacility,
+  type PokemonType,
   type Stat,
 } from "./schema";
 
@@ -74,6 +76,8 @@ export type FrontierSetDetail = {
   species: string;
   baseStats: StatSpread;
   moves: string[];
+  /** Each move's type, in the same order as `moves`. */
+  moveTypes: PokemonType[];
   item: string | null;
   nature: string;
   increasedStat: Stat | null;
@@ -100,6 +104,10 @@ export function getSetDetails(db: Db, setIds: number[]): FrontierSetDetail[] {
       move2: m2!.name,
       move3: m3!.name,
       move4: m4!.name,
+      type1: m1!.type,
+      type2: m2!.type,
+      type3: m3!.type,
+      type4: m4!.type,
       item: item.name,
       nature: nature.name,
       increasedStat: nature.increasedStat,
@@ -130,6 +138,9 @@ export function getSetDetails(db: Db, setIds: number[]): FrontierSetDetail[] {
     },
     moves: [r.move1, r.move2, r.move3, r.move4].filter(
       (m): m is string => m !== null,
+    ),
+    moveTypes: [r.type1, r.type2, r.type3, r.type4].filter(
+      (t): t is PokemonType => t !== null,
     ),
     item: r.item,
     nature: r.nature,
@@ -168,6 +179,26 @@ export function getPossibleSets(
   },
 ) {
   const { trainers } = getTrainersForBattle(db, battle);
+  return setsForTrainers(db, trainers, { levelMode, pokemonId, trainerId });
+}
+
+export type PossibleSet = ReturnType<typeof getPossibleSets>[number];
+
+type CandidateTrainer = { id: number; fixedIv: number };
+
+/**
+ * The sets the given trainers can field (optionally one trainer and one
+ * species), each with the trainers who could field it and their IVs.
+ */
+function setsForTrainers(
+  db: Db,
+  trainers: CandidateTrainer[],
+  {
+    levelMode,
+    pokemonId,
+    trainerId,
+  }: { levelMode: LevelMode; pokemonId?: number; trainerId?: number },
+) {
   const candidates = trainers.filter(
     (t) => trainerId === undefined || t.id === trainerId,
   );
@@ -212,8 +243,6 @@ export function getPossibleSets(
   });
 }
 
-export type PossibleSet = ReturnType<typeof getPossibleSets>[number];
-
 /** A facility's Frontier Brain, schedule and fixed teams (none for the Factory). */
 export function getFrontierBrain(db: Db, facility: FrontierFacility) {
   const brain = db
@@ -231,6 +260,14 @@ export function getFrontierBrain(db: Db, facility: FrontierFacility) {
       species: pokemon.name,
       item: item.name,
       nature: nature.name,
+      increasedStat: nature.increasedStat,
+      decreasedStat: nature.decreasedStat,
+      hp: pokemon.hp,
+      attack: pokemon.attack,
+      defense: pokemon.defense,
+      speed: pokemon.speed,
+      spAttack: pokemon.spAttack,
+      spDefense: pokemon.spDefense,
       fixedIv: frontierBrainMon.fixedIv,
       evHp: frontierBrainMon.evHp,
       evAttack: frontierBrainMon.evAttack,
@@ -242,6 +279,10 @@ export function getFrontierBrain(db: Db, facility: FrontierFacility) {
       move2: m2!.name,
       move3: m3!.name,
       move4: m4!.name,
+      type1: m1!.type,
+      type2: m2!.type,
+      type3: m3!.type,
+      type4: m4!.type,
     })
     .from(frontierBrainMon)
     .innerJoin(pokemon, eq(pokemon.id, frontierBrainMon.pokemonId))
@@ -257,10 +298,40 @@ export function getFrontierBrain(db: Db, facility: FrontierFacility) {
   const team = (symbol: "silver" | "gold") =>
     mons
       .filter((m) => m.symbol === symbol)
-      .map(({ move1, move2, move3, move4, ...m }) => ({
-        ...m,
-        moves: [move1, move2, move3, move4].filter(
+      .map((r) => ({
+        symbol: r.symbol,
+        slot: r.slot,
+        pokemonId: r.pokemonId,
+        species: r.species,
+        item: r.item,
+        nature: r.nature,
+        fixedIv: r.fixedIv,
+        baseStats: {
+          hp: r.hp,
+          attack: r.attack,
+          defense: r.defense,
+          speed: r.speed,
+          spAttack: r.spAttack,
+          spDefense: r.spDefense,
+        },
+        evs: {
+          hp: r.evHp,
+          attack: r.evAttack,
+          defense: r.evDefense,
+          speed: r.evSpeed,
+          spAttack: r.evSpAttack,
+          spDefense: r.evSpDefense,
+        },
+        // Neutral natures raise and lower the same stat; store them as null.
+        increasedStat:
+          r.increasedStat === r.decreasedStat ? null : r.increasedStat,
+        decreasedStat:
+          r.increasedStat === r.decreasedStat ? null : r.decreasedStat,
+        moves: [r.move1, r.move2, r.move3, r.move4].filter(
           (x): x is string => x !== null,
+        ),
+        moveTypes: [r.type1, r.type2, r.type3, r.type4].filter(
+          (t): t is PokemonType => t !== null,
         ),
       }));
   return { ...brain, silver: team("silver"), gold: team("gold") };
@@ -422,4 +493,71 @@ export function getPyramidWildMons(
       moves: [move1, move2, move3, move4].filter((x): x is string => !!x),
     }));
   return { round, mons };
+}
+
+/** The trainers in a challenge's normal (not 7th-battle) trainer range. */
+function trainersInRange(db: Db, challenge: number) {
+  const range = db
+    .select()
+    .from(frontierTrainerRange)
+    .where(
+      and(
+        eq(frontierTrainerRange.challenge, challenge),
+        eq(frontierTrainerRange.lastBattle, false),
+      ),
+    )
+    .get();
+  if (!range) throw new Error(`No trainer range for challenge ${challenge}`);
+  return db
+    .select({
+      id: frontierTrainer.id,
+      name: frontierTrainer.name,
+      trainerClass: frontierTrainer.trainerClass,
+      fixedIv: frontierTrainer.fixedIv,
+    })
+    .from(frontierTrainer)
+    .where(
+      between(frontierTrainer.id, range.firstTrainerId, range.lastTrainerId),
+    )
+    .orderBy(asc(frontierTrainer.id))
+    .all();
+}
+
+/**
+ * The Battle Dome's possible opponents on a win streak of `streak`
+ * tournaments: 10 of the 15 come from `regular`, 5 from `harder`
+ * (domeRangeChallenges).
+ */
+export function getDomeTrainers(db: Db, streak: number) {
+  const challenges = domeRangeChallenges(streak);
+  return {
+    ...challenges,
+    regular: trainersInRange(db, challenges.regularChallenge),
+    harder: trainersInRange(db, challenges.harderChallenge),
+  };
+}
+
+/**
+ * The Dome predictor: every set a tournament opponent's Pokémon could be,
+ * on a win streak of `streak` tournaments (teams are built like the Tower's).
+ */
+export function getDomeSets(
+  db: Db,
+  {
+    streak,
+    levelMode,
+    pokemonId,
+    trainerId,
+  }: {
+    streak: number;
+    levelMode: LevelMode;
+    pokemonId?: number;
+    trainerId?: number;
+  },
+) {
+  const { regular, harder } = getDomeTrainers(db, streak);
+  const trainers = [
+    ...new Map([...regular, ...harder].map((t) => [t.id, t])).values(),
+  ];
+  return setsForTrainers(db, trainers, { levelMode, pokemonId, trainerId });
 }

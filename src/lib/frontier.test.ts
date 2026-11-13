@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   battlePosition,
   brainBattle,
+  domeRangeChallenges,
   factoryBrainIv,
   factoryOpponentIv,
   frontierFriendship,
@@ -152,5 +153,30 @@ describe("Battle Pyramid", () => {
     expect(pyramidWildLevels("50", 35)).toEqual({ min: 30, max: 40 });
     expect(pyramidWildLevels("open", 15, 100)).toEqual({ min: 80, max: 90 });
     expect(pyramidWildLevels("open", 15, 50)).toEqual({ min: 40, max: 50 });
+  });
+});
+
+describe("Battle Dome", () => {
+  it("indexes trainer ranges by championships, 5 opponents one range up", () => {
+    expect(domeRangeChallenges(0)).toEqual({
+      regularChallenge: 0,
+      harderChallenge: 1,
+    });
+    expect(domeRangeChallenges(6)).toEqual({
+      regularChallenge: 6,
+      harderChallenge: 7,
+    });
+    expect(domeRangeChallenges(50)).toEqual({
+      regularChallenge: 7,
+      harderChallenge: 7,
+    });
+  });
+
+  it("wraps after 255 championships (the game passes a u8)", () => {
+    expect(domeRangeChallenges(255)).toEqual({
+      regularChallenge: 7,
+      harderChallenge: 0,
+    });
+    expect(domeRangeChallenges(256).regularChallenge).toBe(0);
   });
 });

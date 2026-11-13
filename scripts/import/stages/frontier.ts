@@ -8,6 +8,7 @@ import path from "node:path";
 
 import {
   BATTLES_PER_CHALLENGE,
+  DOME_HARDER_OPPONENTS,
   FACTORY_BRAIN_IV_OFFSET,
   FACTORY_IV_ROWS,
   LAST_RANGED_CHALLENGE,
@@ -90,16 +91,18 @@ function checkRuleConstants(constants: Constants) {
 /**
  * GetFrontierTrainerFixedIvs is an if/else chain on the trainer id:
  * `if (trainerId <= FRONTIER_TRAINER_JILL) fixedIv = 3; else if … else
- * fixedIv = MAX_PER_STAT_IVS;`. Returns the rule as a function.
+ * fixedIv = MAX_PER_STAT_IVS;`. Returns the rule as a function. The Dome
+ * has its own copy (GetDomeTrainerMonIvs), hence `fnName`.
  */
 export function parseFixedIvRule(
   src: string,
   constants: Constants,
+  fnName = "GetFrontierTrainerFixedIvs",
 ): (trainerId: number) => number {
-  const fn = /\bGetFrontierTrainerFixedIvs\s*\([^)]*\)\s*\{([\s\S]*?)\n\}/.exec(
-    stripComments(src),
-  );
-  if (!fn) throw new Error("GetFrontierTrainerFixedIvs not found");
+  const fn = new RegExp(
+    String.raw`\b${fnName}\s*\([^)]*\)\s*\{([\s\S]*?)\n\}`,
+  ).exec(stripComments(src));
+  if (!fn) throw new Error(`${fnName} not found`);
   const steps = [
     ...fn[1]!.matchAll(
       /if\s*\(\s*trainerId\s*<=\s*(\w+)\s*\)\s*fixedIv\s*=\s*(\w+)\s*;/g,
@@ -110,7 +113,7 @@ export function parseFixedIvRule(
   }));
   const otherwise = /\belse\s+fixedIv\s*=\s*(\w+)\s*;/.exec(fn[1]!);
   if (steps.length === 0 || !otherwise)
-    throw new Error("Unexpected GetFrontierTrainerFixedIvs shape");
+    throw new Error(`Unexpected ${fnName} shape`);
   const fallback = numeric(otherwise[1]!, constants);
   return (trainerId) => steps.find((s) => trainerId <= s.upTo)?.iv ?? fallback;
 }
@@ -175,6 +178,7 @@ export function importFrontier(lookups: Lookups) {
   );
   const classNames = trainerClassNames(E);
   const fixedIv = parseFixedIvRule(towerSrc, constants);
+  checkDomeRules(towerSrc, constants, fixedIv);
 
   // Which sets each trainer uses: arrays of FRONTIER_MON_* and list macros.
   const monsSrc = readForGame(
@@ -341,6 +345,58 @@ function importFactory(
       );
 
   return { factorySetRanges: setRanges, factoryIvs: ivs };
+}
+
+/**
+ * The Battle Dome needs no tables of its own: its opponents are Tower
+ * trainers with Tower sets. Fail the import if battle_dome.c stops matching
+ * the rules in domeRangeChallenges or uses different IVs.
+ */
+function checkDomeRules(
+  towerSrc: string,
+  constants: Constants,
+  towerFixedIv: (trainerId: number) => number,
+) {
+  const domeSrc = stripComments(readForGame(E, "src/battle_dome.c"));
+  const expectations: [string, string, RegExp][] = [
+    // Opponents 1–5 come from the next range up, the rest from the streak's.
+    [
+      "battle_dome.c",
+      domeSrc,
+      new RegExp(
+        String.raw`if \(i > ${DOME_HARDER_OPPONENTS}\)\s*\{\s*do\s*\{\s*trainerId = GetRandomScaledFrontierTrainerId\(GetCurrentFacilityWinStreak\(\), 0\);[\s\S]*?else\s*\{\s*do\s*\{\s*trainerId = GetRandomScaledFrontierTrainerId\(GetCurrentFacilityWinStreak\(\) \+ 1, 0\);`,
+      ),
+    ],
+    // The streak counts tournaments won, one per championship.
+    [
+      "battle_dome.c",
+      domeSrc,
+      /IncrementDomeStreaks\(void\)[\s\S]*?domeWinStreaks\[battleMode\]\[lvlMode\]\+\+/,
+    ],
+    // The streak is truncated to a u8 on the way in.
+    [
+      "battle_tower.c",
+      towerSrc,
+      /GetRandomScaledFrontierTrainerId\(u8 challengeNum, u8 battleNum\)\s*\{/,
+    ],
+  ];
+  for (const [file, src, pattern] of expectations)
+    if (!pattern.test(src))
+      throw new Error(
+        `${file} no longer matches ${pattern} (see domeRangeChallenges)`,
+      );
+
+  const domeFixedIv = parseFixedIvRule(
+    domeSrc,
+    constants,
+    "GetDomeTrainerMonIvs",
+  );
+  const trainerCount = constant(constants, "FRONTIER_TRAINERS_COUNT");
+  for (let id = 0; id < trainerCount; id++)
+    if (domeFixedIv(id) !== towerFixedIv(id))
+      throw new Error(
+        `Dome IVs differ from the Tower's for trainer ${id}: ${domeFixedIv(id)} vs ${towerFixedIv(id)}`,
+      );
 }
 
 type WildJsonGroup = {

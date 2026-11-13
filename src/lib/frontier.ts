@@ -234,3 +234,30 @@ export function pyramidWildLevels(
     mode === "50" ? listed : opponentLevel(mode, highestPartyLevel) - listed;
   return { min: centre - 5, max: centre + 5 };
 }
+
+// ---------------------------------------------------------------------------
+// Battle Dome (battle_dome.c)
+// ---------------------------------------------------------------------------
+
+/** Of the 15 tournament opponents, this many come from the next range up. */
+export const DOME_HARDER_OPPONENTS = 5;
+export const DOME_OPPONENTS = 15;
+
+/**
+ * InitDomeTrainers: which trainer ranges (normal, not 7th-battle) the Dome's
+ * opponents are drawn from. The index is the current win streak, which counts
+ * tournaments won in a row (not battles / 7; capped at 999); 5 opponents use
+ * the next one up. The game passes it to GetRandomScaledFrontierTrainerId as
+ * a u8, so it wraps after 255; above 7 it uses range 7. Teams and IVs work
+ * like the Battle Tower's (the importer checks both against battle_dome.c).
+ */
+export function domeRangeChallenges(streak: number): {
+  regularChallenge: number;
+  harderChallenge: number;
+} {
+  const toRange = (n: number) => Math.min(n % 256, LAST_RANGED_CHALLENGE);
+  return {
+    regularChallenge: toRange(streak),
+    harderChallenge: toRange(streak + 1),
+  };
+}
