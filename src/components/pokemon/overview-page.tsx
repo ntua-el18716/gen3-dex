@@ -1,18 +1,11 @@
 import { useState, type ReactNode } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
-import { dexNumber } from "@/components/pokemon-row";
-import { Sprite } from "@/components/sprite";
-import { TYPE_TINT, TypeBadge } from "@/components/type-badge";
 import type { PokedexEntry, PokemonDetail } from "@/db/queries";
 import type { Game, Stat } from "@/db/schema";
+import { captureChance } from "@/lib/catch-rate";
 import { gamesLabel } from "@/lib/games";
-import {
-  formatHeight,
-  formatWeight,
-  genderLabel,
-  titleCase,
-} from "@/lib/pokemon-format";
+import { femaleShare, genderLabel, titleCase } from "@/lib/pokemon-format";
 import { statRange } from "@/lib/stats";
 
 /** The order Pokédex apps show stats in (the games store Speed fourth). */
@@ -37,6 +30,7 @@ const EV_FIELDS: Record<Stat, keyof PokemonDetail> = {
 /** One egg cycle is 256 steps in Gen 3. */
 const STEPS_PER_EGG_CYCLE = 256;
 
+/** The Overview tab: Pokédex text, stats, and values from the game's formulas. */
 export function OverviewPage({
   pokemon,
   entries,
@@ -50,12 +44,15 @@ export function OverviewPage({
     ({ stat }) => (pokemon[EV_FIELDS[stat]] as number) > 0,
   )
     .map(({ stat, label }) => `${pokemon[EV_FIELDS[stat]]} ${label}`)
+    .join(" · ");
+  const female = femaleShare(pokemon.genderRatio);
+  const eggGroups = [pokemon.eggGroup1, pokemon.eggGroup2]
+    .filter((g) => g !== null)
+    .map(titleCase)
     .join(", ");
 
   return (
-    <ScrollView contentContainerClassName="gap-4 p-4 pb-12">
-      <Header pokemon={pokemon} />
-
+    <View className="gap-3 p-3 pb-12">
       <Section title="Pokédex">
         {entries.map((entry) => {
           const current = entry.games.includes(game);
@@ -85,6 +82,36 @@ export function OverviewPage({
 
       <BaseStats pokemon={pokemon} />
 
+      <View className="flex-row gap-3">
+        <MiniCard
+          label="Catch rate"
+          value={`${(captureChance(pokemon.catchRate) * 100).toFixed(1)}%`}
+          note={`Poké Ball, full HP · rate ${pokemon.catchRate}`}
+        />
+        <MiniCard label="Gender" note={genderLabel(pokemon.genderRatio)}>
+          {female === null ? (
+            <View className="my-2.5 h-2 rounded-full bg-sunken" />
+          ) : (
+            <View className="my-2.5 h-2 flex-row overflow-hidden rounded-full">
+              <View className="bg-blue-400" style={{ flex: 1 - female }} />
+              <View className="bg-pink-400" style={{ flex: female }} />
+            </View>
+          )}
+        </MiniCard>
+      </View>
+      <View className="flex-row gap-3">
+        <MiniCard
+          label="Hatch"
+          value={(pokemon.eggCycles * STEPS_PER_EGG_CYCLE).toLocaleString("en")}
+          note={`steps · ${eggGroups}`}
+        />
+        <MiniCard
+          label="EV yield"
+          value={evYield}
+          note={`Base friendship ${pokemon.baseFriendship}`}
+        />
+      </View>
+
       <Section title="Abilities">
         {pokemon.abilities.map((a) => (
           <View key={a.id} className="gap-0.5">
@@ -94,14 +121,8 @@ export function OverviewPage({
         ))}
       </Section>
 
-      <Section title="Training">
-        <InfoRow label="EV yield" value={evYield} />
-        <InfoRow label="Catch rate" value={String(pokemon.catchRate)} />
+      <Section title="More">
         <InfoRow label="Base exp." value={String(pokemon.baseExperience)} />
-        <InfoRow
-          label="Base friendship"
-          value={String(pokemon.baseFriendship)}
-        />
         <InfoRow label="Growth rate" value={titleCase(pokemon.growthRate)} />
         <InfoRow
           label="Wild held items"
@@ -114,87 +135,32 @@ export function OverviewPage({
           }
         />
       </Section>
-
-      <Section title="Breeding">
-        <InfoRow
-          label="Egg groups"
-          value={[pokemon.eggGroup1, pokemon.eggGroup2]
-            .filter((g) => g !== null)
-            .map(titleCase)
-            .join(", ")}
-        />
-        <InfoRow label="Gender" value={genderLabel(pokemon.genderRatio)} />
-        <InfoRow
-          label="Egg cycles"
-          value={`${pokemon.eggCycles} (${(
-            pokemon.eggCycles * STEPS_PER_EGG_CYCLE
-          ).toLocaleString("en")} steps)`}
-        />
-      </Section>
-    </ScrollView>
-  );
-}
-
-function Header({ pokemon }: { pokemon: PokemonDetail }) {
-  const [shiny, setShiny] = useState(false);
-
-  return (
-    <View
-      className={`items-center gap-3 overflow-hidden rounded-3xl border border-line px-4 pb-5 pt-3 ${TYPE_TINT[pokemon.type1]}`}
-    >
-      <View className="w-full flex-row items-center justify-between">
-        <Text className="text-sm font-bold text-ink-muted">
-          {dexNumber(pokemon.id)}
-        </Text>
-        <Pressable
-          onPress={() => setShiny((s) => !s)}
-          // aria-* props work on native and, unlike accessibilityState,
-          // reach the HTML on web.
-          role="switch"
-          aria-checked={shiny}
-          aria-label="Shiny"
-          className={`rounded-full px-3 py-1 ${shiny ? "bg-accent" : "bg-surface/70"}`}
-        >
-          <Text
-            className={`text-xs font-bold ${shiny ? "text-on-accent" : "text-ink-muted"}`}
-          >
-            ✦ Shiny
-          </Text>
-        </Pressable>
-      </View>
-      {/* Tapping the sprite toggles the shiny too. */}
-      <Pressable
-        onPress={() => setShiny((s) => !s)}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-      >
-        <Sprite id={pokemon.id} size={192} shiny={shiny} />
-      </Pressable>
-      <View className="items-center gap-1">
-        <Text className="text-sm text-ink-muted">
-          {pokemon.category} Pokémon
-          {pokemon.formName ? ` · ${pokemon.formName}` : ""}
-        </Text>
-        <View className="flex-row gap-2">
-          <TypeBadge type={pokemon.type1} />
-          {pokemon.type2 && <TypeBadge type={pokemon.type2} />}
-        </View>
-      </View>
-      <View className="flex-row gap-2">
-        <Measure label="Height" value={formatHeight(pokemon.heightDm)} />
-        <Measure label="Weight" value={formatWeight(pokemon.weightHg)} />
-      </View>
     </View>
   );
 }
 
-function Measure({ label, value }: { label: string; value: string }) {
+/** A small card for one computed value. */
+function MiniCard({
+  label,
+  value,
+  note,
+  children,
+}: {
+  label: string;
+  value?: string;
+  note: string;
+  children?: ReactNode;
+}) {
   return (
-    <View className="min-w-24 items-center rounded-xl bg-surface/70 px-4 py-2">
-      <Text className="text-[10px] font-bold uppercase tracking-wider text-ink-subtle">
+    <View className="flex-1 rounded-2xl border border-line bg-surface p-3">
+      <Text className="text-[10px] font-extrabold uppercase tracking-widest text-ink-subtle">
         {label}
       </Text>
-      <Text className="text-base font-bold text-ink">{value}</Text>
+      {value !== undefined && (
+        <Text className="mt-0.5 text-xl font-black text-ink">{value}</Text>
+      )}
+      {children}
+      <Text className="text-xs text-ink-muted">{note}</Text>
     </View>
   );
 }

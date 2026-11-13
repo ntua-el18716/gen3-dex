@@ -23,6 +23,13 @@ export function genderLabel(ratio: number): string {
   return `${(100 - female).toFixed(1)}% ♂ · ${female.toFixed(1)}% ♀`;
 }
 
+/** The female share (0–1) for a gender ratio, or null if genderless. */
+export function femaleShare(ratio: number): number | null {
+  if (ratio === 255) return null;
+  if (ratio === 254) return 1;
+  return ratio / 256;
+}
+
 /** Egg groups and growth rates are stored kebab-case, e.g. "water-1". */
 export function titleCase(value: string): string {
   return value

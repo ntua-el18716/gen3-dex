@@ -1,9 +1,11 @@
 import { Link } from "expo-router";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Pressable, Text, View } from "react-native";
 
-import { dexNumber } from "@/components/pokemon-row";
+import { PokeballMark } from "@/components/pokeball-mark";
+import { dexNumber, useTypeGradient } from "@/components/pokemon-row";
 import { Sprite } from "@/components/sprite";
-import { TYPE_TINT, TypeBadge } from "@/components/type-badge";
+import { TypeBadge } from "@/components/type-badge";
 import type { EvolutionNode } from "@/db/queries";
 import { evolutionLabel } from "@/lib/evolution";
 
@@ -16,14 +18,14 @@ export function EvolutionPage({
   currentId: number;
 }) {
   return (
-    <ScrollView contentContainerClassName="p-4 pb-12">
+    <View className="p-3 pb-12">
       <Stage node={chain} currentId={currentId} />
       {chain.evolutions.length === 0 && (
         <Text className="mt-4 text-center text-ink-muted">
           {chain.name} doesn’t evolve.
         </Text>
       )}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -44,11 +46,14 @@ function Stage({
           key={evo.into.id}
           className={branches ? "ml-6 border-l-2 border-line pl-4" : ""}
         >
-          <View className="flex-row items-center gap-2 py-2 pl-6">
-            <Text className="text-lg text-ink-subtle">↓</Text>
-            <Text className="flex-1 text-sm font-semibold text-ink-muted">
-              {evolutionLabel(evo.method, evo.level, evo.item)}
-            </Text>
+          {/* The connector: how this step happens. */}
+          <View className="flex-row items-center gap-2 py-1.5 pl-9">
+            <View className="h-5 w-0.5 rounded-full bg-line" />
+            <View className="rounded-full bg-accent/15 px-3 py-1">
+              <Text className="text-xs font-bold text-accent">
+                {evolutionLabel(evo.method, evo.level, evo.item)}
+              </Text>
+            </View>
           </View>
           <Stage node={evo.into} currentId={currentId} />
         </View>
@@ -64,26 +69,42 @@ function StageCard({
   node: EvolutionNode;
   current: boolean;
 }) {
+  const gradient = useTypeGradient(node);
   const card = (
     <View
-      className={`flex-row items-center gap-3 rounded-2xl border bg-surface p-2 ${
-        current ? "border-accent" : "border-line"
+      className={`overflow-hidden rounded-[18px] ${
+        current ? "border-2 border-accent" : "border border-line"
       }`}
     >
-      <View
-        className={`h-16 w-16 items-center justify-center rounded-xl ${TYPE_TINT[node.type1]}`}
-      >
-        <Sprite id={node.id} />
-      </View>
-      <View className="flex-1">
-        <Text className="text-xs font-semibold text-ink-subtle">
-          {dexNumber(node.id)}
-        </Text>
-        <Text className="text-base font-bold text-ink">{node.name}</Text>
-      </View>
-      <View className="gap-1 pr-2">
-        <TypeBadge type={node.type1} small />
-        {node.type2 && <TypeBadge type={node.type2} small />}
+      <LinearGradient
+        colors={gradient}
+        start={{ x: 0, y: 0.3 }}
+        end={{ x: 1, y: 0.7 }}
+        style={{ position: "absolute", inset: 0 }}
+      />
+      <PokeballMark
+        size={96}
+        style={{ position: "absolute", left: -14, top: -12 }}
+      />
+      <View className="flex-row items-center gap-3 p-2 pr-3">
+        <Sprite id={node.id} size={72} />
+        <View className="flex-1 gap-1.5">
+          <View className="flex-row items-baseline gap-2">
+            <Text className="text-base font-black text-ink">{node.name}</Text>
+            <Text className="text-xs font-bold text-ink-subtle">
+              {dexNumber(node.id)}
+            </Text>
+            {current && (
+              <Text className="ml-auto text-[10px] font-extrabold uppercase tracking-widest text-accent">
+                Viewing
+              </Text>
+            )}
+          </View>
+          <View className="flex-row gap-1.5">
+            <TypeBadge type={node.type1} small />
+            {node.type2 && <TypeBadge type={node.type2} small />}
+          </View>
+        </View>
       </View>
     </View>
   );

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { gamesLabel } from "./games";
 import {
+  femaleShare,
   formatHeight,
   formatWeight,
   genderLabel,
@@ -20,6 +21,13 @@ describe("Pokédex formatting", () => {
     expect(genderLabel(0)).toBe("Always male");
     expect(genderLabel(254)).toBe("Always female");
     expect(genderLabel(255)).toBe("Genderless");
+  });
+
+  it("gives the female share for the gender bar", () => {
+    expect(femaleShare(31)).toBeCloseTo(0.121, 3);
+    expect(femaleShare(0)).toBe(0);
+    expect(femaleShare(254)).toBe(1);
+    expect(femaleShare(255)).toBeNull();
   });
 
   it("title-cases kebab-case values", () => {

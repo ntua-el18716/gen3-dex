@@ -1,26 +1,21 @@
-import { SectionList, Text, View } from "react-native";
+import { useState } from "react";
+import { Pressable, Text, View } from "react-native";
+import Svg, { Circle, Path } from "react-native-svg";
 
-import { TypeBadge } from "@/components/type-badge";
+import { TypeDot } from "@/components/type-badge";
 import type { LearnsetMove, LearnsetSection } from "@/db/queries";
 import type { Game, LearnMethod } from "@/db/schema";
 import { damageClass, type DamageClass } from "@/lib/damage-class";
 import { GAME_INFO } from "@/lib/games";
 
-const SECTION_TITLES: Record<LearnMethod, string> = {
+const METHOD_LABELS: Record<LearnMethod, string> = {
   level: "Level up",
-  machine: "TM / HM",
-  tutor: "Move tutor",
-  egg: "Egg moves",
+  machine: "TM/HM",
+  tutor: "Tutor",
+  egg: "Egg",
 };
 
-const CLASS_STYLES: Record<DamageClass, { label: string; className: string }> =
-  {
-    physical: { label: "Phys", className: "bg-orange-500/15 text-orange-500" },
-    special: { label: "Spec", className: "bg-blue-500/15 text-blue-500" },
-    status: { label: "Status", className: "bg-sunken text-ink-muted" },
-  };
-
-/** The Pokémon's moves in the current game, one section per learn method. */
+/** The Moves tab: one learn method at a time, one line per move. */
 export function MovesPage({
   sections,
   game,
@@ -28,92 +23,196 @@ export function MovesPage({
   sections: LearnsetSection[];
   game: Game;
 }) {
+  const [method, setMethod] = useState<LearnMethod>("level");
+  // A method the game has no moves for (e.g. after switching games) falls
+  // back to the first one it has.
+  const section =
+    sections.find((s) => s.method === method) ?? sections[0] ?? null;
+
+  if (!section) {
+    return (
+      <Text className="p-8 text-center text-ink-muted">
+        No moves recorded for {GAME_INFO[game].name}.
+      </Text>
+    );
+  }
+  const label =
+    section.method === "level"
+      ? "Lv"
+      : section.method === "machine"
+        ? "TM"
+        : "";
+
   return (
-    <SectionList
-      sections={sections}
-      keyExtractor={(m) => `${m.method}-${m.moveId}-${m.level}`}
-      stickySectionHeadersEnabled
-      contentContainerClassName="pb-12"
-      ListHeaderComponent={
-        <Text className="px-4 pt-4 text-xs font-semibold uppercase tracking-wider text-ink-subtle">
-          Moves in {GAME_INFO[game].name}
-        </Text>
-      }
-      renderSectionHeader={({ section }) => (
-        <View className="flex-row items-center bg-canvas px-4 pb-2 pt-4">
-          <Text className="flex-1 text-lg font-bold text-ink">
-            {SECTION_TITLES[section.method]}{" "}
-            <Text className="text-ink-subtle">{section.data.length}</Text>
-          </Text>
-          <Text className="w-10 text-right text-xs text-ink-subtle">Pow</Text>
-          <Text className="w-10 text-right text-xs text-ink-subtle">Acc</Text>
-          <Text className="w-8 text-right text-xs text-ink-subtle">PP</Text>
+    <View className="gap-3 p-3 pb-12">
+      <View className="flex-row self-start rounded-full bg-sunken p-1">
+        {sections.map((s) => {
+          const on = s.method === section.method;
+          return (
+            <Pressable
+              key={s.method}
+              onPress={() => setMethod(s.method)}
+              role="tab"
+              aria-selected={on}
+              className={`rounded-full px-3 py-1.5 ${on ? "bg-surface" : ""}`}
+            >
+              <Text
+                className={`text-xs font-bold ${on ? "text-ink" : "text-ink-muted"}`}
+              >
+                {METHOD_LABELS[s.method]}{" "}
+                <Text className="text-ink-subtle">{s.data.length}</Text>
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <View>
+        <View className="flex-row items-center gap-2 px-3 pb-1.5">
+          {label !== "" && <ColumnLabel className="w-10">{label}</ColumnLabel>}
+          <ColumnLabel className="flex-1">Move</ColumnLabel>
+          <ColumnLabel className="w-10 text-right">Pow</ColumnLabel>
+          <ColumnLabel className="w-11 text-right">Acc</ColumnLabel>
         </View>
-      )}
-      renderItem={({ item, index, section }) => (
-        <MoveRow
-          move={item}
-          first={index === 0}
-          last={index === section.data.length - 1}
-        />
-      )}
-      ListEmptyComponent={
-        <Text className="p-8 text-center text-ink-muted">
-          No moves recorded for this game.
-        </Text>
-      }
-    />
+        <View className="overflow-hidden rounded-2xl border border-line bg-surface">
+          {section.data.map((move, i) => (
+            <MoveRow
+              key={`${move.moveId}-${move.level}`}
+              move={move}
+              showLabel={label !== ""}
+              first={i === 0}
+            />
+          ))}
+        </View>
+      </View>
+    </View>
   );
 }
 
-/** Rows of one section form a single rounded card. */
+function ColumnLabel({
+  className,
+  children,
+}: {
+  className: string;
+  children: string;
+}) {
+  return (
+    <Text
+      className={`text-[10px] font-extrabold uppercase tracking-wider text-ink-subtle ${className}`}
+    >
+      {children}
+    </Text>
+  );
+}
+
+/** One move; tapping it shows its description, PP and whether it makes contact. */
 function MoveRow({
   move,
+  showLabel,
   first,
-  last,
 }: {
   move: LearnsetMove;
+  showLabel: boolean;
   first: boolean;
-  last: boolean;
 }) {
+  const [open, setOpen] = useState(false);
+  const cls = damageClass(move);
   const label =
     move.method === "level"
-      ? `Lv ${move.level}`
-      : move.method === "machine"
-        ? move.machine
-        : null;
-  const cls = CLASS_STYLES[damageClass(move)];
+      ? String(move.level)
+      : (move.machine ?? "").replace(/^TM/, "");
   return (
-    <View
-      className={`mx-4 flex-row items-center gap-2 border-x border-line bg-surface px-3 py-2.5 ${
-        first ? "rounded-t-2xl border-t" : ""
-      } ${last ? "rounded-b-2xl border-b" : "border-b border-b-line/50"}`}
+    <Pressable
+      onPress={() => setOpen((o) => !o)}
+      aria-expanded={open}
+      className={`px-3 py-2.5 active:bg-sunken ${first ? "" : "border-t border-line"}`}
     >
-      {label !== null && (
-        <Text className="w-12 text-xs font-semibold text-ink-subtle">
-          {label}
-        </Text>
-      )}
-      <View className="flex-1 gap-1">
-        <Text className="text-sm font-bold text-ink">{move.name}</Text>
-        <View className="flex-row items-center gap-1.5">
-          <TypeBadge type={move.type} small />
-          <Text
-            className={`overflow-hidden rounded-full px-2 text-[10px] font-bold ${cls.className}`}
-          >
-            {cls.label}
+      <View className="flex-row items-center gap-2">
+        {showLabel && (
+          <Text className="w-10 text-[13px] font-bold text-ink-subtle">
+            {label}
           </Text>
-        </View>
+        )}
+        <Text className="flex-1 text-sm font-bold text-ink">{move.name}</Text>
+        <TypeDot type={move.type} size={24} />
+        <CategoryIcon cls={cls} />
+        <Text className="w-10 text-right text-[13px] font-semibold text-ink-muted">
+          {/* 0 = status move, 1 = power is calculated (e.g. Low Kick). */}
+          {move.power === 0 ? "—" : move.power === 1 ? "var" : move.power}
+        </Text>
+        <Text className="w-11 text-right text-[13px] font-semibold text-ink-muted">
+          {/* 0 = never misses. */}
+          {move.accuracy === 0 ? "—" : `${move.accuracy}%`}
+        </Text>
       </View>
-      <Text className="w-10 text-right text-sm text-ink-muted">
-        {/* 0 = status move, 1 = power is calculated (e.g. Low Kick). */}
-        {move.power === 0 ? "—" : move.power === 1 ? "var" : move.power}
-      </Text>
-      <Text className="w-10 text-right text-sm text-ink-muted">
-        {/* 0 = never misses. */}
-        {move.accuracy === 0 ? "—" : move.accuracy}
-      </Text>
-      <Text className="w-8 text-right text-sm text-ink-muted">{move.pp}</Text>
-    </View>
+      {open && (
+        <View
+          className="gap-2 pb-0.5 pt-2"
+          style={showLabel ? { paddingLeft: 48 } : null}
+        >
+          <Text className="text-[13px] leading-5 text-ink-muted">
+            {move.description}
+          </Text>
+          <View className="flex-row gap-1.5">
+            <Tag>{`PP ${move.pp}`}</Tag>
+            <Tag>{cls[0]!.toUpperCase() + cls.slice(1)}</Tag>
+            {move.makesContact && <Tag>Contact</Tag>}
+          </View>
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
+function Tag({ children }: { children: string }) {
+  return (
+    <Text className="overflow-hidden rounded-full bg-sunken px-2.5 py-0.5 text-[11px] font-bold text-ink-muted">
+      {children}
+    </Text>
+  );
+}
+
+/** Physical (burst), special (rings) or status (half circle), like the mockup. */
+function CategoryIcon({ cls }: { cls: DamageClass }) {
+  return (
+    <Svg width={20} height={20} viewBox="0 0 24 24" aria-label={cls}>
+      {cls === "physical" ? (
+        <Path
+          fill="#E8553E"
+          d="M12 1l2.6 6.2L21 5l-2.2 6.4L23 14l-6.4.9L17 22l-5-4.3L7 22l.4-7.1L1 14l4.2-2.6L3 5l6.4 2.2z"
+        />
+      ) : cls === "special" ? (
+        <>
+          <Circle
+            cx={12}
+            cy={12}
+            r={9.5}
+            fill="none"
+            stroke="#4F7CF0"
+            strokeWidth={2.6}
+          />
+          <Circle
+            cx={12}
+            cy={12}
+            r={4.5}
+            fill="none"
+            stroke="#4F7CF0"
+            strokeWidth={2.6}
+          />
+        </>
+      ) : (
+        <>
+          <Circle
+            cx={12}
+            cy={12}
+            r={9.5}
+            fill="none"
+            stroke="#9CA3AF"
+            strokeWidth={2.6}
+          />
+          <Path d="M12 2.5a9.5 9.5 0 0 1 0 19z" fill="#9CA3AF" />
+        </>
+      )}
+    </Svg>
   );
 }

@@ -152,6 +152,8 @@ export function getLearnset(db: Db, id: number, game: Game) {
       power: move.power,
       accuracy: move.accuracy,
       pp: move.pp,
+      makesContact: move.makesContact,
+      description: move.description,
     })
     .from(learnset)
     .innerJoin(move, eq(move.id, learnset.moveId))

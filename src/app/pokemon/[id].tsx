@@ -1,13 +1,14 @@
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useMemo } from "react";
-import { Text, View } from "react-native";
+import { Text, useWindowDimensions, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { GamePicker } from "@/components/game-picker";
+import { CollapsiblePager } from "@/components/collapsible-pager";
 import { EvolutionPage } from "@/components/pokemon/evolution-page";
+import { heroMetrics, HeroHeader } from "@/components/pokemon/hero-header";
 import { LocationsPage } from "@/components/pokemon/locations-page";
 import { MovesPage } from "@/components/pokemon/moves-page";
 import { OverviewPage } from "@/components/pokemon/overview-page";
-import { SwipeTabs } from "@/components/swipe-tabs";
 import { useDb } from "@/db";
 import {
   getEvolutionChain,
@@ -20,12 +21,18 @@ import {
 } from "@/db/queries";
 import { useCurrentGame } from "@/state/current-game";
 
+/** On big screens the page is a centred column this wide. */
+const MAX_WIDTH = 768;
+const TABS = ["Overview", "Moves", "Evolution", "Where"];
+
 export default function PokemonScreen() {
   // The [id] in the file name: /pokemon/25 gives { id: "25" }.
   const { id } = useLocalSearchParams<{ id: string }>();
   const dexNumber = Number(id);
   const db = useDb();
   const { game } = useCurrentGame();
+  const insets = useSafeAreaInsets();
+  const width = Math.min(useWindowDimensions().width, MAX_WIDTH);
 
   const pokemon = useMemo(
     () => getPokemonDetail(db, dexNumber, game),
@@ -62,34 +69,35 @@ export default function PokemonScreen() {
     );
   }
 
+  const { height, collapse } = heroMetrics(insets.top);
   return (
-    // On big screens, a centred column of comfortable reading width.
-    <View className="w-full max-w-3xl flex-1 self-center">
-      <Stack.Screen options={{ title: pokemon.name }} />
-      <View className="px-4 pt-3">
-        <GamePicker />
-      </View>
-      <SwipeTabs
+    <View className="flex-1 self-center" style={{ width }}>
+      {/* The hero header replaces the navigator's. */}
+      <Stack.Screen options={{ headerShown: false, title: pokemon.name }} />
+      <CollapsiblePager
         // A new Pokémon (e.g. opened from its evolution line) starts on the
-        // first page again.
+        // first page, expanded.
         key={dexNumber}
-        tabs={[
+        width={width}
+        headerHeight={height}
+        collapse={collapse}
+        pages={[
           {
-            title: "Overview",
+            key: "overview",
             content: (
               <OverviewPage pokemon={pokemon} entries={entries} game={game} />
             ),
           },
           {
-            title: "Moves",
+            key: "moves",
             content: <MovesPage sections={learnset} game={game} />,
           },
           {
-            title: "Evolution",
+            key: "evolution",
             content: <EvolutionPage chain={chain} currentId={dexNumber} />,
           },
           {
-            title: "Locations",
+            key: "where",
             content: (
               <LocationsPage
                 places={places}
@@ -100,6 +108,15 @@ export default function PokemonScreen() {
             ),
           },
         ]}
+        renderHeader={(props) => (
+          <HeroHeader
+            {...props}
+            pokemon={pokemon}
+            tabs={TABS}
+            top={insets.top}
+            width={width}
+          />
+        )}
       />
     </View>
   );

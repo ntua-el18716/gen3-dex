@@ -1,4 +1,4 @@
-import { ScrollView, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
 import type { LocationEntry, StaticEncounterEntry } from "@/db/queries";
 import type { EncounterMethod, Game, StaticEncounterKind } from "@/db/schema";
@@ -62,7 +62,7 @@ export function LocationsPage({
 }) {
   const gameName = GAME_INFO[game].name;
   return (
-    <ScrollView contentContainerClassName="gap-3 p-4 pb-12">
+    <View className="gap-3 p-3 pb-12">
       {places.length === 0 && oneTime.length === 0 ? (
         <View className="gap-2 rounded-2xl border border-line bg-surface p-4">
           <Text className="font-bold text-ink">
@@ -139,6 +139,6 @@ export function LocationsPage({
           Not found in the wild in {gameName}.
         </Text>
       ) : null}
-    </ScrollView>
+    </View>
   );
 }
