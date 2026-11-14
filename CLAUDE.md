@@ -165,6 +165,16 @@ Checked with lint/typecheck/tests (142 passing) and headless-Chrome walkthroughs
 - **Suggested commits:** (1) Battle Dome rules; (2) tabs + plugin settings; (3) design foundations (theme accent, type icons, chips, 4× sprites); (4) Pokédex list restyle + layout setting; (5) collapsing Pokémon page + moves/overview + catch rate; (6) League tab; (7) Frontier screens; (8) docs (mockup, CLAUDE.md).
 - **Ideas not done:** damage calc; Dome seeding; Pike rooms / Pyramid trainers; an emulator that renders (try `-gpu host`).
 
+## Design system (polish pass 2026-11-14, by Claude at his request)
+
+A restyle of every screen for a cleaner, more professional look; layout, navigation and data are unchanged. Checked on web only (headless Chrome, light + dark) — **not yet seen on Android**.
+
+- **Building blocks** in `src/components/ui/index.tsx`: `Card` (borderless surface), `SectionTitle`, `Label`, `Divider`, `Segmented` (the one segmented control: game picker, move methods, Lv 50/100, rematch teams, Frontier options, IVs), `IconButton`, `Tag`, `TABULAR` (tabular numbers). Build screens from these instead of styling ad hoc.
+- **Tokens** in `tailwind.config.js`: type ramp `text-display/title/headline/body/callout/caption/micro` (use these, not `text-sm`/`text-[11px]`), corners `rounded-card` (20) and `rounded-tile` (12). Palette slightly retuned (`ink-subtle` darker for contrast).
+- **Rules:** no outlines around cards (surface on canvas does the grouping; hairline `Divider`s between rows inside a card); labels in sentence case, never tracked ALL CAPS; weights stop at bold (no `font-black`); icons are symbols (`expo-symbols`), never text glyphs; colour only for information (types, game accent, facility colour, stat bars).
+- Changed along the way: type chips are Title Case; the theme switch is an icon button and is gone from stack headers (tabs only); Overview shows the current game's Pokédex entry first; League cards lost the big faint numeral; the Frontier home is one grouped list; Frontier steppers are a single joined control with disabled ends.
+- The `expo` and `frontend-design` plugins named in `.claude/settings.json` aren't preinstalled in cloud sessions: `claude plugin install frontend-design@claude-plugins-official` and `expo@claude-plugins-official`.
+
 ## Practical notes
 
 - Machine: Windows (x64). Has Android Studio / `.android` and Expo history. Node 24 (upgraded from 22.10, which is too old for Expo SDK 58).
@@ -176,4 +186,4 @@ Checked with lint/typecheck/tests (142 passing) and headless-Chrome walkthroughs
 
 - The old local folders (`gen3-dex`, `pokeApi-v2`) are not available in cloud sessions; everything needed about them is summarised above.
 - Cloud sessions can fetch the pret repos from GitHub; nothing else needs network.
-- Pushing from Claude app sessions has failed so far (GitHub app access); work was handed over as git bundles that Stylianos pulls on his laptop.
+- Pushing from Claude app sessions works since 2026-11-14 (the GitHub app was reconnected). Before that, work was handed over as git bundles.
