@@ -18,6 +18,18 @@ module.exports = {
   darkMode: "class",
   theme: {
     extend: {
+      // The type ramp: every text size in the app is one of these steps.
+      fontSize: {
+        display: ["30px", { lineHeight: "36px" }],
+        title: ["22px", { lineHeight: "28px" }],
+        headline: ["17px", { lineHeight: "22px" }],
+        body: ["15px", { lineHeight: "21px" }],
+        callout: ["13px", { lineHeight: "18px" }],
+        caption: ["12px", { lineHeight: "16px" }],
+        micro: ["11px", { lineHeight: "14px" }],
+      },
+      // Two corner sizes: cards, and the tiles and controls inside them.
+      borderRadius: { card: "20px", tile: "12px" },
       colors: {
         ...themeColors,
         // The classic type colours (as used on Bulbapedia); shared with the
