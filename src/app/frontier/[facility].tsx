@@ -7,6 +7,7 @@ import { Field, Segmented, Stepper } from "@/components/frontier/controls";
 import { SetCard } from "@/components/frontier/set-card";
 import { MoveChip } from "@/components/move-chip";
 import { Sprite } from "@/components/sprite";
+import { TeamsShortcut } from "@/components/teams/teams-shortcut";
 import { Card, SectionTitle, TABULAR, Tag } from "@/components/ui";
 import { useDb } from "@/db";
 import {
@@ -239,6 +240,11 @@ function Facility({ info }: { info: FacilityInfo }) {
           unit={UNITS[info.kind]}
           level={level}
         />
+      )}
+
+      {/* The Factory lends you Pokémon, so there are no teams to save. */}
+      {info.key !== "factory" && (
+        <TeamsShortcut purpose={info.key} game="emerald" />
       )}
 
       {brainNow ? null : result.kind === "sets" ? (

@@ -4,6 +4,7 @@ import { Stack } from "expo-router";
 
 import { DatabaseProvider } from "@/db";
 import { CurrentGameProvider } from "@/state/current-game";
+import { TeamsProvider } from "@/state/teams";
 import { AppThemeProvider, useColors } from "@/theme/theme";
 
 export default function RootLayout() {
@@ -12,7 +13,9 @@ export default function RootLayout() {
     <CurrentGameProvider>
       <AppThemeProvider>
         <DatabaseProvider>
-          <ThemedStack />
+          <TeamsProvider>
+            <ThemedStack />
+          </TeamsProvider>
         </DatabaseProvider>
       </AppThemeProvider>
     </CurrentGameProvider>
@@ -39,6 +42,11 @@ function ThemedStack() {
     >
       {/* Each tab draws its own header (ScreenHeader). */}
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      {/* Choosing a Pokémon, move, item or nature slides up over the editor. */}
+      <Stack.Screen
+        name="teams/[id]/pick"
+        options={{ presentation: "modal" }}
+      />
     </Stack>
   );
 }

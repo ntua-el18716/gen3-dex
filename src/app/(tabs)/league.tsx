@@ -5,6 +5,7 @@ import { GamePicker } from "@/components/game-picker";
 import { TrainerCard } from "@/components/league/trainer-card";
 import { ScreenHeader } from "@/components/screen-header";
 import { Sprite } from "@/components/sprite";
+import { TeamsShortcut } from "@/components/teams/teams-shortcut";
 import { Label, SectionTitle } from "@/components/ui";
 import { useDb } from "@/db";
 import { getTrainerTeams, pickForStarter } from "@/db/league-queries";
@@ -61,6 +62,7 @@ export default function LeagueScreen() {
         <GamePicker />
       </ScreenHeader>
       <View className="gap-7 px-4 pt-2">
+        <TeamsShortcut purpose="walkthrough" game={game} />
         {sections.map((section) => (
           <View key={section.title} className="gap-2">
             <SectionTitle

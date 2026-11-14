@@ -59,6 +59,23 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="teams"
+        options={{
+          title: "Teams",
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon
+              name={{
+                ios: "person.3.fill",
+                android: "groups",
+                web: "groups",
+              }}
+              color={color}
+              size={size}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="frontier"
         options={{
           title: "Frontier",
