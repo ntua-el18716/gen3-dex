@@ -13,6 +13,7 @@ import { GamePicker } from "@/components/game-picker";
 import { PokemonCard } from "@/components/pokemon-card";
 import { PokemonRow } from "@/components/pokemon-row";
 import { ScreenHeader } from "@/components/screen-header";
+import { IconButton } from "@/components/ui";
 import { useDb } from "@/db";
 import { listPokemon } from "@/db/queries";
 import { GAME_INFO } from "@/lib/games";
@@ -61,7 +62,7 @@ export default function PokedexScreen() {
       <View className="self-center" style={{ width: contentWidth }}>
         <ScreenHeader
           title="Pokédex"
-          subtitle={`${count} · ${GAME_INFO[game].name}`}
+          subtitle={`${count} in ${GAME_INFO[game].name}`}
           actions={
             columns === 1 && (
               <LayoutToggle layout={layout} onChange={setLayout} />
@@ -111,7 +112,7 @@ export default function PokedexScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         ListEmptyComponent={
-          <Text className="p-8 text-center text-ink-muted">
+          <Text className="p-8 text-center text-body text-ink-muted">
             No Pokémon match “{query}”.
           </Text>
         }
@@ -133,7 +134,7 @@ function SearchBox({
   const colors = useColors();
   return (
     <View
-      className={`flex-row items-center gap-2 rounded-xl border border-line bg-surface px-3 ${className}`}
+      className={`h-11 flex-row items-center gap-2 rounded-tile bg-sunken px-3 ${className}`}
     >
       <SymbolView
         name={{ ios: "magnifyingglass", android: "search", web: "search" }}
@@ -141,8 +142,8 @@ function SearchBox({
         size={20}
       />
       <TextInput
-        className="flex-1 py-3 text-base text-ink"
-        placeholder="Search by name or number"
+        className="h-11 flex-1 text-body text-ink outline-none"
+        placeholder="Name or number"
         placeholderTextColor={colors["ink-subtle"]}
         value={value}
         onChangeText={onChange}
@@ -179,25 +180,16 @@ function LayoutToggle({
   layout: ListLayout;
   onChange: (layout: ListLayout) => void;
 }) {
-  const colors = useColors();
   const next = layout === "sprite-right" ? "sprite-left" : "sprite-right";
   return (
-    <Pressable
+    <IconButton
+      name={{
+        ios: "arrow.left.arrow.right",
+        android: "swap_horiz",
+        web: "swap_horiz",
+      }}
+      label={`Show sprites on the ${next === "sprite-left" ? "left" : "right"}`}
       onPress={() => onChange(next)}
-      aria-label={`Show sprites on the ${next === "sprite-left" ? "left" : "right"}`}
-      role="button"
-      hitSlop={8}
-      className="h-8 w-8 items-center justify-center rounded-full bg-sunken active:opacity-70"
-    >
-      <SymbolView
-        name={{
-          ios: "arrow.left.arrow.right",
-          android: "swap_horiz",
-          web: "swap_horiz",
-        }}
-        tintColor={colors["ink-muted"]}
-        size={18}
-      />
-    </Pressable>
+    />
   );
 }

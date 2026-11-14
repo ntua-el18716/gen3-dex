@@ -27,7 +27,7 @@ export function PokemonCard({
     >
       <Pressable
         android_ripple={{ color: colors.sunken, foreground: true }}
-        className="overflow-hidden rounded-2xl active:opacity-80"
+        className="overflow-hidden rounded-card active:opacity-80"
         style={{ width }}
       >
         <LinearGradient
@@ -41,14 +41,14 @@ export function PokemonCard({
             size={150}
             style={{ position: "absolute", right: -30, bottom: -30 }}
           />
-          <Text className="self-start px-3 text-xs font-semibold text-ink-muted">
+          <Text className="self-start px-3 text-caption font-semibold text-ink-subtle">
             {dexNumber(pokemon.id)}
           </Text>
           {/* 2× keeps the pixel art evenly scaled. */}
           <Sprite id={pokemon.id} size={128} />
         </View>
         <View className="items-center gap-2 px-2 py-3">
-          <Text className="text-base font-bold text-ink" numberOfLines={1}>
+          <Text className="text-headline font-bold text-ink" numberOfLines={1}>
             {pokemon.name}
           </Text>
           <View className="flex-row gap-1">

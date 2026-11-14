@@ -2,7 +2,6 @@ import "../global.css";
 
 import { Stack } from "expo-router";
 
-import { ThemeToggle } from "@/components/theme-toggle";
 import { DatabaseProvider } from "@/db";
 import { CurrentGameProvider } from "@/state/current-game";
 import { AppThemeProvider, useColors } from "@/theme/theme";
@@ -32,8 +31,9 @@ function ThemedStack() {
         // The header blends into the page instead of sitting on a bar.
         headerStyle: { backgroundColor: colors.canvas },
         headerShadowVisible: false,
-        headerTitleStyle: { fontWeight: "800" },
-        headerRight: () => <ThemeToggle />,
+        headerTitleStyle: { fontWeight: "700" },
+        headerTintColor: colors.ink,
+        headerBackButtonDisplayMode: "minimal",
         contentStyle: { backgroundColor: colors.canvas },
       }}
     >

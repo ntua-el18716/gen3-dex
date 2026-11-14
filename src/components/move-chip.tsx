@@ -17,13 +17,13 @@ export function MoveChip({
 }) {
   return (
     <View
-      className={`flex-row items-center gap-1.5 rounded-full bg-sunken py-1 pl-1 pr-2.5 ${
+      className={`flex-row items-center gap-1.5 rounded-lg bg-sunken py-1 pl-1 pr-2.5 ${
         wide ? "w-[48.5%]" : ""
       }`}
     >
-      {type ? <TypeDot type={type} size={18} /> : <View className="w-1" />}
+      {type ? <TypeDot type={type} size={18} /> : <View className="w-1.5" />}
       <Text
-        className={`font-bold text-ink ${wide ? "flex-1 text-[13px]" : "text-[11px]"}`}
+        className={`font-semibold text-ink ${wide ? "flex-1 text-callout" : "text-caption"}`}
         numberOfLines={1}
       >
         {name}

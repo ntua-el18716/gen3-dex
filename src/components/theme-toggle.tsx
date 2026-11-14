@@ -1,4 +1,4 @@
-import { Pressable, Text } from "react-native";
+import type { SymbolViewProps } from "expo-symbols";
 
 import {
   THEME_PREFERENCES,
@@ -6,10 +6,16 @@ import {
   type ThemePreference,
 } from "@/theme/theme";
 
-const LABELS: Record<ThemePreference, string> = {
-  system: "◐ Auto",
-  light: "☀ Light",
-  dark: "☾ Dark",
+import { IconButton } from "./ui";
+
+const ICONS: Record<ThemePreference, SymbolViewProps["name"]> = {
+  system: {
+    ios: "circle.lefthalf.filled",
+    android: "contrast",
+    web: "contrast",
+  },
+  light: { ios: "sun.max.fill", android: "light_mode", web: "light_mode" },
+  dark: { ios: "moon.fill", android: "dark_mode", web: "dark_mode" },
 };
 
 /** Header button that cycles Auto → Light → Dark. */
@@ -20,16 +26,10 @@ export function ThemeToggle() {
       (THEME_PREFERENCES.indexOf(preference) + 1) % THEME_PREFERENCES.length
     ]!;
   return (
-    <Pressable
+    <IconButton
+      name={ICONS[preference]}
+      label={`Theme: ${preference}. Switch to ${next}.`}
       onPress={() => setPreference(next)}
-      aria-label={`Theme: ${preference}. Switch to ${next}.`}
-      role="button"
-      hitSlop={8}
-      className="rounded-full bg-sunken px-3 py-1.5 active:opacity-70"
-    >
-      <Text className="text-xs font-bold text-ink-muted">
-        {LABELS[preference]}
-      </Text>
-    </Pressable>
+    />
   );
 }

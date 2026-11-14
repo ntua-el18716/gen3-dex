@@ -10,6 +10,7 @@ import { useColors, usePalette } from "@/theme/theme";
 import { PokeballMark } from "./pokeball-mark";
 import { Sprite } from "./sprite";
 import { TypeBadge } from "./type-badge";
+import { TABULAR } from "./ui";
 
 /** Card height plus the gap around it; every row is exactly this tall. */
 export const ROW_HEIGHT = 80;
@@ -50,7 +51,7 @@ export function PokemonRow({
       >
         <Pressable
           android_ripple={{ color: colors.sunken, foreground: true }}
-          className="flex-1 overflow-hidden rounded-[18px] active:opacity-80"
+          className="flex-1 overflow-hidden rounded-card active:opacity-80"
         >
           <LinearGradient
             colors={gradient}
@@ -75,12 +76,15 @@ export function PokemonRow({
                 className={`flex-row items-baseline gap-2 ${left ? "justify-between" : ""}`}
               >
                 <Text
-                  className="text-base font-black text-ink"
+                  className="text-headline font-bold text-ink"
                   numberOfLines={1}
                 >
                   {pokemon.name}
                 </Text>
-                <Text className="text-xs font-bold text-ink-subtle">
+                <Text
+                  className="text-caption font-semibold text-ink-subtle"
+                  style={TABULAR}
+                >
                   {dexNumber(pokemon.id)}
                 </Text>
               </View>

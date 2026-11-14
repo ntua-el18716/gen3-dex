@@ -62,7 +62,7 @@ export function TypeBadge({
   const icon = small ? 16 : 18;
   return (
     <View
-      className={`flex-row items-center rounded-full ${small ? "w-[84px]" : "w-[96px]"}`}
+      className={`flex-row items-center rounded-full ${small ? "w-[82px]" : "w-[94px]"}`}
       style={{ backgroundColor: typeColor(type), padding: 2 }}
     >
       <View
@@ -72,7 +72,7 @@ export function TypeBadge({
         <TypeIcon type={type} size={icon - 2} />
       </View>
       <Text
-        className={`flex-1 pr-1 text-center font-extrabold uppercase tracking-wide ${small ? "text-[10px]" : "text-[11px]"}`}
+        className={`flex-1 pr-1 text-center font-bold capitalize ${small ? "text-micro" : "text-caption"}`}
         style={{ color: glyphColor(type) }}
         numberOfLines={1}
       >

@@ -20,7 +20,7 @@ export default function TabLayout() {
           backgroundColor: colors.surface,
           borderTopColor: colors.line,
         },
-        tabBarLabelStyle: { fontWeight: "700" },
+        tabBarLabelStyle: { fontWeight: "600" },
         sceneStyle: { backgroundColor: colors.canvas },
       }}
     >
