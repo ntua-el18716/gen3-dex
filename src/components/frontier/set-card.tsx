@@ -4,6 +4,7 @@ import { Pressable, Text, View } from "react-native";
 
 import { MoveChip } from "@/components/move-chip";
 import { Sprite } from "@/components/sprite";
+import { Card, Label, Segmented, TABULAR } from "@/components/ui";
 import type { FrontierSetDetail } from "@/db/frontier-queries";
 import type { Stat } from "@/db/schema";
 import { frontierStats } from "@/lib/frontier";
@@ -42,14 +43,14 @@ export function SetCard({
   const stats = frontierStats(set, level, shown);
   const evs = STAT_LABELS.filter(([s]) => set.evs[s] > 0)
     .map(([s, l]) => `${set.evs[s]} ${l}`)
-    .join(" · ");
+    .join(", ");
 
   return (
-    <View className="gap-3 rounded-[20px] border border-line bg-surface p-3.5">
+    <Card className="gap-3.5 p-4">
       <View className="flex-row items-center gap-3">
         <View
-          className="items-center justify-center rounded-2xl"
-          style={{ backgroundColor: `${accent}22` }}
+          className="items-center justify-center rounded-tile"
+          style={{ backgroundColor: `${accent}1F` }}
         >
           <Link
             href={{ pathname: "/pokemon/[id]", params: { id: set.pokemonId } }}
@@ -65,27 +66,29 @@ export function SetCard({
         </View>
         <View className="flex-1 gap-0.5">
           <View className="flex-row items-baseline gap-2">
-            <Text className="text-lg font-black text-ink">{set.species}</Text>
+            <Text className="text-headline font-bold text-ink">
+              {set.species}
+            </Text>
             {set.id !== undefined && (
-              <Text className="text-[11px] font-bold text-ink-subtle">
-                set {set.id}
+              <Text className="text-caption text-ink-subtle" style={TABULAR}>
+                Set {set.id}
               </Text>
             )}
           </View>
-          <Text className="text-xs text-ink-muted">
+          <Text className="text-callout text-ink-muted">
             {set.item ? (
               <>
-                Holds <Text className="font-bold text-ink">{set.item}</Text>
+                Holds <Text className="font-semibold text-ink">{set.item}</Text>
               </>
             ) : (
               "No item"
             )}
           </Text>
-          <Text className="text-xs text-ink-muted">
-            <Text className="font-bold text-ink">{set.nature}</Text>
+          <Text className="text-callout text-ink-muted">
+            <Text className="font-semibold text-ink">{set.nature}</Text>
             {set.increasedStat && set.decreasedStat
-              ? `  +${LABEL[set.increasedStat]} −${LABEL[set.decreasedStat]}`
-              : "  neutral"}
+              ? `  +${LABEL[set.increasedStat]}  −${LABEL[set.decreasedStat]}`
+              : "  no stat change"}
           </Text>
         </View>
       </View>
@@ -96,56 +99,42 @@ export function SetCard({
         ))}
       </View>
 
-      <View className="gap-1.5">
-        <View className="flex-row items-center justify-between">
-          <Text className="text-[10px] font-extrabold uppercase tracking-widest text-ink-subtle">
-            Lv {level} stats {ivs.length === 0 ? "(random IVs)" : ""}
-          </Text>
+      <View className="gap-2">
+        <View className="min-h-7 flex-row items-center justify-between">
+          <Label>
+            Stats at Lv {level}
+            {ivs.length === 0
+              ? ", random IVs"
+              : options.length === 1
+                ? `, every IV ${shown}`
+                : ""}
+          </Label>
           {options.length > 1 && (
-            <View className="flex-row gap-1">
-              {options.map((v) => (
-                <Pressable
-                  key={v}
-                  onPress={() => setIv(v)}
-                  role="tab"
-                  aria-selected={v === shown}
-                  hitSlop={4}
-                  className="rounded-full px-2 py-0.5"
-                  style={{
-                    backgroundColor: v === shown ? accent : "transparent",
-                  }}
-                >
-                  <Text
-                    className={`text-[11px] font-bold ${v === shown ? "text-white" : "text-ink-muted"}`}
-                  >
-                    IV {v}
-                  </Text>
-                </Pressable>
-              ))}
-            </View>
-          )}
-          {options.length === 1 && (
-            <Text className="text-[11px] font-bold text-ink-muted">
-              IV {shown}
-            </Text>
+            <Segmented
+              options={options.map((v) => ({ value: v, label: `IV ${v}` }))}
+              value={shown}
+              onChange={setIv}
+              small
+            />
           )}
         </View>
-        <View className="flex-row overflow-hidden rounded-xl border border-line">
-          {STAT_LABELS.map(([s, l], i) => {
+        <View className="flex-row gap-1">
+          {STAT_LABELS.map(([s, l]) => {
             const up = set.increasedStat === s;
             const down = set.decreasedStat === s;
             return (
               <View
                 key={s}
-                className={`flex-1 items-center py-1.5 ${i > 0 ? "border-l border-line" : ""}`}
+                className="flex-1 items-center rounded-lg bg-sunken py-1.5"
               >
-                <Text className="text-[10px] font-bold text-ink-subtle">
+                <Text className="text-micro font-medium text-ink-muted">
                   {l}
                 </Text>
                 <Text
-                  className={`text-base font-black ${
+                  className={`text-body font-bold ${
                     up ? "text-red-500" : down ? "text-blue-500" : "text-ink"
                   }`}
+                  style={TABULAR}
                 >
                   {stats[s]}
                 </Text>
@@ -154,9 +143,9 @@ export function SetCard({
           })}
         </View>
         {evs ? (
-          <Text className="text-[11px] text-ink-muted">EVs {evs}</Text>
+          <Text className="text-caption text-ink-subtle">EVs: {evs}</Text>
         ) : null}
       </View>
-    </View>
+    </Card>
   );
 }

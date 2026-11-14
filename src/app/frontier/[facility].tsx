@@ -1,11 +1,13 @@
 import { Stack, useLocalSearchParams } from "expo-router";
-import { useMemo, useState, type ReactNode } from "react";
+import { SymbolView } from "expo-symbols";
+import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
-import { Segmented, Stepper } from "@/components/frontier/controls";
+import { Field, Segmented, Stepper } from "@/components/frontier/controls";
 import { SetCard } from "@/components/frontier/set-card";
 import { MoveChip } from "@/components/move-chip";
 import { Sprite } from "@/components/sprite";
+import { Card, SectionTitle, TABULAR, Tag } from "@/components/ui";
 import { useDb } from "@/db";
 import {
   getDomeSets,
@@ -40,7 +42,9 @@ export default function FacilityScreen() {
   if (!info) {
     return (
       <View className="flex-1 items-center justify-center">
-        <Text className="text-ink-muted">No facility “{facility}”.</Text>
+        <Text className="text-body text-ink-muted">
+          No facility “{facility}”.
+        </Text>
       </View>
     );
   }
@@ -133,13 +137,13 @@ function Facility({ info }: { info: FacilityInfo }) {
 
   return (
     <ScrollView
-      contentContainerClassName="gap-3 p-3 pb-12"
+      contentContainerClassName="gap-6 px-4 pb-12 pt-2"
       keyboardShouldPersistTaps="handled"
     >
       <Stack.Screen options={{ title: info.name }} />
 
-      <Card>
-        <Text className="text-sm text-ink-muted">{info.rule}</Text>
+      <Card className="gap-5 p-4">
+        <Text className="text-callout text-ink-muted">{info.rule}</Text>
         <Segmented
           options={[
             { value: "50", label: "Level 50" },
@@ -147,6 +151,7 @@ function Facility({ info }: { info: FacilityInfo }) {
           ]}
           value={levelMode}
           onChange={setLevelMode}
+          fill
         />
         {info.kind === "trainers" || info.kind === "factory" ? (
           <Stepper
@@ -176,7 +181,7 @@ function Facility({ info }: { info: FacilityInfo }) {
         )}
         {info.kind === "factory" && (
           <Stepper
-            label="Your Battle Tower Lv 50 wins"
+            label="Your Battle Tower Level 50 wins"
             value={towerWins}
             min={0}
             onChange={setTowerWins}
@@ -184,10 +189,7 @@ function Facility({ info }: { info: FacilityInfo }) {
           />
         )}
         {info.kind === "pyramid" && (
-          <View className="gap-1.5">
-            <Text className="text-[10px] font-extrabold uppercase tracking-widest text-ink-subtle">
-              Floor
-            </Text>
+          <Field label="Floor">
             <Segmented
               options={[1, 2, 3, 4, 5, 6, 7].map((f) => ({
                 value: f,
@@ -195,14 +197,12 @@ function Facility({ info }: { info: FacilityInfo }) {
               }))}
               value={floor}
               onChange={setFloor}
+              fill
             />
-          </View>
+          </Field>
         )}
         {brain && info.kind !== "pike" && info.kind !== "pyramid" && (
-          <View className="gap-1.5">
-            <Text className="text-[10px] font-extrabold uppercase tracking-widest text-ink-subtle">
-              {brain.name}&apos;s Symbols you have
-            </Text>
+          <Field label={`Symbols won from ${brain.name}`}>
             <Segmented
               options={[
                 { value: 0, label: "None" },
@@ -211,8 +211,9 @@ function Facility({ info }: { info: FacilityInfo }) {
               ]}
               value={symbols}
               onChange={(v) => setSymbols(v as 0 | 1 | 2)}
+              fill
             />
-          </View>
+          </Field>
         )}
         {levelMode === "open" && (
           <Stepper
@@ -225,9 +226,6 @@ function Facility({ info }: { info: FacilityInfo }) {
             note={`Open Level opponents match your highest level, but are at least Lv ${MIN_OPEN_LEVEL}.`}
           />
         )}
-        <Text className="text-xs text-ink-subtle">
-          Opponents are Lv {level}.
-        </Text>
       </Card>
 
       {brain && (
@@ -253,7 +251,7 @@ function Facility({ info }: { info: FacilityInfo }) {
         />
       ) : result.kind === "pike" ? (
         <WildList
-          title={`Wild Pokémon · tier ${result.tier + 1}`}
+          title={`Wild Pokémon, tier ${result.tier + 1}`}
           mons={result.mons.map((m) => ({
             ...m,
             levels: String(pikeWildLevel(levelMode, m.levelDelta, partyLevel)),
@@ -261,7 +259,7 @@ function Facility({ info }: { info: FacilityInfo }) {
         />
       ) : (
         <WildList
-          title={`Wild Pokémon · floor ${floor} · round ${result.round + 1}`}
+          title={`Wild Pokémon, floor ${floor} of round ${result.round + 1}`}
           mons={result.mons.map((m) => {
             const l = pyramidWildLevels(levelMode, m.level, partyLevel);
             return { ...m, levels: `${l.min}–${l.max}` };
@@ -293,14 +291,6 @@ function battleNote(battle: number) {
   return `Challenge ${p.challenge + 1}, battle ${p.battleInChallenge} of 7${
     p.lastBattle ? " · the 7th battle draws harder trainers" : ""
   }`;
-}
-
-function Card({ children }: { children: ReactNode }) {
-  return (
-    <View className="gap-3.5 rounded-[20px] border border-line bg-surface p-4">
-      {children}
-    </View>
-  );
 }
 
 /**
@@ -343,37 +333,45 @@ function SetsExplorer({
 
   return (
     <View className="gap-3">
-      <View className="px-1">
-        <Text className="text-xs font-extrabold uppercase tracking-widest text-ink-subtle">
-          What they can send out
-        </Text>
-        <Text className="text-xs text-ink-muted">
+      <View className="gap-0.5">
+        <SectionTitle>{`Lv ${level} opponents can send out`}</SectionTitle>
+        <Text className="px-1 text-callout text-ink-muted">
           {summary} · {species.length} species, {sets.length} sets
         </Text>
       </View>
-      <TextInput
-        className="rounded-xl border border-line bg-surface px-3.5 py-3 text-base text-ink"
-        placeholder="Which Pokémon did they send out?"
-        placeholderTextColor={colors["ink-subtle"]}
-        value={query}
-        onChangeText={setQuery}
-        autoCorrect={false}
-        autoCapitalize="none"
-      />
+      {picked === null && (
+        <View className="h-11 flex-row items-center gap-2 rounded-tile bg-sunken px-3">
+          <SymbolView
+            name={{ ios: "magnifyingglass", android: "search", web: "search" }}
+            tintColor={colors["ink-subtle"]}
+            size={20}
+          />
+          <TextInput
+            className="h-11 flex-1 text-body text-ink outline-none"
+            placeholder="Which Pokémon did they send out?"
+            placeholderTextColor={colors["ink-subtle"]}
+            value={query}
+            onChangeText={setQuery}
+            autoCorrect={false}
+            autoCapitalize="none"
+          />
+        </View>
+      )}
       {picked !== null && (
-        <View className="gap-2.5">
+        <View className="gap-2">
           <View className="flex-row items-center justify-between px-1">
-            <Text className="text-sm font-bold text-ink">
-              {pickedSets[0]?.species ?? "This Pokémon"} · {pickedSets.length}{" "}
+            <Text className="text-body font-semibold text-ink">
+              {pickedSets[0]?.species ?? "This Pokémon"} has {pickedSets.length}{" "}
               {pickedSets.length === 1 ? "set" : "sets"}
             </Text>
             <Pressable
               onPress={() => setPicked(null)}
               hitSlop={8}
               role="button"
+              className="active:opacity-60"
             >
-              <Text className="text-sm font-bold" style={{ color: info.color }}>
-                Show all
+              <Text className="text-body font-semibold text-accent">
+                All species
               </Text>
             </Pressable>
           </View>
@@ -389,25 +387,30 @@ function SetsExplorer({
         </View>
       )}
       {picked === null && (
-        <View className="flex-row flex-wrap gap-1.5">
+        <View className="flex-row flex-wrap gap-2">
           {shown.map((s) => (
             <Pressable
               key={s.id}
               onPress={() => setPicked(s.id)}
-              className="w-[23.5%] items-center rounded-2xl border border-line bg-surface py-1.5 active:opacity-70"
+              className="w-[23%] flex-grow items-center rounded-tile bg-surface pb-2 pt-1 active:opacity-60"
             >
               <Sprite id={s.id} size={56} game="emerald" />
               <Text
-                className="px-1 text-[11px] font-bold text-ink"
+                className="px-1 text-micro font-semibold text-ink"
                 numberOfLines={1}
               >
                 {s.name}
               </Text>
-              <Text className="text-[10px] text-ink-subtle">
+              <Text className="text-micro text-ink-subtle">
                 {s.count} {s.count === 1 ? "set" : "sets"}
               </Text>
             </Pressable>
           ))}
+          {shown.length === 0 && (
+            <Text className="flex-1 p-6 text-center text-body text-ink-muted">
+              No opponent here uses “{query}”.
+            </Text>
+          )}
         </View>
       )}
     </View>
@@ -432,31 +435,42 @@ function BrainCard({
 }) {
   const [symbol, setSymbol] = useState<"silver" | "gold">(now ?? "silver");
   const [open, setOpen] = useState(now !== null);
+  const colors = useColors();
   const first = (at: number) => at - brain.streakOffset + 1;
   const team = symbol === "silver" ? brain.silver : brain.gold;
   return (
     <View
-      className="gap-3 rounded-[20px] border-2 p-4"
-      style={{ borderColor: info.color, backgroundColor: `${info.color}14` }}
+      className="gap-3 rounded-card p-4"
+      style={{ backgroundColor: `${info.color}${now ? "2E" : "1A"}` }}
     >
       <Pressable
         onPress={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="gap-0.5"
+        className="flex-row items-center gap-3 active:opacity-60"
       >
-        <Text
-          className="text-[10px] font-extrabold uppercase tracking-widest"
-          style={{ color: info.color }}
-        >
-          {now ? `This ${unit}: Frontier Brain (${now})` : "Frontier Brain"}
-        </Text>
-        <Text className="text-xl font-black text-ink">
-          {brain.trainerClass} {brain.name}
-        </Text>
-        <Text className="text-xs text-ink-muted">
-          Silver Symbol at {unit} {first(brain.silverAt)} · Gold at {unit}{" "}
-          {first(brain.goldAt)}, then every {brain.repeatEvery} · singles only
-        </Text>
+        <View className="flex-1 gap-0.5">
+          <Text className="text-caption font-semibold text-ink-muted">
+            {now
+              ? `This ${unit} is against the Frontier Brain`
+              : "Frontier Brain"}
+          </Text>
+          <Text className="text-headline font-bold text-ink">
+            {brain.trainerClass} {brain.name}
+          </Text>
+          <Text className="text-callout text-ink-muted">
+            Silver Symbol at {unit} {first(brain.silverAt)}, Gold at{" "}
+            {first(brain.goldAt)}, then every {brain.repeatEvery}. Singles only.
+          </Text>
+        </View>
+        <SymbolView
+          name={{
+            ios: open ? "chevron.up" : "chevron.down",
+            android: open ? "expand_less" : "expand_more",
+            web: open ? "expand_less" : "expand_more",
+          }}
+          tintColor={colors["ink-subtle"]}
+          size={22}
+        />
       </Pressable>
       {open && team.length > 0 && (
         <>
@@ -467,6 +481,7 @@ function BrainCard({
             ]}
             value={symbol}
             onChange={setSymbol}
+            fill
           />
           {team.map((m) => (
             <SetCard
@@ -480,7 +495,7 @@ function BrainCard({
         </>
       )}
       {open && team.length === 0 && (
-        <Text className="text-xs text-ink-muted">
+        <Text className="text-callout text-ink-muted">
           {brain.name} rents from the same pool as the other trainers.
         </Text>
       )}
@@ -503,29 +518,31 @@ function WildList({
   }[];
 }) {
   return (
-    <View className="gap-2.5">
-      <Text className="px-1 text-xs font-extrabold uppercase tracking-widest text-ink-subtle">
-        {title}
-      </Text>
+    <View className="gap-2">
+      <SectionTitle>{title}</SectionTitle>
       {mons.map((m, i) => (
-        <View
-          key={`${m.pokemonId}-${i}`}
-          className="flex-row gap-3 rounded-[20px] border border-line bg-surface p-3"
-        >
+        <Card key={`${m.pokemonId}-${i}`} className="flex-row gap-3 p-3">
           <Sprite id={m.pokemonId} size={56} game="emerald" />
-          <View className="flex-1 gap-1">
-            <View className="flex-row items-baseline justify-between">
-              <Text className="text-base font-black text-ink">{m.species}</Text>
-              <Text className="text-sm font-black text-ink">{m.rate}%</Text>
+          <View className="flex-1 gap-1.5">
+            <View className="flex-row items-center gap-2">
+              <Text className="flex-1 text-body font-bold text-ink">
+                {m.species}
+              </Text>
+              <Tag>{`Lv ${m.levels}`}</Tag>
+              <Text
+                className="w-10 text-right text-body font-bold text-ink"
+                style={TABULAR}
+              >
+                {m.rate}%
+              </Text>
             </View>
-            <Text className="text-xs text-ink-muted">Lv {m.levels}</Text>
             <View className="flex-row flex-wrap gap-1">
               {m.moves.map((mv, j) => (
                 <MoveChip key={`${mv}-${j}`} name={mv} />
               ))}
             </View>
           </View>
-        </View>
+        </Card>
       ))}
     </View>
   );
