@@ -5,7 +5,7 @@ import { Pressable, Text, View } from "react-native";
 import type { PokemonListItem } from "@/db/queries";
 import { spriteColors } from "@/generated/sprite-colors";
 import type { ListLayout } from "@/state/list-layout";
-import { hexToRgb, mix, typeColor } from "@/theme/colors";
+import { hexToRgb, mix, typeColor, vivid } from "@/theme/colors";
 import { useColors, usePalette } from "@/theme/theme";
 
 import { PokeballMark } from "./pokeball-mark";
@@ -32,16 +32,15 @@ const TINT: "sprite" | "type" = "sprite";
  */
 export function useTypeGradient(pokemon: PokemonListItem) {
   const { surface } = usePalette();
-  const [first, second] =
-    (TINT === "sprite" ? spriteColors[pokemon.id] : undefined) ??
-    ([
-      typeColor(pokemon.type1),
-      typeColor(pokemon.type2 ?? pokemon.type1),
-    ] as const);
-  return [
-    mix(hexToRgb(first), surface, 0.3),
-    mix(hexToRgb(second), surface, 0.14),
-  ] as const;
+  const own = TINT === "sprite" ? spriteColors[pokemon.id] : undefined;
+  const [first, second] = own
+    ? // Brought up to the strength of the type colours, so the fade shows.
+      [vivid(hexToRgb(own[0])), vivid(hexToRgb(own[1]))]
+    : [
+        hexToRgb(typeColor(pokemon.type1)),
+        hexToRgb(typeColor(pokemon.type2 ?? pokemon.type1)),
+      ];
+  return [mix(first, surface, 0.3), mix(second, surface, 0.14)] as const;
 }
 
 /** One Pokémon in the phone list: a card washed in its types' colours. */
