@@ -67,6 +67,7 @@
     "db:generate": "drizzle-kit generate",
     "sprites": "tsx scripts/sprites/build-sprites.ts",
     "icons": "tsx scripts/icons/build-type-icons.ts",
+    "sprite-colors": "tsx scripts/sprites/build-sprite-colors.ts",
     "apk": "tsx scripts/apk/build-apk.ts"
   },
   "private": true,

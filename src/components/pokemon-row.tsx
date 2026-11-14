@@ -3,6 +3,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, Text, View } from "react-native";
 
 import type { PokemonListItem } from "@/db/queries";
+import { spriteColors } from "@/generated/sprite-colors";
 import type { ListLayout } from "@/state/list-layout";
 import { hexToRgb, mix, typeColor } from "@/theme/colors";
 import { useColors, usePalette } from "@/theme/theme";
@@ -20,14 +21,26 @@ export function dexNumber(id: number) {
 }
 
 /**
- * The card's background: its first type's colour fading into its second
- * (or a paler first), blended over the surface so it works in both themes.
+ * What the cards are tinted with: the Pokémon's own colours (taken from its
+ * sprite, see scripts/sprites/build-sprite-colors.ts) or its types' colours.
+ */
+const TINT: "sprite" | "type" = "sprite";
+
+/**
+ * The card's background: one colour fading into a second, blended over the
+ * surface so it works in both themes.
  */
 export function useTypeGradient(pokemon: PokemonListItem) {
   const { surface } = usePalette();
+  const [first, second] =
+    (TINT === "sprite" ? spriteColors[pokemon.id] : undefined) ??
+    ([
+      typeColor(pokemon.type1),
+      typeColor(pokemon.type2 ?? pokemon.type1),
+    ] as const);
   return [
-    mix(hexToRgb(typeColor(pokemon.type1)), surface, 0.3),
-    mix(hexToRgb(typeColor(pokemon.type2 ?? pokemon.type1)), surface, 0.14),
+    mix(hexToRgb(first), surface, 0.3),
+    mix(hexToRgb(second), surface, 0.14),
   ] as const;
 }
 
