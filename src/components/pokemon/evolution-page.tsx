@@ -18,10 +18,10 @@ export function EvolutionPage({
   currentId: number;
 }) {
   return (
-    <View className="p-3 pb-12">
+    <View className="px-4 pb-12 pt-5">
       <Stage node={chain} currentId={currentId} />
       {chain.evolutions.length === 0 && (
-        <Text className="mt-4 text-center text-ink-muted">
+        <Text className="mt-4 text-center text-body text-ink-muted">
           {chain.name} doesn’t evolve.
         </Text>
       )}
@@ -47,10 +47,10 @@ function Stage({
           className={branches ? "ml-6 border-l-2 border-line pl-4" : ""}
         >
           {/* The connector: how this step happens. */}
-          <View className="flex-row items-center gap-2 py-1.5 pl-9">
-            <View className="h-5 w-0.5 rounded-full bg-line" />
-            <View className="rounded-full bg-accent/15 px-3 py-1">
-              <Text className="text-xs font-bold text-accent">
+          <View className="flex-row items-center gap-2.5 py-2 pl-10">
+            <View className="h-6 w-0.5 rounded-full bg-line" />
+            <View className="rounded-lg bg-accent/15 px-2.5 py-1">
+              <Text className="text-caption font-semibold text-accent">
                 {evolutionLabel(evo.method, evo.level, evo.item)}
               </Text>
             </View>
@@ -72,8 +72,8 @@ function StageCard({
   const gradient = useTypeGradient(node);
   const card = (
     <View
-      className={`overflow-hidden rounded-[18px] ${
-        current ? "border-2 border-accent" : "border border-line"
+      className={`overflow-hidden rounded-card ${
+        current ? "border-2 border-accent" : "border-2 border-transparent"
       }`}
     >
       <LinearGradient
@@ -90,12 +90,14 @@ function StageCard({
         <Sprite id={node.id} size={72} />
         <View className="flex-1 gap-1.5">
           <View className="flex-row items-baseline gap-2">
-            <Text className="text-base font-black text-ink">{node.name}</Text>
-            <Text className="text-xs font-bold text-ink-subtle">
+            <Text className="text-headline font-bold text-ink">
+              {node.name}
+            </Text>
+            <Text className="text-caption font-semibold text-ink-subtle">
               {dexNumber(node.id)}
             </Text>
             {current && (
-              <Text className="ml-auto text-[10px] font-extrabold uppercase tracking-widest text-accent">
+              <Text className="ml-auto text-caption font-semibold text-accent">
                 Viewing
               </Text>
             )}

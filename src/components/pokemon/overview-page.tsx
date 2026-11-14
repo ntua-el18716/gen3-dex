@@ -1,6 +1,14 @@
 import { useState, type ReactNode } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 
+import {
+  Card,
+  Divider,
+  Label,
+  SectionTitle,
+  Segmented,
+  TABULAR,
+} from "@/components/ui";
 import type { PokedexEntry, PokemonDetail } from "@/db/queries";
 import type { Game, Stat } from "@/db/schema";
 import { captureChance } from "@/lib/catch-rate";
@@ -11,8 +19,8 @@ import { statRange } from "@/lib/stats";
 /** The order Pokédex apps show stats in (the games store Speed fourth). */
 const DISPLAY_STATS: { stat: Stat; label: string }[] = [
   { stat: "hp", label: "HP" },
-  { stat: "attack", label: "Atk" },
-  { stat: "defense", label: "Def" },
+  { stat: "attack", label: "Attack" },
+  { stat: "defense", label: "Defense" },
   { stat: "spAttack", label: "Sp. Atk" },
   { stat: "spDefense", label: "Sp. Def" },
   { stat: "speed", label: "Speed" },
@@ -44,103 +52,130 @@ export function OverviewPage({
     ({ stat }) => (pokemon[EV_FIELDS[stat]] as number) > 0,
   )
     .map(({ stat, label }) => `${pokemon[EV_FIELDS[stat]]} ${label}`)
-    .join(" · ");
+    .join(", ");
   const female = femaleShare(pokemon.genderRatio);
   const eggGroups = [pokemon.eggGroup1, pokemon.eggGroup2]
     .filter((g) => g !== null)
     .map(titleCase)
     .join(", ");
+  // The current game's text leads; the other versions follow, quieter.
+  const sorted = [...entries].sort(
+    (a, b) => Number(b.games.includes(game)) - Number(a.games.includes(game)),
+  );
 
   return (
-    <View className="gap-3 p-3 pb-12">
-      <Section title="Pokédex">
-        {entries.map((entry) => {
-          const current = entry.games.includes(game);
-          return (
-            <View
-              key={entry.games.join()}
-              className={`gap-1 rounded-xl p-3 ${current ? "bg-sunken" : ""}`}
-            >
-              <Text
-                className={`text-xs font-bold tracking-wider ${
-                  current ? "text-accent" : "text-ink-subtle"
-                }`}
-              >
-                {gamesLabel(entry.games)}
-              </Text>
-              <Text
-                className={`text-sm leading-5 ${
-                  current ? "text-ink" : "text-ink-muted"
-                }`}
-              >
-                {entry.text}
-              </Text>
-            </View>
-          );
-        })}
-      </Section>
+    <View className="gap-6 px-4 pb-12 pt-5">
+      <View className="gap-2">
+        <SectionTitle>Pokédex entry</SectionTitle>
+        <Card>
+          {sorted.map((entry, i) => {
+            const current = entry.games.includes(game);
+            return (
+              <View key={entry.games.join()}>
+                {i > 0 && <Divider className="ml-4" />}
+                <View className="gap-1 p-4">
+                  <Text
+                    className={`text-caption font-semibold ${
+                      current ? "text-accent" : "text-ink-subtle"
+                    }`}
+                  >
+                    {gamesLabel(entry.games)}
+                  </Text>
+                  <Text
+                    className={`text-body ${
+                      current ? "text-ink" : "text-ink-muted"
+                    }`}
+                  >
+                    {entry.text}
+                  </Text>
+                </View>
+              </View>
+            );
+          })}
+        </Card>
+      </View>
 
       <BaseStats pokemon={pokemon} />
 
-      <View className="flex-row gap-3">
-        <MiniCard
-          label="Catch rate"
-          value={`${(captureChance(pokemon.catchRate) * 100).toFixed(1)}%`}
-          note={`Poké Ball, full HP · rate ${pokemon.catchRate}`}
-        />
-        <MiniCard label="Gender" note={genderLabel(pokemon.genderRatio)}>
-          {female === null ? (
-            <View className="my-2.5 h-2 rounded-full bg-sunken" />
-          ) : (
-            <View className="my-2.5 h-2 flex-row overflow-hidden rounded-full">
-              <View className="bg-blue-400" style={{ flex: 1 - female }} />
-              <View className="bg-pink-400" style={{ flex: female }} />
+      <View className="gap-2">
+        <SectionTitle>Training</SectionTitle>
+        <View className="flex-row gap-2">
+          <Figure
+            label="Catch chance"
+            value={`${(captureChance(pokemon.catchRate) * 100).toFixed(1)}%`}
+            note={`Poké Ball at full HP (rate ${pokemon.catchRate})`}
+          />
+          <Figure label="Gender" note={genderLabel(pokemon.genderRatio)}>
+            {female === null ? (
+              <View className="my-3 h-2 rounded-full bg-sunken" />
+            ) : (
+              <View className="my-3 h-2 flex-row gap-0.5 overflow-hidden rounded-full">
+                <View className="bg-blue-400" style={{ flex: 1 - female }} />
+                <View className="bg-pink-400" style={{ flex: female }} />
+              </View>
+            )}
+          </Figure>
+        </View>
+        <View className="flex-row gap-2">
+          <Figure
+            label="Steps to hatch"
+            value={(pokemon.eggCycles * STEPS_PER_EGG_CYCLE).toLocaleString(
+              "en",
+            )}
+            note={`Egg group: ${eggGroups}`}
+          />
+          <Figure
+            label="EV yield"
+            value={evYield}
+            note={`Base friendship ${pokemon.baseFriendship}`}
+          />
+        </View>
+      </View>
+
+      <View className="gap-2">
+        <SectionTitle>Abilities</SectionTitle>
+        <Card>
+          {pokemon.abilities.map((a, i) => (
+            <View key={a.id}>
+              {i > 0 && <Divider className="ml-4" />}
+              <View className="gap-0.5 p-4">
+                <Text className="text-body font-semibold text-ink">
+                  {a.name}
+                </Text>
+                <Text className="text-callout text-ink-muted">
+                  {a.description}
+                </Text>
+              </View>
             </View>
-          )}
-        </MiniCard>
-      </View>
-      <View className="flex-row gap-3">
-        <MiniCard
-          label="Hatch"
-          value={(pokemon.eggCycles * STEPS_PER_EGG_CYCLE).toLocaleString("en")}
-          note={`steps · ${eggGroups}`}
-        />
-        <MiniCard
-          label="EV yield"
-          value={evYield}
-          note={`Base friendship ${pokemon.baseFriendship}`}
-        />
+          ))}
+        </Card>
       </View>
 
-      <Section title="Abilities">
-        {pokemon.abilities.map((a) => (
-          <View key={a.id} className="gap-0.5">
-            <Text className="font-bold text-ink">{a.name}</Text>
-            <Text className="text-sm text-ink-muted">{a.description}</Text>
-          </View>
-        ))}
-      </Section>
-
-      <Section title="More">
-        <InfoRow label="Base exp." value={String(pokemon.baseExperience)} />
-        <InfoRow label="Growth rate" value={titleCase(pokemon.growthRate)} />
-        <InfoRow
-          label="Wild held items"
-          value={
-            pokemon.heldItems.length
-              ? pokemon.heldItems
-                  .map((h) => `${h.name} (${h.rarity})`)
-                  .join(", ")
-              : "None"
-          }
-        />
-      </Section>
+      <View className="gap-2">
+        <SectionTitle>More</SectionTitle>
+        <Card>
+          <InfoRow label="Base experience" value={pokemon.baseExperience} />
+          <Divider className="ml-4" />
+          <InfoRow label="Growth rate" value={titleCase(pokemon.growthRate)} />
+          <Divider className="ml-4" />
+          <InfoRow
+            label="Held in the wild"
+            value={
+              pokemon.heldItems.length
+                ? pokemon.heldItems
+                    .map((h) => `${h.name} (${h.rarity})`)
+                    .join(", ")
+                : "Nothing"
+            }
+          />
+        </Card>
+      </View>
     </View>
   );
 }
 
-/** A small card for one computed value. */
-function MiniCard({
+/** A tile for one computed value. */
+function Figure({
   label,
   value,
   note,
@@ -152,20 +187,24 @@ function MiniCard({
   children?: ReactNode;
 }) {
   return (
-    <View className="flex-1 rounded-2xl border border-line bg-surface p-3">
-      <Text className="text-[10px] font-extrabold uppercase tracking-widest text-ink-subtle">
-        {label}
-      </Text>
+    <Card className="flex-1 p-4">
+      <Label>{label}</Label>
       {value !== undefined && (
-        <Text className="mt-0.5 text-xl font-black text-ink">{value}</Text>
+        <Text
+          className="mt-1 text-title font-bold tracking-tight text-ink"
+          style={TABULAR}
+        >
+          {value}
+        </Text>
       )}
       {children}
-      <Text className="text-xs text-ink-muted">{note}</Text>
-    </View>
+      <Text className="mt-0.5 text-caption text-ink-subtle">{note}</Text>
+    </Card>
   );
 }
 
 const LEVELS = [50, 100] as const;
+const LEVEL_OPTIONS = LEVELS.map((l) => ({ value: l, label: `Lv ${l}` }));
 
 function BaseStats({ pokemon }: { pokemon: PokemonDetail }) {
   const [level, setLevel] = useState<(typeof LEVELS)[number]>(50);
@@ -175,64 +214,63 @@ function BaseStats({ pokemon }: { pokemon: PokemonDetail }) {
   );
 
   return (
-    <Section
-      title="Base stats"
-      action={
-        <View className="flex-row gap-1">
-          {LEVELS.map((l) => (
-            <Pressable
-              key={l}
-              onPress={() => setLevel(l)}
-              accessibilityRole="button"
-              accessibilityState={{ selected: l === level }}
-              className={`rounded-full px-3 py-1 ${
-                l === level ? "bg-accent" : "bg-sunken"
-              }`}
-            >
+    <View className="gap-2">
+      <SectionTitle
+        action={
+          <Segmented
+            options={LEVEL_OPTIONS}
+            value={level}
+            onChange={setLevel}
+            small
+          />
+        }
+      >
+        Base stats
+      </SectionTitle>
+      <Card className="gap-3 p-4">
+        {DISPLAY_STATS.map(({ stat, label }) => {
+          const base = pokemon.baseStats[stat];
+          const { min, max } = statRange(stat, base, level);
+          return (
+            <View key={stat} className="flex-row items-center gap-3">
+              <Text className="w-16 text-callout text-ink-muted">{label}</Text>
               <Text
-                className={`text-xs font-bold ${
-                  l === level ? "text-on-accent" : "text-ink-muted"
-                }`}
+                className="w-8 text-right text-callout font-bold text-ink"
+                style={TABULAR}
               >
-                Lv {l}
+                {base}
               </Text>
-            </Pressable>
-          ))}
-        </View>
-      }
-    >
-      {DISPLAY_STATS.map(({ stat, label }) => {
-        const base = pokemon.baseStats[stat];
-        const { min, max } = statRange(stat, base, level);
-        return (
-          <View key={stat} className="flex-row items-center gap-2">
-            <Text className="w-16 text-sm text-ink-muted">{label}</Text>
-            <Text className="w-8 text-right text-sm font-bold text-ink">
-              {base}
-            </Text>
-            <View className="h-2.5 flex-1 overflow-hidden rounded-full bg-sunken">
-              <View
-                className={`h-full rounded-full ${barColour(base)}`}
-                // 255 is the highest base stat a Pokémon can have.
-                style={{ width: `${(base / 255) * 100}%` }}
-              />
+              <View className="h-1.5 flex-1 overflow-hidden rounded-full bg-sunken">
+                <View
+                  className={`h-full rounded-full ${barColour(base)}`}
+                  // 255 is the highest base stat a Pokémon can have.
+                  style={{ width: `${(base / 255) * 100}%` }}
+                />
+              </View>
+              <Text
+                className="w-[68px] text-right text-caption text-ink-subtle"
+                style={TABULAR}
+              >
+                {min}–{max}
+              </Text>
             </View>
-            <Text className="w-20 text-right text-xs text-ink-subtle">
-              {min}–{max}
-            </Text>
-          </View>
-        );
-      })}
-      <View className="flex-row items-center gap-2 border-t border-line pt-3">
-        <Text className="w-16 text-sm font-bold text-ink-muted">Total</Text>
-        <Text className="w-8 text-right text-sm font-bold text-ink">
-          {total}
-        </Text>
-        <Text className="flex-1 text-right text-xs text-ink-subtle">
-          Lv {level} range: worst–best IVs, EVs, nature
-        </Text>
-      </View>
-    </Section>
+          );
+        })}
+        <Divider />
+        <View className="flex-row items-center gap-3">
+          <Text className="w-16 text-callout text-ink-muted">Total</Text>
+          <Text
+            className="w-8 text-right text-callout font-bold text-ink"
+            style={TABULAR}
+          >
+            {total}
+          </Text>
+          <Text className="flex-1 text-right text-caption text-ink-subtle">
+            Right: lowest to highest at Lv {level}
+          </Text>
+        </View>
+      </Card>
+    </View>
   );
 }
 
@@ -244,31 +282,13 @@ function barColour(base: number): string {
   return "bg-emerald-500";
 }
 
-function Section({
-  title,
-  action,
-  children,
-}: {
-  title: string;
-  action?: ReactNode;
-  children: ReactNode;
-}) {
+function InfoRow({ label, value }: { label: string; value: string | number }) {
   return (
-    <View className="gap-3 rounded-2xl border border-line bg-surface p-4">
-      <View className="flex-row items-center justify-between">
-        <Text className="text-lg font-bold text-ink">{title}</Text>
-        {action}
-      </View>
-      {children}
-    </View>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <View className="flex-row gap-4">
-      <Text className="w-32 text-sm text-ink-muted">{label}</Text>
-      <Text className="flex-1 text-sm font-semibold text-ink">{value}</Text>
+    <View className="flex-row items-baseline gap-4 px-4 py-3">
+      <Text className="text-body text-ink-muted">{label}</Text>
+      <Text className="flex-1 text-right text-body font-semibold text-ink">
+        {value}
+      </Text>
     </View>
   );
 }

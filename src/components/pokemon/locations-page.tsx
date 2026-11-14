@@ -1,6 +1,7 @@
 import { Text, View } from "react-native";
 
 import type { LocationEntry, StaticEncounterEntry } from "@/db/queries";
+import { Card, Divider, SectionTitle, TABULAR, Tag } from "@/components/ui";
 import type { EncounterMethod, Game, StaticEncounterKind } from "@/db/schema";
 import { GAME_INFO, gamesLabel } from "@/lib/games";
 
@@ -39,14 +40,6 @@ function details(e: StaticEncounterEntry): string {
   return parts.join(" · ");
 }
 
-function SectionTitle({ children }: { children: string }) {
-  return (
-    <Text className="text-xs font-semibold uppercase tracking-wider text-ink-subtle">
-      {children}
-    </Text>
-  );
-}
-
 /** Where to get the Pokémon in the current game: gifts and one-time encounters, then the wild. */
 export function LocationsPage({
   places,
@@ -62,80 +55,79 @@ export function LocationsPage({
 }) {
   const gameName = GAME_INFO[game].name;
   return (
-    <View className="gap-3 p-3 pb-12">
+    <View className="gap-2 px-4 pb-12 pt-5">
       {places.length === 0 && oneTime.length === 0 ? (
-        <View className="gap-2 rounded-2xl border border-line bg-surface p-4">
-          <Text className="font-bold text-ink">
+        <Card className="gap-1 p-4">
+          <Text className="text-body font-semibold text-ink">
             Can’t be caught or received in {gameName}.
           </Text>
-          <Text className="text-sm text-ink-muted">
+          <Text className="text-callout text-ink-muted">
             {foundIn.length > 0
               ? `It can be found in ${gamesLabel(foundIn)}. Otherwise evolve, breed or trade for it.`
               : "Get it by evolving, breeding or trading."}
           </Text>
-        </View>
+        </Card>
       ) : null}
 
       {oneTime.length > 0 ? (
         <>
-          <SectionTitle>{`Gifts & one-time in ${gameName}`}</SectionTitle>
+          <SectionTitle>{`Gifts and one-time in ${gameName}`}</SectionTitle>
           {oneTime.map((e) => (
-            <View
-              key={e.id}
-              className="gap-1 rounded-2xl border border-line bg-surface p-4"
-            >
+            <Card key={e.id} className="gap-1 p-4">
               <View className="flex-row items-center gap-3">
-                <Text className="flex-1 text-base font-bold text-ink">
+                <Text className="flex-1 text-body font-semibold text-ink">
                   {e.place ?? "Roams the region"}
                 </Text>
-                <View className="rounded-full bg-sunken px-2.5 py-0.5">
-                  <Text className="text-xs font-bold text-ink">
-                    {KIND_LABELS[e.kind]}
-                  </Text>
-                </View>
+                <Tag>{KIND_LABELS[e.kind]}</Tag>
               </View>
-              <Text className="text-sm font-semibold text-ink">
-                {details(e)}
-              </Text>
+              <Text className="text-callout text-ink">{details(e)}</Text>
               {e.note ? (
-                <Text className="text-sm text-ink-muted">{e.note}</Text>
+                <Text className="text-callout text-ink-muted">{e.note}</Text>
               ) : null}
-            </View>
+            </Card>
           ))}
         </>
       ) : null}
 
       {places.length > 0 ? (
         <>
-          <SectionTitle>{`Wild in ${gameName}`}</SectionTitle>
+          <View className={oneTime.length > 0 ? "mt-4" : ""}>
+            <SectionTitle>{`In the wild in ${gameName}`}</SectionTitle>
+          </View>
           {places.map((place) => (
-            <View
-              key={place.locationId}
-              className="gap-2 rounded-2xl border border-line bg-surface p-4"
-            >
-              <Text className="text-base font-bold text-ink">{place.name}</Text>
+            <Card key={place.locationId}>
+              <Text className="px-4 pb-2 pt-3.5 text-body font-semibold text-ink">
+                {place.name}
+              </Text>
               {place.encounters.map((e) => (
-                <View key={e.method} className="flex-row items-center gap-3">
-                  <Text className="flex-1 text-sm text-ink-muted">
-                    {METHOD_LABELS[e.method]}
-                  </Text>
-                  <Text className="text-sm font-semibold text-ink">
-                    {e.minLevel === e.maxLevel
-                      ? `Lv ${e.minLevel}`
-                      : `Lv ${e.minLevel}–${e.maxLevel}`}
-                  </Text>
-                  <View className="w-14 items-center rounded-full bg-sunken py-0.5">
-                    <Text className="text-xs font-bold text-ink">
+                <View key={e.method}>
+                  <Divider className="ml-4" />
+                  <View className="flex-row items-center gap-3 px-4 py-2.5">
+                    <Text className="flex-1 text-callout text-ink-muted">
+                      {METHOD_LABELS[e.method]}
+                    </Text>
+                    <Text
+                      className="text-callout text-ink-muted"
+                      style={TABULAR}
+                    >
+                      {e.minLevel === e.maxLevel
+                        ? `Lv ${e.minLevel}`
+                        : `Lv ${e.minLevel}–${e.maxLevel}`}
+                    </Text>
+                    <Text
+                      className="w-12 text-right text-callout font-semibold text-ink"
+                      style={TABULAR}
+                    >
                       {e.rate}%
                     </Text>
                   </View>
                 </View>
               ))}
-            </View>
+            </Card>
           ))}
         </>
       ) : oneTime.length > 0 ? (
-        <Text className="text-sm text-ink-muted">
+        <Text className="px-1 text-callout text-ink-muted">
           Not found in the wild in {gameName}.
         </Text>
       ) : null}

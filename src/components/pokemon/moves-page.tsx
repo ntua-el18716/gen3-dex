@@ -3,6 +3,7 @@ import { Pressable, Text, View } from "react-native";
 import Svg, { Circle, Path } from "react-native-svg";
 
 import { TypeDot } from "@/components/type-badge";
+import { Card, Label, Segmented, TABULAR, Tag } from "@/components/ui";
 import type { LearnsetMove, LearnsetSection } from "@/db/queries";
 import type { Game, LearnMethod } from "@/db/schema";
 import { damageClass, type DamageClass } from "@/lib/damage-class";
@@ -31,7 +32,7 @@ export function MovesPage({
 
   if (!section) {
     return (
-      <Text className="p-8 text-center text-ink-muted">
+      <Text className="p-8 text-center text-body text-ink-muted">
         No moves recorded for {GAME_INFO[game].name}.
       </Text>
     );
@@ -44,37 +45,25 @@ export function MovesPage({
         : "";
 
   return (
-    <View className="gap-3 p-3 pb-12">
-      <View className="flex-row self-start rounded-full bg-sunken p-1">
-        {sections.map((s) => {
-          const on = s.method === section.method;
-          return (
-            <Pressable
-              key={s.method}
-              onPress={() => setMethod(s.method)}
-              role="tab"
-              aria-selected={on}
-              className={`rounded-full px-3 py-1.5 ${on ? "bg-surface" : ""}`}
-            >
-              <Text
-                className={`text-xs font-bold ${on ? "text-ink" : "text-ink-muted"}`}
-              >
-                {METHOD_LABELS[s.method]}{" "}
-                <Text className="text-ink-subtle">{s.data.length}</Text>
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+    <View className="gap-4 px-4 pb-12 pt-5">
+      <Segmented
+        options={sections.map((s) => ({
+          value: s.method,
+          label: METHOD_LABELS[s.method],
+          count: s.data.length,
+        }))}
+        value={section.method}
+        onChange={setMethod}
+      />
 
-      <View>
-        <View className="flex-row items-center gap-2 px-3 pb-1.5">
-          {label !== "" && <ColumnLabel className="w-10">{label}</ColumnLabel>}
-          <ColumnLabel className="flex-1">Move</ColumnLabel>
-          <ColumnLabel className="w-10 text-right">Pow</ColumnLabel>
-          <ColumnLabel className="w-11 text-right">Acc</ColumnLabel>
+      <View className="gap-1.5">
+        <View className="flex-row items-center gap-2 px-4">
+          {label !== "" && <Label className="w-9">{label}</Label>}
+          <Label className="flex-1">Move</Label>
+          <Label className="w-10 text-right">Power</Label>
+          <Label className="w-11 text-right">Acc.</Label>
         </View>
-        <View className="overflow-hidden rounded-2xl border border-line bg-surface">
+        <Card>
           {section.data.map((move, i) => (
             <MoveRow
               key={`${move.moveId}-${move.level}`}
@@ -83,25 +72,9 @@ export function MovesPage({
               first={i === 0}
             />
           ))}
-        </View>
+        </Card>
       </View>
     </View>
-  );
-}
-
-function ColumnLabel({
-  className,
-  children,
-}: {
-  className: string;
-  children: string;
-}) {
-  return (
-    <Text
-      className={`text-[10px] font-extrabold uppercase tracking-wider text-ink-subtle ${className}`}
-    >
-      {children}
-    </Text>
   );
 }
 
@@ -125,22 +98,33 @@ function MoveRow({
     <Pressable
       onPress={() => setOpen((o) => !o)}
       aria-expanded={open}
-      className={`px-3 py-2.5 active:bg-sunken ${first ? "" : "border-t border-line"}`}
+      className={`px-4 py-3 active:bg-sunken ${first ? "" : "border-t border-line"}`}
     >
       <View className="flex-row items-center gap-2">
         {showLabel && (
-          <Text className="w-10 text-[13px] font-bold text-ink-subtle">
+          <Text
+            className="w-9 text-callout font-medium text-ink-subtle"
+            style={TABULAR}
+          >
             {label}
           </Text>
         )}
-        <Text className="flex-1 text-sm font-bold text-ink">{move.name}</Text>
-        <TypeDot type={move.type} size={24} />
+        <Text className="flex-1 text-body font-semibold text-ink">
+          {move.name}
+        </Text>
+        <TypeDot type={move.type} size={22} />
         <CategoryIcon cls={cls} />
-        <Text className="w-10 text-right text-[13px] font-semibold text-ink-muted">
+        <Text
+          className="w-10 text-right text-callout font-medium text-ink-muted"
+          style={TABULAR}
+        >
           {/* 0 = status move, 1 = power is calculated (e.g. Low Kick). */}
           {move.power === 0 ? "—" : move.power === 1 ? "var" : move.power}
         </Text>
-        <Text className="w-11 text-right text-[13px] font-semibold text-ink-muted">
+        <Text
+          className="w-11 text-right text-callout font-medium text-ink-muted"
+          style={TABULAR}
+        >
           {/* 0 = never misses. */}
           {move.accuracy === 0 ? "—" : `${move.accuracy}%`}
         </Text>
@@ -148,9 +132,9 @@ function MoveRow({
       {open && (
         <View
           className="gap-2 pb-0.5 pt-2"
-          style={showLabel ? { paddingLeft: 48 } : null}
+          style={showLabel ? { paddingLeft: 44 } : null}
         >
-          <Text className="text-[13px] leading-5 text-ink-muted">
+          <Text className="text-callout text-ink-muted">
             {move.description}
           </Text>
           <View className="flex-row gap-1.5">
@@ -164,18 +148,10 @@ function MoveRow({
   );
 }
 
-function Tag({ children }: { children: string }) {
-  return (
-    <Text className="overflow-hidden rounded-full bg-sunken px-2.5 py-0.5 text-[11px] font-bold text-ink-muted">
-      {children}
-    </Text>
-  );
-}
-
 /** Physical (burst), special (rings) or status (half circle), like the mockup. */
 function CategoryIcon({ cls }: { cls: DamageClass }) {
   return (
-    <Svg width={20} height={20} viewBox="0 0 24 24" aria-label={cls}>
+    <Svg width={18} height={18} viewBox="0 0 24 24" aria-label={cls}>
       {cls === "physical" ? (
         <Path
           fill="#E8553E"
