@@ -5,7 +5,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { PokeballMark } from "@/components/pokeball-mark";
 import { ScreenHeader } from "@/components/screen-header";
 import { TeamCard } from "@/components/teams/team-card";
-import { IconButton, SectionTitle } from "@/components/ui";
+import { Divider, IconButton, SectionTitle } from "@/components/ui";
 import { purposeName } from "@/lib/team-labels";
 import { TEAM_PURPOSES } from "@/lib/teams";
 import { useCurrentGame } from "@/state/current-game";
@@ -59,15 +59,18 @@ export default function TeamsScreen() {
           </Pressable>
         </View>
       ) : (
-        <View className="gap-7 px-4 pt-2">
+        <View className="gap-5 px-4 pt-2">
           {TEAM_PURPOSES.map((purpose) => {
             const group = teams.filter((t) => t.purpose === purpose);
             if (group.length === 0) return null;
             return (
-              <View key={purpose} className="gap-2">
+              <View key={purpose}>
                 <SectionTitle>{purposeName(purpose)}</SectionTitle>
-                {group.map((t) => (
-                  <TeamCard key={t.id} team={t} />
+                {group.map((t, i) => (
+                  <View key={t.id}>
+                    {i > 0 && <Divider />}
+                    <TeamCard team={t} />
+                  </View>
                 ))}
               </View>
             );

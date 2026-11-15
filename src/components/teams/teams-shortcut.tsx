@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
-import { SectionTitle } from "@/components/ui";
+import { Divider, SectionTitle } from "@/components/ui";
 import type { Game } from "@/db/schema";
 import { isFrontier, type TeamPurpose } from "@/lib/teams";
 import { useTeams } from "@/state/teams";
@@ -30,7 +30,7 @@ export function TeamsShortcut({
       params: { id: createTeam(game, purpose) },
     });
   return (
-    <View className="gap-2">
+    <View>
       <SectionTitle
         action={
           <Pressable
@@ -48,11 +48,16 @@ export function TeamsShortcut({
         Your teams
       </SectionTitle>
       {mine.length === 0 ? (
-        <Text className="px-1 text-callout text-ink-muted">
+        <Text className="px-1 pt-2 text-callout text-ink-muted">
           Nothing saved for this yet.
         </Text>
       ) : (
-        mine.map((t) => <TeamCard key={t.id} team={t} />)
+        mine.map((t, i) => (
+          <View key={t.id}>
+            {i > 0 && <Divider />}
+            <TeamCard team={t} />
+          </View>
+        ))
       )}
     </View>
   );
