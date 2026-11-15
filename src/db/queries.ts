@@ -55,6 +55,35 @@ export function listPokemon(db: Db) {
 export type PokemonListItem = ReturnType<typeof listPokemon>[number];
 
 /**
+ * A species' base stats in one game: its own, or those of the form the game
+ * uses (Deoxys is a different form in each game), with the form's name.
+ */
+export function baseStatsIn(
+  db: Db,
+  species: typeof pokemon.$inferSelect,
+  game: Game,
+) {
+  const override = db
+    .select()
+    .from(baseStatOverride)
+    .where(
+      and(
+        eq(baseStatOverride.pokemonId, species.id),
+        eq(baseStatOverride.game, game),
+      ),
+    )
+    .get();
+  const source = override ?? species;
+  return {
+    baseStats: Object.fromEntries(STATS.map((s) => [s, source[s]])) as Record<
+      Stat,
+      number
+    >,
+    formName: override?.formName ?? null,
+  };
+}
+
+/**
  * Everything the overview page shows for one Pokémon in one game, or null if
  * there is no such Pokémon. Base stats include the game's form override
  * (Deoxys); held items are those of the game's version group.
@@ -63,17 +92,7 @@ export function getPokemonDetail(db: Db, id: number, game: Game) {
   const row = db.select().from(pokemon).where(eq(pokemon.id, id)).get();
   if (!row) return null;
 
-  const override = db
-    .select()
-    .from(baseStatOverride)
-    .where(
-      and(eq(baseStatOverride.pokemonId, id), eq(baseStatOverride.game, game)),
-    )
-    .get();
-  const statSource = override ?? row;
-  const baseStats = Object.fromEntries(
-    STATS.map((s) => [s, statSource[s]]),
-  ) as Record<Stat, number>;
+  const { baseStats, formName } = baseStatsIn(db, row, game);
 
   const abilityIds = [row.ability1Id, row.ability2Id].filter(
     (a): a is number => a !== null,
@@ -100,7 +119,7 @@ export function getPokemonDetail(db: Db, id: number, game: Game) {
 
   return {
     ...row,
-    formName: override?.formName ?? null,
+    formName,
     baseStats,
     abilities,
     heldItems,

@@ -1,12 +1,10 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
 
-import { calculateStats } from "@/lib/stats";
 import type { Team } from "@/lib/teams";
 
+import { getTeamCombatants } from "./damage-queries";
 import type { Db } from "./queries";
 import {
-  ability,
-  baseStatOverride,
   evolution,
   item,
   learnset,
@@ -14,9 +12,7 @@ import {
   move,
   nature,
   pokemon,
-  STATS,
   type Game,
-  type Stat,
 } from "./schema";
 
 /** A Pokémon and everything it evolved from, itself first. */
@@ -146,98 +142,36 @@ export function listNatures(db: Db) {
 }
 
 /**
- * A team's members with everything the screens show: names, types, the
+ * A team's members with everything the team screens show: names, types, the
  * species' abilities, item, nature, moves, and the real stats for the
- * member's level, nature, IVs and EVs. Base stats are the team's game's
- * (Deoxys differs per game). Members whose Pokémon isn't in the database
- * come back as null, so slots keep their positions.
+ * member's level, nature, IVs and EVs (the same Pokémon the damage
+ * calculator uses, see getTeamCombatants). Members whose Pokémon isn't in
+ * the database come back as null, so slots keep their positions.
  */
 export function getTeamDetails(db: Db, team: Pick<Team, "game" | "members">) {
-  const ids = <T>(values: (T | null)[]) => [
-    ...new Set(values.filter((v): v is T => v !== null)),
-  ];
-  const speciesIds = ids(team.members.map((m) => m.pokemonId));
-  if (speciesIds.length === 0) return [];
-
-  const species = db
-    .select()
-    .from(pokemon)
-    .where(inArray(pokemon.id, speciesIds))
-    .all();
-  const overrides = db
-    .select()
-    .from(baseStatOverride)
-    .where(
-      and(
-        inArray(baseStatOverride.pokemonId, speciesIds),
-        eq(baseStatOverride.game, team.game),
-      ),
-    )
-    .all();
-  const abilities = db
-    .select({ id: ability.id, name: ability.name })
-    .from(ability)
-    .where(
-      inArray(
-        ability.id,
-        ids(species.flatMap((s) => [s.ability1Id, s.ability2Id])),
-      ),
-    )
-    .all();
-  const itemIds = ids(team.members.map((m) => m.itemId));
-  const items = itemIds.length
-    ? db
-        .select({ id: item.id, name: item.name })
-        .from(item)
-        .where(inArray(item.id, itemIds))
-        .all()
-    : [];
-  const moveIds = ids(team.members.flatMap((m) => m.moveIds));
-  const moves = moveIds.length
-    ? db
-        .select({ id: move.id, name: move.name, type: move.type })
-        .from(move)
-        .where(inArray(move.id, moveIds))
-        .all()
-    : [];
-  const natures = db.select().from(nature).all();
-
-  return team.members.map((m) => {
-    const s = species.find((row) => row.id === m.pokemonId);
-    if (!s) return null;
-    const statSource = overrides.find((o) => o.pokemonId === s.id) ?? s;
-    const baseStats = Object.fromEntries(
-      STATS.map((stat) => [stat, statSource[stat]]),
-    ) as Record<Stat, number>;
-    const memberNature = natures.find((n) => n.id === m.natureId) ?? {
-      id: m.natureId,
-      name: "Hardy",
-      increasedStat: null,
-      decreasedStat: null,
-    };
+  return getTeamCombatants(db, team).map((c, slot) => {
+    if (!c) return null;
+    const member = team.members[slot]!;
     return {
-      pokemonId: s.id,
-      name: s.name,
-      type1: s.type1,
-      type2: s.type2,
+      pokemonId: c.battler.pokemonId,
+      name: c.name,
+      type1: c.battler.type1,
+      type2: c.battler.type2,
       /** The abilities this species can have. */
-      abilities: [s.ability1Id, s.ability2Id]
-        .map((id) => abilities.find((a) => a.id === id))
-        .filter((a) => a !== undefined),
-      abilityName: abilities.find((a) => a.id === m.abilityId)?.name ?? null,
-      itemName: items.find((i) => i.id === m.itemId)?.name ?? null,
-      nature: memberNature,
-      moves: m.moveIds
-        .map((id) => moves.find((mv) => mv.id === id))
-        .filter((mv) => mv !== undefined),
-      baseStats,
-      stats: calculateStats({
-        base: baseStats,
-        level: m.level,
-        ivs: m.ivs,
-        evs: m.evs,
-        nature: memberNature,
-      }),
+      abilities: c.abilities.map(({ id, name }) => ({ id, name })),
+      abilityName:
+        c.abilities.find((a) => a.id === member.abilityId)?.name ?? null,
+      itemName: c.itemName,
+      // An unknown nature id behaves like a neutral nature.
+      nature: c.nature ?? {
+        id: member.natureId,
+        name: "Hardy",
+        increasedStat: null,
+        decreasedStat: null,
+      },
+      moves: c.moves.map(({ id, name, type }) => ({ id, name, type })),
+      baseStats: c.baseStats,
+      stats: c.battler.stats,
     };
   });
 }

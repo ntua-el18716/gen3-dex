@@ -1,22 +1,19 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { eq, inArray, sql } from "drizzle-orm";
 
 import type { BattleMove, Battler, TypeMatchup } from "@/lib/damage";
 import { calculateStats, uniformSpread, type StatSpread } from "@/lib/stats";
 import type { Team } from "@/lib/teams";
 
-import type { Db } from "./queries";
+import { baseStatsIn, type Db } from "./queries";
 import {
   ability,
-  baseStatOverride,
   frontierSet,
   item,
   move,
   nature,
   pokemon,
-  STATS,
   typeChart,
   type Game,
-  type Stat,
 } from "./schema";
 
 /**
@@ -40,7 +37,10 @@ export type Combatant = {
   /** The held item's name, for display. */
   itemName: string | null;
   /** The abilities its species can have (the battler has one of them). */
-  abilities: { key: string; name: string }[];
+  abilities: { id: number; key: string; name: string }[];
+  /** Its nature, if the id is a real one. */
+  nature: typeof nature.$inferSelect | null;
+  baseStats: StatSpread;
 };
 
 type Build = {
@@ -63,21 +63,7 @@ function build(db: Db, b: Build): Combatant | null {
     .where(eq(pokemon.id, b.pokemonId))
     .get();
   if (!species) return null;
-  const override = db
-    .select()
-    .from(baseStatOverride)
-    .where(
-      and(
-        eq(baseStatOverride.pokemonId, b.pokemonId),
-        eq(baseStatOverride.game, b.game),
-      ),
-    )
-    .get();
-  const source = override ?? species;
-  const base = Object.fromEntries(STATS.map((s) => [s, source[s]])) as Record<
-    Stat,
-    number
-  >;
+  const { baseStats: base } = baseStatsIn(db, species, b.game);
 
   const abilityIds = [species.ability1Id, species.ability2Id].filter(
     (a): a is number => a !== null,
@@ -153,7 +139,9 @@ function build(db: Db, b: Build): Combatant | null {
       .map((id) => moveRows.find((m) => m.id === id))
       .filter((m) => m !== undefined),
     itemName: held?.name ?? null,
-    abilities: abilities.map(({ key, name }) => ({ key, name })),
+    abilities,
+    nature: natureRow ?? null,
+    baseStats: base,
   };
 }
 
