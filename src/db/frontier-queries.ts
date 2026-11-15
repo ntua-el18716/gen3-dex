@@ -182,8 +182,6 @@ export function getPossibleSets(
   return setsForTrainers(db, trainers, { levelMode, pokemonId, trainerId });
 }
 
-export type PossibleSet = ReturnType<typeof getPossibleSets>[number];
-
 type CandidateTrainer = { id: number; fixedIv: number };
 
 /**

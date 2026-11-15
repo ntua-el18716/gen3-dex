@@ -7,7 +7,6 @@ import {
   domeRangeChallenges,
   factoryBrainIv,
   factoryOpponentIv,
-  frontierFriendship,
   opponentLevel,
   pikeWildLevel,
   pikeWildTier,
@@ -50,13 +49,6 @@ describe("opponentLevel", () => {
     expect(opponentLevel("50", 100)).toBe(50);
     expect(opponentLevel("open", 45)).toBe(60);
     expect(opponentLevel("open", 100)).toBe(100);
-  });
-});
-
-describe("frontierFriendship", () => {
-  it("is 0 only with Frustration", () => {
-    expect(frontierFriendship(["Return", null, null, null])).toBe(255);
-    expect(frontierFriendship(["Frustration", "Toxic", null, null])).toBe(0);
   });
 });
 

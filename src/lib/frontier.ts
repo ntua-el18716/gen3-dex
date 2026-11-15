@@ -61,11 +61,6 @@ export function opponentLevel(
   return Math.max(highestPartyLevel, MIN_OPEN_LEVEL);
 }
 
-/** Friendship of a Frontier Pokémon: 0 if it knows Frustration. */
-export function frontierFriendship(moveNames: (string | null)[]): number {
-  return moveNames.includes("Frustration") ? 0 : MAX_FRIENDSHIP;
-}
-
 export type BrainSchedule = {
   silverAt: number;
   goldAt: number;
@@ -281,7 +276,6 @@ export function pyramidWildLevels(
 
 /** Of the 15 tournament opponents, this many come from the next range up. */
 export const DOME_HARDER_OPPONENTS = 5;
-export const DOME_OPPONENTS = 15;
 
 /**
  * InitDomeTrainers: which trainer ranges (normal, not 7th-battle) the Dome's

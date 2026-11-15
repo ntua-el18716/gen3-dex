@@ -35,14 +35,6 @@ module.exports = {
         // The classic type colours (as used on Bulbapedia); shared with the
         // TypeScript code, which needs them as strings for gradients.
         type: typeColors,
-        // One colour per game, for the game picker.
-        game: {
-          ruby: "#C0392B",
-          sapphire: "#2563EB",
-          emerald: "#059669",
-          firered: "#EA580C",
-          leafgreen: "#65A30D",
-        },
       },
     },
   },

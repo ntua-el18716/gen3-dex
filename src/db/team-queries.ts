@@ -145,8 +145,6 @@ export function listNatures(db: Db) {
   return db.select().from(nature).orderBy(asc(nature.name)).all();
 }
 
-export type NatureOption = ReturnType<typeof listNatures>[number];
-
 /**
  * A team's members with everything the screens show: names, types, the
  * species' abilities, item, nature, moves, and the real stats for the

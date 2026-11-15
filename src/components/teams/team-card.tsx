@@ -50,51 +50,48 @@ export function TeamCard({ team }: { team: Team }) {
             size={20}
           />
         </View>
-        {team.members.length === 0 && (
+        {team.members.length === 0 ? (
           <Text className="px-1 text-callout text-ink-subtle">
             No Pokémon yet. Tap to add some.
           </Text>
-        )}
-        <View
-          className={`flex-row justify-between px-1 ${
-            team.members.length === 0 ? "hidden" : ""
-          }`}
-        >
-          {Array.from({ length: MAX_TEAM_SIZE }, (_, i) => {
-            const member = team.members[i];
-            const own = member && spriteColors[member.pokemonId];
-            return (
-              <View
-                key={i}
-                className="items-center justify-center"
-                style={{ width: SLOT, height: SLOT }}
-              >
-                {member ? (
-                  <>
-                    <View
-                      className="absolute inset-0 rounded-full"
-                      style={{
-                        backgroundColor: own
-                          ? mix(vivid(hexToRgb(own[0])), canvas, 0.28)
-                          : colors.sunken,
-                      }}
-                    />
-                    {/* Bigger than its disc, so it stands out of it. */}
-                    <View style={{ margin: (SLOT - SPRITE) / 2 }}>
-                      <Sprite
-                        id={member.pokemonId}
-                        size={SPRITE}
-                        game={team.game}
+        ) : (
+          <View className="flex-row justify-between px-1">
+            {Array.from({ length: MAX_TEAM_SIZE }, (_, i) => {
+              const member = team.members[i];
+              const own = member && spriteColors[member.pokemonId];
+              return (
+                <View
+                  key={i}
+                  className="items-center justify-center"
+                  style={{ width: SLOT, height: SLOT }}
+                >
+                  {member ? (
+                    <>
+                      <View
+                        className="absolute inset-0 rounded-full"
+                        style={{
+                          backgroundColor: own
+                            ? mix(vivid(hexToRgb(own[0])), canvas, 0.28)
+                            : colors.sunken,
+                        }}
                       />
-                    </View>
-                  </>
-                ) : (
-                  <View className="h-2 w-2 rounded-full bg-line" />
-                )}
-              </View>
-            );
-          })}
-        </View>
+                      {/* Bigger than its disc, so it stands out of it. */}
+                      <View style={{ margin: (SLOT - SPRITE) / 2 }}>
+                        <Sprite
+                          id={member.pokemonId}
+                          size={SPRITE}
+                          game={team.game}
+                        />
+                      </View>
+                    </>
+                  ) : (
+                    <View className="h-2 w-2 rounded-full bg-line" />
+                  )}
+                </View>
+              );
+            })}
+          </View>
+        )}
       </Pressable>
     </Link>
   );
