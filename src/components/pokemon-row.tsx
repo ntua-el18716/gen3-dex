@@ -30,7 +30,9 @@ const TINT: "sprite" | "type" = "sprite";
  * The card's background: one colour fading into a second, blended over the
  * surface so it works in both themes.
  */
-export function useTypeGradient(pokemon: PokemonListItem) {
+export function useTypeGradient(
+  pokemon: Pick<PokemonListItem, "id" | "type1" | "type2">,
+) {
   const { surface } = usePalette();
   const own = TINT === "sprite" ? spriteColors[pokemon.id] : undefined;
   const [first, second] = own
