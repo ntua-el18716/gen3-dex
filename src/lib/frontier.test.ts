@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  narrowBySeen,
   battlePosition,
   brainBattle,
   domeRangeChallenges,
@@ -178,5 +179,54 @@ describe("Battle Dome", () => {
       harderChallenge: 0,
     });
     expect(domeRangeChallenges(256).regularChallenge).toBe(0);
+  });
+});
+
+describe("narrowBySeen", () => {
+  // Trainer 1: Abra, Onix. Trainer 2: Abra (another set), Onix, Jynx.
+  // Trainer 3: Jynx only.
+  const set = (id: number, pokemonId: number, trainerIds: number[]) => ({
+    id,
+    pokemonId,
+    trainerIds,
+    possibleIvs: [3, 6, 9],
+  });
+  const sets = [
+    set(10, 63, [1]),
+    set(11, 63, [2]),
+    set(20, 95, [1, 2]),
+    set(30, 124, [2, 3]),
+  ];
+  const ivOf = (t: number) => ({ 1: 3, 2: 6, 3: 9 })[t];
+
+  it("changes nothing until something is seen", () => {
+    expect(narrowBySeen(sets, [], ivOf)).toEqual({
+      trainerIds: [1, 2, 3],
+      sets,
+    });
+  });
+
+  it("keeps the trainers with a set for every seen species", () => {
+    const abra = narrowBySeen(sets, [63], ivOf);
+    expect(abra.trainerIds).toEqual([1, 2]);
+    // Jynx stays possible, but only from trainer 2, so only with IV 6.
+    expect(abra.sets.find((s) => s.id === 30)).toMatchObject({
+      trainerIds: [2],
+      possibleIvs: [6],
+    });
+    expect(abra.sets.map((s) => s.id)).toEqual([10, 11, 20, 30]);
+
+    const both = narrowBySeen(sets, [63, 124], ivOf);
+    expect(both.trainerIds).toEqual([2]);
+    // Trainer 1's Abra set is ruled out.
+    expect(both.sets.map((s) => s.id)).toEqual([11, 20, 30]);
+    expect(both.sets.every((s) => s.possibleIvs.join() === "6")).toBe(true);
+  });
+
+  it("is empty when no trainer has them all", () => {
+    expect(narrowBySeen(sets, [63, 124, 95, 1], ivOf)).toEqual({
+      trainerIds: [],
+      sets: [],
+    });
   });
 });

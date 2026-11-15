@@ -123,6 +123,46 @@ export function frontierStats(
   });
 }
 
+/**
+ * Narrows the predictor by the Pokémon the opponent has already sent out.
+ * A trainer's three Pokémon all come from that trainer's own list of sets,
+ * so only trainers with a set for every seen species still fit; the sets
+ * that remain are theirs. Each set keeps only the trainers that fit, and
+ * the IVs those trainers use (`ivOf`).
+ */
+export function narrowBySeen<
+  S extends { pokemonId: number; trainerIds: number[]; possibleIvs: number[] },
+>(
+  sets: S[],
+  seen: number[],
+  ivOf: (trainerId: number) => number | undefined,
+): { trainerIds: number[]; sets: S[] } {
+  let fitting = new Set(sets.flatMap((s) => s.trainerIds));
+  for (const species of seen) {
+    const withIt = new Set(
+      sets.filter((s) => s.pokemonId === species).flatMap((s) => s.trainerIds),
+    );
+    fitting = new Set([...fitting].filter((t) => withIt.has(t)));
+  }
+  const trainerIds = [...fitting].sort((a, b) => a - b);
+  if (seen.length === 0) return { trainerIds, sets };
+  return {
+    trainerIds,
+    sets: sets
+      .map((s) => {
+        const mine = s.trainerIds.filter((t) => fitting.has(t));
+        return {
+          ...s,
+          trainerIds: mine,
+          possibleIvs: [
+            ...new Set(mine.map(ivOf).filter((iv) => iv !== undefined)),
+          ].sort((x, y) => x - y),
+        };
+      })
+      .filter((s) => s.trainerIds.length > 0),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Battle Factory (battle_factory.c)
 // ---------------------------------------------------------------------------

@@ -27,6 +27,7 @@ import {
   brainBattle,
   factoryOpponentIv,
   MIN_OPEN_LEVEL,
+  narrowBySeen,
   opponentLevel,
   pikeWildLevel,
   pyramidWildLevels,
@@ -36,6 +37,12 @@ import { facilityInfo, type FacilityInfo } from "@/lib/frontier-facilities";
 import { useColors } from "@/theme/theme";
 
 type SetWithIvs = FrontierSetDetail & { possibleIvs: number[] };
+type FrontierTrainerInfo = {
+  id: number;
+  name: string;
+  trainerClass: string;
+  fixedIv: number;
+};
 
 export default function FacilityScreen() {
   const { facility } = useLocalSearchParams<{ facility: string }>();
@@ -75,6 +82,7 @@ function Facility({ info }: { info: FacilityInfo }) {
         return {
           kind: "sets" as const,
           sets: getPossibleSets(db, { battle, levelMode }) as SetWithIvs[],
+          trainers: t.trainers as FrontierTrainerInfo[] | undefined,
           summary: trainerSummary(t.trainers),
         };
       }
@@ -83,6 +91,8 @@ function Facility({ info }: { info: FacilityInfo }) {
         return {
           kind: "sets" as const,
           sets: getDomeSets(db, { streak, levelMode }) as SetWithIvs[],
+          trainers: [...t.regular, ...t.harder] as
+            FrontierTrainerInfo[] | undefined,
           summary: trainerSummary([...t.regular, ...t.harder]),
         };
       }
@@ -90,6 +100,7 @@ function Facility({ info }: { info: FacilityInfo }) {
         const iv = factoryOpponentIv(ivTable, towerWins, battle);
         return {
           kind: "sets" as const,
+          trainers: undefined as FrontierTrainerInfo[] | undefined,
           sets: getFactorySets(db, { battle, levelMode }).sets.map((s) => ({
             ...s,
             possibleIvs: iv === null ? [] : [iv],
@@ -251,6 +262,7 @@ function Facility({ info }: { info: FacilityInfo }) {
         <SetsExplorer
           key={`${battle}-${streak}-${levelMode}`}
           sets={result.sets}
+          trainers={result.trainers}
           summary={result.summary}
           level={level}
           info={info}
@@ -301,15 +313,19 @@ function battleNote(battle: number) {
 
 /**
  * Every species the opponents can field, as a sprite grid; tap one to see
- * its possible sets with real stats.
+ * its possible sets with real stats. Marking a Pokémon as sent out narrows
+ * everything to the trainers who could have it (narrowBySeen).
  */
 function SetsExplorer({
   sets,
+  trainers,
   summary,
   level,
   info,
 }: {
   sets: SetWithIvs[];
+  /** Who the sets belong to; without it (the Factory) nothing narrows. */
+  trainers?: FrontierTrainerInfo[];
   summary: string;
   level: number;
   info: FacilityInfo;
@@ -317,34 +333,114 @@ function SetsExplorer({
   const colors = useColors();
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState<number | null>(null);
-  const species = useMemo(() => {
-    const byId = new Map<number, { id: number; name: string; count: number }>();
-    for (const s of sets) {
-      const e = byId.get(s.pokemonId) ?? {
-        id: s.pokemonId,
-        name: s.species,
-        count: 0,
-      };
-      e.count++;
-      byId.set(s.pokemonId, e);
-    }
-    return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
-  }, [sets]);
+  const [seen, setSeen] = useState<number[]>([]);
+
+  const narrowed = trainers
+    ? narrowBySeen(
+        sets as (SetWithIvs & { trainerIds: number[] })[],
+        seen,
+        (id) => trainers.find((t) => t.id === id)?.fixedIv,
+      )
+    : { trainerIds: [] as number[], sets };
+  const fitting = trainers?.filter((t) => narrowed.trainerIds.includes(t.id));
+  const nameOf = (id: number) =>
+    sets.find((s) => s.pokemonId === id)?.species ?? "This Pokémon";
+
+  // What's left to see: the fitting trainers' Pokémon, minus those seen (a
+  // team never has the same species twice).
+  const byId = new Map<number, { id: number; name: string; count: number }>();
+  for (const s of narrowed.sets) {
+    if (seen.includes(s.pokemonId)) continue;
+    const e = byId.get(s.pokemonId) ?? {
+      id: s.pokemonId,
+      name: s.species,
+      count: 0,
+    };
+    e.count++;
+    byId.set(s.pokemonId, e);
+  }
+  const species = [...byId.values()].sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
   const q = query.trim().toLowerCase();
   const shown = q
     ? species.filter((s) => s.name.toLowerCase().includes(q))
     : species;
   const pickedSets =
-    picked === null ? [] : sets.filter((s) => s.pokemonId === picked);
+    picked === null ? [] : narrowed.sets.filter((s) => s.pokemonId === picked);
+  const pickedSeen = picked !== null && seen.includes(picked);
 
   return (
     <View className="gap-3">
       <View className="gap-0.5">
         <SectionTitle>{`Lv ${level} opponents can send out`}</SectionTitle>
         <Text className="px-1 text-callout text-ink-muted">
-          {summary} · {species.length} species, {sets.length} sets
+          {seen.length === 0
+            ? `${summary} · ${species.length} species, ${sets.length} sets`
+            : "Narrowed by what they’ve sent out"}
         </Text>
       </View>
+
+      {seen.length > 0 && fitting && (
+        <Card className="gap-3 p-4">
+          <View className="flex-row flex-wrap gap-2">
+            {seen.map((id) => (
+              <View
+                key={id}
+                className="h-11 flex-row items-center rounded-full bg-sunken pl-1"
+              >
+                <Pressable
+                  onPress={() => setPicked(id)}
+                  className="flex-row items-center gap-1 active:opacity-60"
+                >
+                  <Sprite id={id} size={40} game="emerald" />
+                  <Text className="text-callout font-semibold text-ink">
+                    {nameOf(id)}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setSeen(seen.filter((s) => s !== id))}
+                  aria-label={`Remove ${nameOf(id)}`}
+                  role="button"
+                  className="h-11 w-10 items-center justify-center active:opacity-60"
+                >
+                  <SymbolView
+                    name={{ ios: "xmark", android: "close", web: "close" }}
+                    tintColor={colors["ink-muted"]}
+                    size={16}
+                  />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+          {fitting.length === 0 ? (
+            <Text className="text-callout text-ink-muted">
+              No trainer at this point has all of these. Remove one to see the
+              rest again.
+            </Text>
+          ) : (
+            <Text className="text-callout text-ink-muted">
+              <Text className="font-semibold text-ink">
+                {fitting.length === 1
+                  ? `${fitting[0]!.trainerClass} ${fitting[0]!.name}`
+                  : `${fitting.length} trainers`}
+              </Text>
+              {fitting.length === 1 ? " is" : " are"} the only{" "}
+              {fitting.length === 1 ? "one" : "ones"} with{" "}
+              {seen.length === 1 ? "it" : "all of them"}
+              {fitting.length > 1 && fitting.length <= 4
+                ? `: ${fitting.map((t) => `${t.trainerClass} ${t.name}`).join(", ")}`
+                : ""}
+              . Every IV is{" "}
+              {[...new Set(fitting.map((t) => t.fixedIv))]
+                .sort((a, b) => a - b)
+                .join(" or ")}
+              . {species.length} other species possible.
+            </Text>
+          )}
+        </Card>
+      )}
+
       {picked === null && (
         <View className="h-11 flex-row items-center gap-2 rounded-tile bg-sunken px-3">
           <SymbolView
@@ -367,7 +463,7 @@ function SetsExplorer({
         <View className="gap-2">
           <View className="flex-row items-center justify-between px-1">
             <Text className="text-body font-semibold text-ink">
-              {pickedSets[0]?.species ?? "This Pokémon"} has {pickedSets.length}{" "}
+              {nameOf(picked)} has {pickedSets.length}{" "}
               {pickedSets.length === 1 ? "set" : "sets"}
             </Text>
             <Pressable
@@ -381,6 +477,30 @@ function SetsExplorer({
               </Text>
             </Pressable>
           </View>
+          {trainers && !pickedSeen && (
+            <Pressable
+              onPress={() => {
+                setSeen([...seen, picked]);
+                setPicked(null);
+                setQuery("");
+              }}
+              role="button"
+              className="h-12 flex-row items-center justify-center gap-2 rounded-tile bg-accent active:opacity-60"
+            >
+              <SymbolView
+                name={{
+                  ios: "eye.fill",
+                  android: "visibility",
+                  web: "visibility",
+                }}
+                tintColor={colors["on-accent"]}
+                size={20}
+              />
+              <Text className="text-body font-semibold text-on-accent">
+                They sent this out
+              </Text>
+            </Pressable>
+          )}
           {pickedSets.map((s) => (
             <SetCard
               key={s.id}
@@ -412,7 +532,7 @@ function SetsExplorer({
               </Text>
             </Pressable>
           ))}
-          {shown.length === 0 && (
+          {shown.length === 0 && q !== "" && (
             <Text className="flex-1 p-6 text-center text-body text-ink-muted">
               No opponent here uses “{query}”.
             </Text>
