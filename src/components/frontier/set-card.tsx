@@ -1,4 +1,5 @@
 import { Link } from "expo-router";
+import { SymbolView } from "expo-symbols";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
@@ -8,6 +9,7 @@ import { Card, Label, Segmented, TABULAR } from "@/components/ui";
 import type { FrontierSetDetail } from "@/db/frontier-queries";
 import type { Stat } from "@/db/schema";
 import { frontierStats } from "@/lib/frontier";
+import { useColors } from "@/theme/theme";
 
 const STAT_LABELS: [Stat, string][] = [
   ["hp", "HP"],
@@ -37,6 +39,7 @@ export function SetCard({
   /** The facility's colour. */
   accent: string;
 }) {
+  const colors = useColors();
   const options = ivs.length > 0 ? ivs : [0, 31];
   const [iv, setIv] = useState(options[options.length - 1]!);
   const shown = options.includes(iv) ? iv : options[options.length - 1]!;
@@ -146,6 +149,31 @@ export function SetCard({
           <Text className="text-caption text-ink-subtle">EVs: {evs}</Text>
         ) : null}
       </View>
+
+      {/* Only real sets have an id; a Brain's Pokémon doesn't. */}
+      {set.id !== undefined && (
+        <Link
+          href={{
+            pathname: "/matchup",
+            params: { set: set.id, level, iv: shown },
+          }}
+          asChild
+        >
+          <Pressable
+            role="button"
+            className="h-11 flex-row items-center justify-center gap-2 rounded-tile bg-sunken active:opacity-60"
+          >
+            <SymbolView
+              name={{ ios: "bolt.fill", android: "bolt", web: "bolt" }}
+              tintColor={colors.ink}
+              size={18}
+            />
+            <Text className="text-callout font-semibold text-ink">
+              Damage against your team
+            </Text>
+          </Pressable>
+        </Link>
+      )}
     </Card>
   );
 }
