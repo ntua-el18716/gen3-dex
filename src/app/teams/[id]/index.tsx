@@ -7,6 +7,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { PokeballMark } from "@/components/pokeball-mark";
 import { useTypeGradient } from "@/components/pokemon-row";
 import { Sprite } from "@/components/sprite";
+import { StatCells } from "@/components/stat-cells";
 import { PurposeIcon } from "@/components/teams/purpose-icon";
 import { TypeDot } from "@/components/type-badge";
 import { SectionTitle, Segmented, TABULAR } from "@/components/ui";
@@ -14,12 +15,7 @@ import { useDb } from "@/db";
 import { GAMES } from "@/db/schema";
 import { getTeamDetails, type TeamMemberDetail } from "@/db/team-queries";
 import { GAME_INFO } from "@/lib/games";
-import {
-  issueText,
-  natureEffect,
-  purposeName,
-  STAT_LABELS,
-} from "@/lib/team-labels";
+import { issueText, natureEffect, purposeName } from "@/lib/team-labels";
 import {
   isFrontier,
   MAX_TEAM_SIZE,
@@ -337,31 +333,7 @@ function MemberCard({
               </Text>
             ))}
           {detail && (
-            <View className="flex-row rounded-tile bg-surface/70 py-2">
-              {STAT_LABELS.map(([stat, label]) => {
-                const up = detail.nature.increasedStat === stat;
-                const down = detail.nature.decreasedStat === stat;
-                return (
-                  <View key={stat} className="flex-1 items-center">
-                    <Text className="text-micro font-medium text-ink-muted">
-                      {label}
-                    </Text>
-                    <Text
-                      className={`text-body font-bold ${
-                        up && !down
-                          ? "text-red-500"
-                          : down && !up
-                            ? "text-blue-500"
-                            : "text-ink"
-                      }`}
-                      style={TABULAR}
-                    >
-                      {detail.stats[stat]}
-                    </Text>
-                  </View>
-                );
-              })}
-            </View>
+            <StatCells stats={detail.stats} nature={detail.nature} strip />
           )}
         </View>
       </Pressable>

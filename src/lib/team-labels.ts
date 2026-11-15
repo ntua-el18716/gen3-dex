@@ -2,6 +2,7 @@ import type { Stat } from "@/db/schema";
 
 import { facilityInfo } from "./frontier-facilities";
 import { GAME_INFO } from "./games";
+import { STAT_SHORT } from "./stat-labels";
 import {
   FRONTIER_PARTY_SIZE,
   isFrontier,
@@ -11,16 +12,6 @@ import {
 } from "./teams";
 
 /** The words the Teams screens use for the data in lib/teams.ts. */
-
-export const STAT_LABELS: [Stat, string][] = [
-  ["hp", "HP"],
-  ["attack", "Atk"],
-  ["defense", "Def"],
-  ["spAttack", "SpA"],
-  ["spDefense", "SpD"],
-  ["speed", "Spe"],
-];
-const STAT_LABEL = Object.fromEntries(STAT_LABELS) as Record<Stat, string>;
 
 /** "Walkthrough", "Battle Tower"… */
 export function purposeName(purpose: TeamPurpose): string {
@@ -48,7 +39,7 @@ export function natureEffect(nature: {
   return nature.increasedStat &&
     nature.decreasedStat &&
     nature.increasedStat !== nature.decreasedStat
-    ? `+${STAT_LABEL[nature.increasedStat]} −${STAT_LABEL[nature.decreasedStat]}`
+    ? `+${STAT_SHORT[nature.increasedStat]} −${STAT_SHORT[nature.decreasedStat]}`
     : "No stat change";
 }
 

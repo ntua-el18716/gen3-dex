@@ -5,21 +5,12 @@ import { Pressable, Text, View } from "react-native";
 
 import { MoveChip } from "@/components/move-chip";
 import { Sprite } from "@/components/sprite";
+import { StatCells } from "@/components/stat-cells";
 import { Card, Label, Segmented, TABULAR } from "@/components/ui";
 import type { FrontierSetDetail } from "@/db/frontier-queries";
-import type { Stat } from "@/db/schema";
 import { frontierStats } from "@/lib/frontier";
+import { DISPLAY_STATS, STAT_SHORT } from "@/lib/stat-labels";
 import { useColors } from "@/theme/theme";
-
-const STAT_LABELS: [Stat, string][] = [
-  ["hp", "HP"],
-  ["attack", "Atk"],
-  ["defense", "Def"],
-  ["spAttack", "SpA"],
-  ["spDefense", "SpD"],
-  ["speed", "Spe"],
-];
-const LABEL = Object.fromEntries(STAT_LABELS) as Record<Stat, string>;
 
 /**
  * One Frontier set: moves, item, nature, EVs, and its real stats at the
@@ -44,8 +35,8 @@ export function SetCard({
   const [iv, setIv] = useState(options[options.length - 1]!);
   const shown = options.includes(iv) ? iv : options[options.length - 1]!;
   const stats = frontierStats(set, level, shown);
-  const evs = STAT_LABELS.filter(([s]) => set.evs[s] > 0)
-    .map(([s, l]) => `${set.evs[s]} ${l}`)
+  const evs = DISPLAY_STATS.filter((s) => set.evs[s] > 0)
+    .map((s) => `${set.evs[s]} ${STAT_SHORT[s]}`)
     .join(", ");
 
   return (
@@ -90,7 +81,7 @@ export function SetCard({
           <Text className="text-callout text-ink-muted">
             <Text className="font-semibold text-ink">{set.nature}</Text>
             {set.increasedStat && set.decreasedStat
-              ? `  +${LABEL[set.increasedStat]}  −${LABEL[set.decreasedStat]}`
+              ? `  +${STAT_SHORT[set.increasedStat]}  −${STAT_SHORT[set.decreasedStat]}`
               : "  no stat change"}
           </Text>
         </View>
@@ -121,30 +112,7 @@ export function SetCard({
             />
           )}
         </View>
-        <View className="flex-row gap-1">
-          {STAT_LABELS.map(([s, l]) => {
-            const up = set.increasedStat === s;
-            const down = set.decreasedStat === s;
-            return (
-              <View
-                key={s}
-                className="flex-1 items-center rounded-lg bg-sunken py-1.5"
-              >
-                <Text className="text-micro font-medium text-ink-muted">
-                  {l}
-                </Text>
-                <Text
-                  className={`text-body font-bold ${
-                    up ? "text-red-500" : down ? "text-blue-500" : "text-ink"
-                  }`}
-                  style={TABULAR}
-                >
-                  {stats[s]}
-                </Text>
-              </View>
-            );
-          })}
-        </View>
+        <StatCells stats={stats} nature={set} />
         {evs ? (
           <Text className="text-caption text-ink-subtle">EVs: {evs}</Text>
         ) : null}

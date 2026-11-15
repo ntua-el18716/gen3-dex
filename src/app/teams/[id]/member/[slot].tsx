@@ -18,9 +18,9 @@ import {
   TABULAR,
 } from "@/components/ui";
 import { useDb } from "@/db";
-import type { Stat } from "@/db/schema";
 import { getTeamDetails, type TeamMemberDetail } from "@/db/team-queries";
-import { natureEffect, STAT_LABELS } from "@/lib/team-labels";
+import { DISPLAY_STATS, natureTone, STAT_NAME } from "@/lib/stat-labels";
+import { natureEffect } from "@/lib/team-labels";
 import {
   clampLevel,
   evTotal,
@@ -35,15 +35,6 @@ import {
 import { hexToRgb, mix, typeColor } from "@/theme/colors";
 import { useTeam, useTeams } from "@/state/teams";
 import { useColors, usePalette } from "@/theme/theme";
-
-const FULL_STAT_NAMES: Record<Stat, string> = {
-  hp: "HP",
-  attack: "Attack",
-  defense: "Defense",
-  spAttack: "Sp. Atk",
-  spDefense: "Sp. Def",
-  speed: "Speed",
-};
 
 /** One Pokémon of a team: level, ability, nature, item, moves, EVs and IVs. */
 export default function MemberScreen() {
@@ -322,23 +313,20 @@ function Editor({
             <Label className="w-14 text-center">EVs</Label>
             <Label className="w-11 text-center">IV</Label>
           </View>
-          {STAT_LABELS.map(([stat]) => {
-            const up = detail.nature.increasedStat === stat;
-            const down = detail.nature.decreasedStat === stat;
-            const tone =
-              up && !down ? "red" : down && !up ? "blue" : ("plain" as const);
+          {DISPLAY_STATS.map((stat) => {
+            const tone = natureTone(stat, detail.nature);
             return (
               <View key={stat} className="flex-row items-center gap-2">
                 <View className="flex-1 gap-1.5">
                   <Text className="text-callout text-ink">
-                    {FULL_STAT_NAMES[stat]}
+                    {STAT_NAME[stat]}
                   </Text>
                   <View className="h-1.5 overflow-hidden rounded-full bg-sunken">
                     <View
                       className={`h-full rounded-full ${
-                        tone === "red"
+                        tone === "raised"
                           ? "bg-red-500"
-                          : tone === "blue"
+                          : tone === "lowered"
                             ? "bg-blue-500"
                             : "bg-ink-subtle"
                       }`}
@@ -350,9 +338,9 @@ function Editor({
                 </View>
                 <Text
                   className={`w-9 text-right text-body font-bold ${
-                    tone === "red"
+                    tone === "raised"
                       ? "text-red-500"
-                      : tone === "blue"
+                      : tone === "lowered"
                         ? "text-blue-500"
                         : "text-ink"
                   }`}
@@ -362,7 +350,7 @@ function Editor({
                 </Text>
                 <NumberInput
                   className="w-14"
-                  label={`${FULL_STAT_NAMES[stat]} EVs`}
+                  label={`${STAT_NAME[stat]} EVs`}
                   value={member.evs[stat]}
                   onChange={(v) =>
                     change((m) => ({ ...m, evs: withEv(m.evs, stat, v) }))
@@ -370,7 +358,7 @@ function Editor({
                 />
                 <NumberInput
                   className="w-11"
-                  label={`${FULL_STAT_NAMES[stat]} IV`}
+                  label={`${STAT_NAME[stat]} IV`}
                   value={member.ivs[stat]}
                   onChange={(v) =>
                     change((m) => ({ ...m, ivs: withIv(m.ivs, stat, v) }))

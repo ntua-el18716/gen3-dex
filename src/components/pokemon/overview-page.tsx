@@ -14,17 +14,13 @@ import type { Game, Stat } from "@/db/schema";
 import { captureChance } from "@/lib/catch-rate";
 import { gamesLabel } from "@/lib/games";
 import { femaleShare, genderLabel, titleCase } from "@/lib/pokemon-format";
+import { DISPLAY_STATS, STAT_NAME } from "@/lib/stat-labels";
 import { statRange } from "@/lib/stats";
 
-/** The order Pokédex apps show stats in (the games store Speed fourth). */
-const DISPLAY_STATS: { stat: Stat; label: string }[] = [
-  { stat: "hp", label: "HP" },
-  { stat: "attack", label: "Attack" },
-  { stat: "defense", label: "Defense" },
-  { stat: "spAttack", label: "Sp. Atk" },
-  { stat: "spDefense", label: "Sp. Def" },
-  { stat: "speed", label: "Speed" },
-];
+const STAT_ROWS = DISPLAY_STATS.map((stat) => ({
+  stat,
+  label: STAT_NAME[stat],
+}));
 
 const EV_FIELDS: Record<Stat, keyof PokemonDetail> = {
   hp: "evHp",
@@ -48,7 +44,7 @@ export function OverviewPage({
   entries: PokedexEntry[];
   game: Game;
 }) {
-  const evYield = DISPLAY_STATS.filter(
+  const evYield = STAT_ROWS.filter(
     ({ stat }) => (pokemon[EV_FIELDS[stat]] as number) > 0,
   )
     .map(({ stat, label }) => `${pokemon[EV_FIELDS[stat]]} ${label}`)
@@ -208,7 +204,7 @@ const LEVEL_OPTIONS = LEVELS.map((l) => ({ value: l, label: `Lv ${l}` }));
 
 function BaseStats({ pokemon }: { pokemon: PokemonDetail }) {
   const [level, setLevel] = useState<(typeof LEVELS)[number]>(50);
-  const total = DISPLAY_STATS.reduce(
+  const total = STAT_ROWS.reduce(
     (sum, { stat }) => sum + pokemon.baseStats[stat],
     0,
   );
@@ -228,7 +224,7 @@ function BaseStats({ pokemon }: { pokemon: PokemonDetail }) {
         Base stats
       </SectionTitle>
       <Card className="gap-3 p-4">
-        {DISPLAY_STATS.map(({ stat, label }) => {
+        {STAT_ROWS.map(({ stat, label }) => {
           const base = pokemon.baseStats[stat];
           const { min, max } = statRange(stat, base, level);
           return (
