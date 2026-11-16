@@ -50,9 +50,9 @@ Read: [src/components/pokemon-row.tsx](../../src/components/pokemon-row.tsx), [s
 
 ## 2. Navigation with Expo Router
 
-Read: [src/app/_layout.tsx](../../src/app/_layout.tsx), [src/app/index.tsx](../../src/app/index.tsx), [src/app/pokemon/[id].tsx](../../src/app/pokemon/[id].tsx)
+Read: [src/app/_layout.tsx](../../src/app/_layout.tsx), [src/app/(tabs)/index.tsx](<../../src/app/(tabs)/index.tsx>), [src/app/pokemon/[id].tsx](../../src/app/pokemon/[id].tsx)
 
-- **Every file in `src/app/` is a screen**, and its path is its URL: `index.tsx` is `/`, `pokemon/[id].tsx` is `/pokemon/25`, `/pokemon/386`…
+- **Every file in `src/app/` is a screen**, and its path is its URL: `(tabs)/index.tsx` is `/` (folders in parentheses stay out of the URL), `pokemon/[id].tsx` is `/pokemon/25`, `/pokemon/386`…
 - `[id]` in square brackets makes a **dynamic route**. The screen reads the value with `useLocalSearchParams()`. It always arrives as a **string** (`"25"`), hence `Number(id)`.
 - `_layout.tsx` wraps all screens. Ours returns a `<Stack>`: screens are pushed on top of each other with a back button (Android back / browser back work for free).
 - A screen sets its own header with `<Stack.Screen options={{ title: … }} />` inside its JSX.
@@ -104,7 +104,7 @@ Read: [src/db/schema.ts](../../src/db/schema.ts) (skim), [src/db/context.ts](../
 
 ## 5. Lists that scroll fast
 
-Read: [src/app/index.tsx](../../src/app/index.tsx), [src/components/pokemon-card.tsx](../../src/components/pokemon-card.tsx), [src/components/pokemon/moves-page.tsx](../../src/components/pokemon/moves-page.tsx)
+Read: [src/app/(tabs)/index.tsx](<../../src/app/(tabs)/index.tsx>), [src/components/pokemon-card.tsx](../../src/components/pokemon-card.tsx), [src/components/pokemon/moves-page.tsx](../../src/components/pokemon/moves-page.tsx)
 
 - `FlatList` only renders the rows near the screen (**virtualization**). 386 rows stay smooth. Never `.map()` a long list inside a `ScrollView`.
 - `keyExtractor` gives each row a stable key so React can reuse rows.
@@ -118,7 +118,7 @@ Read: [src/app/index.tsx](../../src/app/index.tsx), [src/components/pokemon-card
 
 ## 6. State, derived values and effects
 
-Read: [src/app/index.tsx](../../src/app/index.tsx) (search), [src/app/pokemon/[id].tsx](../../src/app/pokemon/[id].tsx), [src/theme/theme.tsx](../../src/theme/theme.tsx) (`useEffect`)
+Read: [src/app/(tabs)/index.tsx](<../../src/app/(tabs)/index.tsx>) (search), [src/app/pokemon/[id].tsx](../../src/app/pokemon/[id].tsx), [src/theme/theme.tsx](../../src/theme/theme.tsx) (`useEffect`)
 
 - `useState` holds what the user changes (`query`). Everything computable from it is **derived** during render: `shown = all.filter(...)`. Don't store derived values in state.
 - `useMemo` caches expensive work between renders (`listPokemon(db)` runs once, not on every keystroke). The dependency array says when to recompute.
@@ -132,17 +132,19 @@ Read: [src/app/index.tsx](../../src/app/index.tsx) (search), [src/app/pokemon/[i
 
 ## 7. The swipe pages
 
-Read: [src/components/swipe-tabs.tsx](../../src/components/swipe-tabs.tsx)
+Read: [src/components/collapsible-pager.tsx](../../src/components/collapsible-pager.tsx)
+
+> This chapter described `SwipeTabs`, which the redesign replaced with `CollapsiblePager` (the pages plus the collapsing header). The ideas below still apply; the new file adds a shared scroll position that the header animates from.
 
 - The pages sit side by side in a **horizontal `ScrollView` with `pagingEnabled`**: it snaps one page at a time.
 - Two-way sync:
-  - swipe → `onScroll` computes `round(x / width)` → `setIndex` → the tab bar highlights;
-  - tap a tab → `pager.current.scrollTo({ x: i * width })` → the pager moves.
-- `useRef` keeps a handle to the `ScrollView` so we can call `scrollTo`. (In React Native 0.88 the ref type is `ScrollViewInstance`.)
+  - swipe → the pager's position gives `round(x / width)` → the active page changes → the tab bar highlights;
+  - tap a tab → the pager scrolls to `i * width`.
+- A ref keeps a handle to the `ScrollView` so it can be scrolled from code.
 - `onLayout` measures the area the pages get. Each page is given that **exact width and height**.
   - Width: on big screens the detail column is narrower than the window.
   - Height: **this was the web scroll bug.** Without a fixed height, on web each page's vertical `ScrollView` grew to its whole content and had nothing to scroll.
-- The detail screen gives `SwipeTabs` a `key={dexNumber}` so opening another Pokémon (from Evolution) starts on the first page again.
+- The detail screen gives the pager a `key={dexNumber}` so opening another Pokémon (from Evolution) starts on the first page again.
 
 **Check yourself:** What two things keep the tab bar and the pages in sync? Why does every page need an explicit height on web?
 
