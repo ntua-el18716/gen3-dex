@@ -1,12 +1,11 @@
 import { router, Stack, useLocalSearchParams } from "expo-router";
-import { SymbolView } from "expo-symbols";
 import { useMemo, useState, type ReactNode } from "react";
-import { FlatList, Pressable, Text, TextInput, View } from "react-native";
+import { FlatList, Pressable, Text, View } from "react-native";
 
 import { dexNumber } from "@/components/pokemon-row";
 import { Sprite } from "@/components/sprite";
 import { TypeDot } from "@/components/type-badge";
-import { Divider, Segmented, TABULAR } from "@/components/ui";
+import { Divider, SearchField, Segmented, TABULAR } from "@/components/ui";
 import { useDb } from "@/db";
 import {
   getTeachableMoves,
@@ -26,7 +25,6 @@ import {
   type TeamMember,
 } from "@/lib/teams";
 import { useTeam, useTeams } from "@/state/teams";
-import { useColors } from "@/theme/theme";
 
 const FIELDS = ["species", "move", "item", "nature"] as const;
 type PickField = (typeof FIELDS)[number];
@@ -97,7 +95,6 @@ function Picker({
   index: number;
 }) {
   const db = useDb();
-  const colors = useColors();
   const { updateTeam } = useTeams();
   const [query, setQuery] = useState("");
   const [allMoves, setAllMoves] = useState(false);
@@ -203,22 +200,7 @@ function Picker({
     <View className="flex-1 bg-canvas">
       <Stack.Screen options={{ title: TITLES[field] }} />
       <View className="gap-3 px-4 pb-3 pt-2">
-        <View className="h-11 flex-row items-center gap-2 rounded-tile bg-sunken px-3">
-          <SymbolView
-            name={{ ios: "magnifyingglass", android: "search", web: "search" }}
-            tintColor={colors["ink-subtle"]}
-            size={20}
-          />
-          <TextInput
-            className="h-11 flex-1 text-body text-ink outline-none"
-            placeholder="Search"
-            placeholderTextColor={colors["ink-subtle"]}
-            value={query}
-            onChangeText={setQuery}
-            autoCorrect={false}
-            autoCapitalize="none"
-          />
-        </View>
+        <SearchField value={query} onChange={setQuery} placeholder="Search" />
         {field === "move" && (
           <Segmented
             options={[

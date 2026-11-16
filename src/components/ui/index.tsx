@@ -1,6 +1,6 @@
 import { SymbolView, type SymbolViewProps } from "expo-symbols";
 import type { ReactNode } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { useColors } from "@/theme/theme";
 
@@ -14,6 +14,10 @@ import { useColors } from "@/theme/theme";
  * - Segmented: pick one of a few options
  * - IconButton: a round button with a symbol
  * - Divider: the hairline between rows inside a card
+ * - Pills: pick one of several options that may not fit one row
+ * - SearchField: a text field with a magnifier
+ * - Field: a control with its caption and an optional note
+ * - Stepper: a number with − and + buttons
  */
 
 export function Card({
@@ -193,3 +197,219 @@ export function Tag({ children }: { children: string }) {
 
 /** Numbers that line up in columns. */
 export const TABULAR = { fontVariant: ["tabular-nums" as const] };
+
+/**
+ * One scrolling row of pills, for options that don't fit a Segmented.
+ * It runs to the screen's edges, so it belongs in a page with the usual
+ * 16px side padding.
+ */
+export function Pills<T extends string | number>({
+  options,
+  value,
+  onChange,
+}: {
+  options: {
+    value: T;
+    label: string;
+    a11yLabel?: string;
+    /** Shown before the label, e.g. an icon tile. */
+    left?: ReactNode;
+  }[];
+  value: T | undefined;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      className="-mx-4"
+      contentContainerClassName="gap-2 px-4"
+    >
+      {options.map((o) => {
+        const on = o.value === value;
+        return (
+          <Pressable
+            key={String(o.value)}
+            onPress={() => onChange(o.value)}
+            role="radio"
+            aria-checked={on}
+            aria-label={o.a11yLabel}
+            className={`h-11 flex-row items-center gap-2 rounded-full pr-4 active:opacity-60 ${
+              o.left ? "pl-1.5" : "pl-4"
+            } ${on ? "bg-ink" : "bg-surface"}`}
+          >
+            {o.left}
+            <Text
+              className={`text-callout font-semibold ${
+                on ? "text-canvas" : "text-ink"
+              }`}
+            >
+              {o.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+export function SearchField({
+  value,
+  onChange,
+  placeholder,
+  clearable = false,
+  className = "",
+}: {
+  value: string;
+  onChange: (text: string) => void;
+  placeholder: string;
+  /** Show a button that empties the field. */
+  clearable?: boolean;
+  className?: string;
+}) {
+  const colors = useColors();
+  return (
+    <View
+      className={`h-11 flex-row items-center gap-2 rounded-tile bg-sunken px-3 ${className}`}
+    >
+      <SymbolView
+        name={{ ios: "magnifyingglass", android: "search", web: "search" }}
+        tintColor={colors["ink-subtle"]}
+        size={20}
+      />
+      <TextInput
+        className="h-11 flex-1 text-body text-ink outline-none"
+        placeholder={placeholder}
+        placeholderTextColor={colors["ink-subtle"]}
+        value={value}
+        onChangeText={onChange}
+        autoCorrect={false}
+        autoCapitalize="none"
+      />
+      {clearable && value !== "" && (
+        <Pressable
+          onPress={() => onChange("")}
+          aria-label="Clear search"
+          role="button"
+          hitSlop={8}
+        >
+          <SymbolView
+            name={{
+              ios: "xmark.circle.fill",
+              android: "cancel",
+              web: "cancel",
+            }}
+            tintColor={colors["ink-subtle"]}
+            size={20}
+          />
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+/** A control with its caption above and an optional explanation below. */
+export function Field({
+  label,
+  note,
+  children,
+}: {
+  label: string;
+  note?: string;
+  children: ReactNode;
+}) {
+  return (
+    <View className="gap-2">
+      <Label>{label}</Label>
+      {children}
+      {note ? (
+        <Text className="text-caption text-ink-subtle">{note}</Text>
+      ) : null}
+    </View>
+  );
+}
+
+/** A number with − and + buttons (and ±7 for whole challenges). */
+export function Stepper({
+  label,
+  value,
+  min,
+  max = 9999,
+  onChange,
+  big = 7,
+  note,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max?: number;
+  onChange: (value: number) => void;
+  /** Size of the big steps; 0 hides them. */
+  big?: number;
+  note?: string;
+}) {
+  const set = (v: number) => onChange(Math.min(max, Math.max(min, v)));
+  return (
+    <Field label={label} note={note}>
+      <View className="flex-row items-center gap-1 rounded-tile bg-sunken p-[3px]">
+        {big > 0 && (
+          <StepButton
+            label={`−${big}`}
+            disabled={value <= min}
+            onPress={() => set(value - big)}
+          />
+        )}
+        <StepButton
+          label="−"
+          disabled={value <= min}
+          onPress={() => set(value - 1)}
+        />
+        <Text
+          className="flex-1 text-center text-title font-bold text-ink"
+          style={TABULAR}
+        >
+          {value}
+        </Text>
+        <StepButton
+          label="+"
+          disabled={value >= max}
+          onPress={() => set(value + 1)}
+        />
+        {big > 0 && (
+          <StepButton
+            label={`+${big}`}
+            disabled={value >= max}
+            onPress={() => set(value + big)}
+          />
+        )}
+      </View>
+    </Field>
+  );
+}
+
+function StepButton({
+  label,
+  disabled,
+  onPress,
+}: {
+  label: string;
+  disabled: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      role="button"
+      aria-label={label}
+      aria-disabled={disabled}
+      className={`h-10 w-12 items-center justify-center rounded-[9px] bg-surface active:opacity-60 ${
+        disabled ? "opacity-40" : ""
+      }`}
+    >
+      <Text className="text-body font-semibold text-ink" style={TABULAR}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}

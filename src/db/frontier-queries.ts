@@ -86,6 +86,11 @@ export type FrontierSetDetail = {
   openLevelOnly: boolean;
 };
 
+/** A Frontier trainer as the predictor needs it: who, and their IVs. */
+export type FrontierTrainer = ReturnType<
+  typeof getTrainersForBattle
+>["trainers"][number];
+
 /** Full details of the given sets (species, moves, item, nature, EVs). */
 export function getSetDetails(db: Db, setIds: number[]): FrontierSetDetail[] {
   if (setIds.length === 0) return [];

@@ -1,25 +1,16 @@
-import { SymbolView } from "expo-symbols";
 import { useMemo, useState } from "react";
-import {
-  FlatList,
-  Pressable,
-  Text,
-  TextInput,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { FlatList, Text, useWindowDimensions, View } from "react-native";
 
 import { GamePicker } from "@/components/game-picker";
 import { PokemonCard } from "@/components/pokemon-card";
 import { PokemonRow } from "@/components/pokemon-row";
 import { ScreenHeader } from "@/components/screen-header";
-import { IconButton } from "@/components/ui";
+import { IconButton, SearchField } from "@/components/ui";
 import { useDb } from "@/db";
 import { listPokemon } from "@/db/queries";
 import { GAME_INFO } from "@/lib/games";
 import { useCurrentGame } from "@/state/current-game";
 import { useListLayout, type ListLayout } from "@/state/list-layout";
-import { useColors } from "@/theme/theme";
 
 /** Content never gets wider than this, so big screens get margins. */
 const MAX_WIDTH = 1200;
@@ -78,9 +69,11 @@ export default function PokedexScreen() {
             <View className={columns > 1 ? "w-80" : ""}>
               <GamePicker />
             </View>
-            <SearchBox
+            <SearchField
               value={query}
               onChange={setQuery}
+              placeholder="Name or number"
+              clearable
               className={columns > 1 ? "flex-1" : ""}
             />
           </View>
@@ -117,57 +110,6 @@ export default function PokedexScreen() {
           </Text>
         }
       />
-    </View>
-  );
-}
-
-/** A search field with a magnifier and a clear button. */
-function SearchBox({
-  value,
-  onChange,
-  className = "",
-}: {
-  value: string;
-  onChange: (text: string) => void;
-  className?: string;
-}) {
-  const colors = useColors();
-  return (
-    <View
-      className={`h-11 flex-row items-center gap-2 rounded-tile bg-sunken px-3 ${className}`}
-    >
-      <SymbolView
-        name={{ ios: "magnifyingglass", android: "search", web: "search" }}
-        tintColor={colors["ink-subtle"]}
-        size={20}
-      />
-      <TextInput
-        className="h-11 flex-1 text-body text-ink outline-none"
-        placeholder="Name or number"
-        placeholderTextColor={colors["ink-subtle"]}
-        value={value}
-        onChangeText={onChange}
-        autoCorrect={false}
-        autoCapitalize="none"
-      />
-      {value !== "" && (
-        <Pressable
-          onPress={() => onChange("")}
-          aria-label="Clear search"
-          role="button"
-          hitSlop={8}
-        >
-          <SymbolView
-            name={{
-              ios: "xmark.circle.fill",
-              android: "cancel",
-              web: "cancel",
-            }}
-            tintColor={colors["ink-subtle"]}
-            size={20}
-          />
-        </Pressable>
-      )}
     </View>
   );
 }

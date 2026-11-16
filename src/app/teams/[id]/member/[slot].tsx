@@ -4,7 +4,6 @@ import { SymbolView } from "expo-symbols";
 import { useMemo, type ReactNode } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
-import { Field, Stepper } from "@/components/frontier/controls";
 import { PokeballMark } from "@/components/pokeball-mark";
 import { useTypeGradient } from "@/components/pokemon-row";
 import { Sprite } from "@/components/sprite";
@@ -12,9 +11,11 @@ import { TypeBadge, TypeDot } from "@/components/type-badge";
 import {
   Card,
   Divider,
+  Field,
   Label,
   SectionTitle,
   Segmented,
+  Stepper,
   TABULAR,
 } from "@/components/ui";
 import { useDb } from "@/db";

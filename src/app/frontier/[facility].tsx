@@ -1,14 +1,22 @@
 import { Stack, useLocalSearchParams } from "expo-router";
 import { SymbolView } from "expo-symbols";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 
-import { Field, Segmented, Stepper } from "@/components/frontier/controls";
 import { SetCard } from "@/components/frontier/set-card";
 import { MoveChip } from "@/components/move-chip";
 import { Sprite } from "@/components/sprite";
 import { TeamsShortcut } from "@/components/teams/teams-shortcut";
-import { Card, SectionTitle, TABULAR, Tag } from "@/components/ui";
+import {
+  Card,
+  Field,
+  SearchField,
+  SectionTitle,
+  Segmented,
+  Stepper,
+  TABULAR,
+  Tag,
+} from "@/components/ui";
 import { useDb } from "@/db";
 import {
   getDomeSets,
@@ -21,6 +29,7 @@ import {
   getPyramidWildMons,
   getTrainersForBattle,
   type FrontierSetDetail,
+  type FrontierTrainer,
 } from "@/db/frontier-queries";
 import {
   battlePosition,
@@ -36,12 +45,10 @@ import {
 import { facilityInfo, type FacilityInfo } from "@/lib/frontier-facilities";
 import { useColors } from "@/theme/theme";
 
-type SetWithIvs = FrontierSetDetail & { possibleIvs: number[] };
-type FrontierTrainerInfo = {
-  id: number;
-  name: string;
-  trainerClass: string;
-  fixedIv: number;
+/** A possible set, the trainers who can field it and the IVs they use. */
+type SetWithIvs = FrontierSetDetail & {
+  possibleIvs: number[];
+  trainerIds: number[];
 };
 
 export default function FacilityScreen() {
@@ -81,8 +88,8 @@ function Facility({ info }: { info: FacilityInfo }) {
         const t = getTrainersForBattle(db, battle);
         return {
           kind: "sets" as const,
-          sets: getPossibleSets(db, { battle, levelMode }) as SetWithIvs[],
-          trainers: t.trainers as FrontierTrainerInfo[] | undefined,
+          sets: getPossibleSets(db, { battle, levelMode }),
+          trainers: t.trainers,
           summary: trainerSummary(t.trainers),
         };
       }
@@ -90,9 +97,8 @@ function Facility({ info }: { info: FacilityInfo }) {
         const t = getDomeTrainers(db, streak);
         return {
           kind: "sets" as const,
-          sets: getDomeSets(db, { streak, levelMode }) as SetWithIvs[],
-          trainers: [...t.regular, ...t.harder] as
-            FrontierTrainerInfo[] | undefined,
+          sets: getDomeSets(db, { streak, levelMode }),
+          trainers: [...t.regular, ...t.harder],
           summary: trainerSummary([...t.regular, ...t.harder]),
         };
       }
@@ -100,10 +106,12 @@ function Facility({ info }: { info: FacilityInfo }) {
         const iv = factoryOpponentIv(ivTable, towerWins, battle);
         return {
           kind: "sets" as const,
-          trainers: undefined as FrontierTrainerInfo[] | undefined,
+          // Factory Pokémon don't depend on the trainer.
+          trainers: undefined,
           sets: getFactorySets(db, { battle, levelMode }).sets.map((s) => ({
             ...s,
             possibleIvs: iv === null ? [] : [iv],
+            trainerIds: [],
           })),
           summary:
             iv === null
@@ -325,7 +333,7 @@ function SetsExplorer({
 }: {
   sets: SetWithIvs[];
   /** Who the sets belong to; without it (the Factory) nothing narrows. */
-  trainers?: FrontierTrainerInfo[];
+  trainers?: FrontierTrainer[];
   summary: string;
   level: number;
   info: FacilityInfo;
@@ -337,11 +345,11 @@ function SetsExplorer({
 
   const narrowed = trainers
     ? narrowBySeen(
-        sets as (SetWithIvs & { trainerIds: number[] })[],
+        sets,
         seen,
         (id) => trainers.find((t) => t.id === id)?.fixedIv,
       )
-    : { trainerIds: [] as number[], sets };
+    : { trainerIds: [], sets };
   const fitting = trainers?.filter((t) => narrowed.trainerIds.includes(t.id));
   const nameOf = (id: number) =>
     sets.find((s) => s.pokemonId === id)?.species ?? "This Pokémon";
@@ -442,22 +450,11 @@ function SetsExplorer({
       )}
 
       {picked === null && (
-        <View className="h-11 flex-row items-center gap-2 rounded-tile bg-sunken px-3">
-          <SymbolView
-            name={{ ios: "magnifyingglass", android: "search", web: "search" }}
-            tintColor={colors["ink-subtle"]}
-            size={20}
-          />
-          <TextInput
-            className="h-11 flex-1 text-body text-ink outline-none"
-            placeholder="Which Pokémon did they send out?"
-            placeholderTextColor={colors["ink-subtle"]}
-            value={query}
-            onChangeText={setQuery}
-            autoCorrect={false}
-            autoCapitalize="none"
-          />
-        </View>
+        <SearchField
+          value={query}
+          onChange={setQuery}
+          placeholder="Which Pokémon did they send out?"
+        />
       )}
       {picked !== null && (
         <View className="gap-2">

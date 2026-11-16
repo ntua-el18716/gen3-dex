@@ -10,7 +10,7 @@ import { Sprite } from "@/components/sprite";
 import { StatCells } from "@/components/stat-cells";
 import { PurposeIcon } from "@/components/teams/purpose-icon";
 import { TypeDot } from "@/components/type-badge";
-import { SectionTitle, Segmented, TABULAR } from "@/components/ui";
+import { Pills, SectionTitle, Segmented, TABULAR } from "@/components/ui";
 import { useDb } from "@/db";
 import { GAMES } from "@/db/schema";
 import { getTeamDetails, type TeamMemberDetail } from "@/db/team-queries";
@@ -76,38 +76,16 @@ function TeamEditor({ team }: { team: Team }) {
           onChangeText={(name) => change({ name })}
           maxLength={40}
         />
-        {/* One scrolling row, running to the screen's edges. */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          className="-mx-4"
-          contentContainerClassName="gap-2 px-4"
-        >
-          {TEAM_PURPOSES.map((p) => {
-            const on = p === team.purpose;
-            return (
-              <Pressable
-                key={p}
-                onPress={() => updateTeam(team.id, (t) => withPurpose(t, p))}
-                role="radio"
-                aria-checked={on}
-                aria-label={purposeName(p)}
-                className={`h-11 flex-row items-center gap-2 rounded-full pl-1.5 pr-4 active:opacity-60 ${
-                  on ? "bg-ink" : "bg-surface"
-                }`}
-              >
-                <PurposeIcon purpose={p} game={team.game} size={32} />
-                <Text
-                  className={`text-callout font-semibold ${
-                    on ? "text-canvas" : "text-ink"
-                  }`}
-                >
-                  {purposeName(p).replace("Battle ", "")}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+        <Pills
+          options={TEAM_PURPOSES.map((p) => ({
+            value: p,
+            label: purposeName(p).replace("Battle ", ""),
+            a11yLabel: purposeName(p),
+            left: <PurposeIcon purpose={p} game={team.game} size={32} />,
+          }))}
+          value={team.purpose}
+          onChange={(p) => updateTeam(team.id, (t) => withPurpose(t, p))}
+        />
         {isFrontier(team.purpose) ? (
           <Segmented
             options={[

@@ -3,7 +3,6 @@ import { Link, router, Stack, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
-import { Field } from "@/components/frontier/controls";
 import { PokeballMark } from "@/components/pokeball-mark";
 import { useTypeGradient } from "@/components/pokemon-row";
 import { Sprite } from "@/components/sprite";
@@ -12,7 +11,9 @@ import { TypeDot } from "@/components/type-badge";
 import {
   Card,
   Divider,
+  Field,
   Label,
+  Pills,
   SectionTitle,
   Segmented,
   TABULAR,
@@ -161,36 +162,17 @@ export default function MatchupScreen() {
         <View className="gap-3">
           <SectionTitle>Your team</SectionTitle>
           {usable.length > 1 && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              className="-mx-4"
-              contentContainerClassName="gap-2 px-4"
-            >
-              {usable.map((t) => {
-                const on = t.id === team?.id;
-                return (
-                  <Pressable
-                    key={t.id}
-                    onPress={() => setTeamId(t.id)}
-                    role="radio"
-                    aria-checked={on}
-                    className={`h-11 flex-row items-center gap-2 rounded-full pl-1.5 pr-4 active:opacity-60 ${
-                      on ? "bg-ink" : "bg-surface"
-                    }`}
-                  >
-                    <PurposeIcon purpose={t.purpose} game={t.game} size={32} />
-                    <Text
-                      className={`text-callout font-semibold ${
-                        on ? "text-canvas" : "text-ink"
-                      }`}
-                    >
-                      {t.name || "Untitled team"}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+            <Pills
+              options={usable.map((t) => ({
+                value: t.id,
+                label: t.name || "Untitled team",
+                left: (
+                  <PurposeIcon purpose={t.purpose} game={t.game} size={32} />
+                ),
+              }))}
+              value={team?.id}
+              onChange={setTeamId}
+            />
           )}
           {team &&
             mine.map((member, slot) =>
