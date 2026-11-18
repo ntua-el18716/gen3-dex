@@ -3,13 +3,15 @@ import { LinearGradient } from "expo-linear-gradient";
 import { Pressable, Text, View } from "react-native";
 
 import type { PokemonListItem } from "@/db/queries";
+import { spriteColors } from "@/generated/sprite-colors";
 import type { ListLayout } from "@/state/list-layout";
-import { hexToRgb, mix, typeColor } from "@/theme/colors";
+import { hexToRgb, mix, typeColor, vivid } from "@/theme/colors";
 import { useColors, usePalette } from "@/theme/theme";
 
 import { PokeballMark } from "./pokeball-mark";
 import { Sprite } from "./sprite";
 import { TypeBadge } from "./type-badge";
+import { TABULAR } from "./ui";
 
 /** Card height plus the gap around it; every row is exactly this tall. */
 export const ROW_HEIGHT = 80;
@@ -19,15 +21,28 @@ export function dexNumber(id: number) {
 }
 
 /**
- * The card's background: its first type's colour fading into its second
- * (or a paler first), blended over the surface so it works in both themes.
+ * What the cards are tinted with: the Pokémon's own colours (taken from its
+ * sprite, see scripts/sprites/build-sprite-colors.ts) or its types' colours.
  */
-export function useTypeGradient(pokemon: PokemonListItem) {
+const TINT: "sprite" | "type" = "sprite";
+
+/**
+ * The card's background: one colour fading into a second, blended over the
+ * surface so it works in both themes.
+ */
+export function useTypeGradient(
+  pokemon: Pick<PokemonListItem, "id" | "type1" | "type2">,
+) {
   const { surface } = usePalette();
-  return [
-    mix(hexToRgb(typeColor(pokemon.type1)), surface, 0.3),
-    mix(hexToRgb(typeColor(pokemon.type2 ?? pokemon.type1)), surface, 0.14),
-  ] as const;
+  const own = TINT === "sprite" ? spriteColors[pokemon.id] : undefined;
+  const [first, second] = own
+    ? // Brought up to the strength of the type colours, so the fade shows.
+      [vivid(hexToRgb(own[0])), vivid(hexToRgb(own[1]))]
+    : [
+        hexToRgb(typeColor(pokemon.type1)),
+        hexToRgb(typeColor(pokemon.type2 ?? pokemon.type1)),
+      ];
+  return [mix(first, surface, 0.3), mix(second, surface, 0.14)] as const;
 }
 
 /** One Pokémon in the phone list: a card washed in its types' colours. */
@@ -50,7 +65,7 @@ export function PokemonRow({
       >
         <Pressable
           android_ripple={{ color: colors.sunken, foreground: true }}
-          className="flex-1 overflow-hidden rounded-[18px] active:opacity-80"
+          className="flex-1 overflow-hidden rounded-card active:opacity-80"
         >
           <LinearGradient
             colors={gradient}
@@ -75,12 +90,15 @@ export function PokemonRow({
                 className={`flex-row items-baseline gap-2 ${left ? "justify-between" : ""}`}
               >
                 <Text
-                  className="text-base font-black text-ink"
+                  className="text-headline font-bold text-ink"
                   numberOfLines={1}
                 >
                   {pokemon.name}
                 </Text>
-                <Text className="text-xs font-bold text-ink-subtle">
+                <Text
+                  className="text-caption font-semibold text-ink-subtle"
+                  style={TABULAR}
+                >
                   {dexNumber(pokemon.id)}
                 </Text>
               </View>

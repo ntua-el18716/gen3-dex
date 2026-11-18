@@ -1,10 +1,12 @@
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, View } from "react-native";
 
 import { GamePicker } from "@/components/game-picker";
 import { TrainerCard } from "@/components/league/trainer-card";
 import { ScreenHeader } from "@/components/screen-header";
 import { Sprite } from "@/components/sprite";
+import { TeamsShortcut } from "@/components/teams/teams-shortcut";
+import { Label, SectionTitle } from "@/components/ui";
 import { useDb } from "@/db";
 import { getTrainerTeams, pickForStarter } from "@/db/league-queries";
 import { GAME_INFO } from "@/lib/games";
@@ -55,35 +57,32 @@ export default function LeagueScreen() {
     <ScrollView contentContainerClassName="pb-10">
       <ScreenHeader
         title="League"
-        subtitle={`${GAME_INFO[game].name} · gyms, Elite Four, rivals`}
+        subtitle={`Every team you face in ${GAME_INFO[game].name}`}
       >
         <GamePicker />
       </ScreenHeader>
-      <View className="gap-6 px-3">
+      <View className="gap-7 px-4 pt-2">
+        <TeamsShortcut purpose="walkthrough" game={game} />
         {sections.map((section) => (
-          <View key={section.title} className="gap-2.5">
-            <View className="flex-row items-end justify-between px-1">
-              <Text className="text-xs font-extrabold uppercase tracking-widest text-ink-subtle">
-                {section.title}
-              </Text>
-              {section.kind === "rival" && (
-                <StarterPicker
-                  region={region}
-                  value={starter}
-                  onChange={setStarter}
-                />
-              )}
-            </View>
+          <View key={section.title} className="gap-2">
+            <SectionTitle
+              action={
+                section.kind === "rival" && (
+                  <StarterPicker
+                    region={region}
+                    value={starter}
+                    onChange={setStarter}
+                  />
+                )
+              }
+            >
+              {section.title}
+            </SectionTitle>
             {section.trainers.map((entry, i) => (
               <TrainerCard
                 key={`${game}-${section.title}-${i}`}
                 entry={entry}
                 kind={section.kind}
-                number={
-                  section.kind === "gym" || section.kind === "elite"
-                    ? i + 1
-                    : undefined
-                }
                 pick={pick}
               />
             ))}
@@ -105,9 +104,7 @@ function StarterPicker({
 }) {
   return (
     <View className="flex-row items-center gap-1.5">
-      <Text className="mr-1 text-[11px] font-bold text-ink-subtle">
-        Your starter
-      </Text>
+      <Label className="mr-1">Your starter</Label>
       {STARTERS[region].map((id) => {
         const on = id === value;
         return (
@@ -116,7 +113,7 @@ function StarterPicker({
             onPress={() => onChange(id)}
             role="radio"
             aria-checked={on}
-            className={`h-10 w-10 items-center justify-center rounded-full border-2 ${
+            className={`h-10 w-10 items-center justify-center rounded-full border-2 active:opacity-60 ${
               on ? "border-accent bg-surface" : "border-transparent bg-sunken"
             }`}
           >

@@ -20,7 +20,7 @@ export default function TabLayout() {
           backgroundColor: colors.surface,
           borderTopColor: colors.line,
         },
-        tabBarLabelStyle: { fontWeight: "700" },
+        tabBarLabelStyle: { fontWeight: "600" },
         sceneStyle: { backgroundColor: colors.canvas },
       }}
     >
@@ -51,6 +51,23 @@ export default function TabLayout() {
                 ios: "medal.fill",
                 android: "military_tech",
                 web: "military_tech",
+              }}
+              color={color}
+              size={size}
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="teams"
+        options={{
+          title: "Teams",
+          tabBarIcon: ({ color, size }) => (
+            <TabIcon
+              name={{
+                ios: "person.3.fill",
+                android: "groups",
+                web: "groups",
               }}
               color={color}
               size={size}

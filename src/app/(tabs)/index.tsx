@@ -1,24 +1,16 @@
-import { SymbolView } from "expo-symbols";
 import { useMemo, useState } from "react";
-import {
-  FlatList,
-  Pressable,
-  Text,
-  TextInput,
-  useWindowDimensions,
-  View,
-} from "react-native";
+import { FlatList, Text, useWindowDimensions, View } from "react-native";
 
 import { GamePicker } from "@/components/game-picker";
 import { PokemonCard } from "@/components/pokemon-card";
 import { PokemonRow } from "@/components/pokemon-row";
 import { ScreenHeader } from "@/components/screen-header";
+import { IconButton, SearchField } from "@/components/ui";
 import { useDb } from "@/db";
 import { listPokemon } from "@/db/queries";
 import { GAME_INFO } from "@/lib/games";
 import { useCurrentGame } from "@/state/current-game";
 import { useListLayout, type ListLayout } from "@/state/list-layout";
-import { useColors } from "@/theme/theme";
 
 /** Content never gets wider than this, so big screens get margins. */
 const MAX_WIDTH = 1200;
@@ -61,7 +53,7 @@ export default function PokedexScreen() {
       <View className="self-center" style={{ width: contentWidth }}>
         <ScreenHeader
           title="Pokédex"
-          subtitle={`${count} · ${GAME_INFO[game].name}`}
+          subtitle={`${count} in ${GAME_INFO[game].name}`}
           actions={
             columns === 1 && (
               <LayoutToggle layout={layout} onChange={setLayout} />
@@ -77,9 +69,11 @@ export default function PokedexScreen() {
             <View className={columns > 1 ? "w-80" : ""}>
               <GamePicker />
             </View>
-            <SearchBox
+            <SearchField
               value={query}
               onChange={setQuery}
+              placeholder="Name or number"
+              clearable
               className={columns > 1 ? "flex-1" : ""}
             />
           </View>
@@ -111,62 +105,11 @@ export default function PokedexScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
         ListEmptyComponent={
-          <Text className="p-8 text-center text-ink-muted">
+          <Text className="p-8 text-center text-body text-ink-muted">
             No Pokémon match “{query}”.
           </Text>
         }
       />
-    </View>
-  );
-}
-
-/** A search field with a magnifier and a clear button. */
-function SearchBox({
-  value,
-  onChange,
-  className = "",
-}: {
-  value: string;
-  onChange: (text: string) => void;
-  className?: string;
-}) {
-  const colors = useColors();
-  return (
-    <View
-      className={`flex-row items-center gap-2 rounded-xl border border-line bg-surface px-3 ${className}`}
-    >
-      <SymbolView
-        name={{ ios: "magnifyingglass", android: "search", web: "search" }}
-        tintColor={colors["ink-subtle"]}
-        size={20}
-      />
-      <TextInput
-        className="flex-1 py-3 text-base text-ink"
-        placeholder="Search by name or number"
-        placeholderTextColor={colors["ink-subtle"]}
-        value={value}
-        onChangeText={onChange}
-        autoCorrect={false}
-        autoCapitalize="none"
-      />
-      {value !== "" && (
-        <Pressable
-          onPress={() => onChange("")}
-          aria-label="Clear search"
-          role="button"
-          hitSlop={8}
-        >
-          <SymbolView
-            name={{
-              ios: "xmark.circle.fill",
-              android: "cancel",
-              web: "cancel",
-            }}
-            tintColor={colors["ink-subtle"]}
-            size={20}
-          />
-        </Pressable>
-      )}
     </View>
   );
 }
@@ -179,25 +122,16 @@ function LayoutToggle({
   layout: ListLayout;
   onChange: (layout: ListLayout) => void;
 }) {
-  const colors = useColors();
   const next = layout === "sprite-right" ? "sprite-left" : "sprite-right";
   return (
-    <Pressable
+    <IconButton
+      name={{
+        ios: "arrow.left.arrow.right",
+        android: "swap_horiz",
+        web: "swap_horiz",
+      }}
+      label={`Show sprites on the ${next === "sprite-left" ? "left" : "right"}`}
       onPress={() => onChange(next)}
-      aria-label={`Show sprites on the ${next === "sprite-left" ? "left" : "right"}`}
-      role="button"
-      hitSlop={8}
-      className="h-8 w-8 items-center justify-center rounded-full bg-sunken active:opacity-70"
-    >
-      <SymbolView
-        name={{
-          ios: "arrow.left.arrow.right",
-          android: "swap_horiz",
-          web: "swap_horiz",
-        }}
-        tintColor={colors["ink-muted"]}
-        size={18}
-      />
-    </Pressable>
+    />
   );
 }

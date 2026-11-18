@@ -17,6 +17,7 @@ import { PokeballMark } from "@/components/pokeball-mark";
 import { dexNumber } from "@/components/pokemon-row";
 import { Sprite } from "@/components/sprite";
 import { TypeBadge } from "@/components/type-badge";
+import { IconButton, Label, TABULAR } from "@/components/ui";
 import type { PokemonDetail } from "@/db/queries";
 import { captureChance } from "@/lib/catch-rate";
 import { formatHeight, formatWeight } from "@/lib/pokemon-format";
@@ -196,10 +197,13 @@ export function HeroHeader({
           name,
         ]}
       >
-        <Text className="text-xl font-bold text-ink-subtle">
+        <Text className="text-xl font-semibold text-ink-subtle" style={TABULAR}>
           {dexNumber(pokemon.id)}
         </Text>
-        <Text className="text-[32px] font-black text-ink" numberOfLines={1}>
+        <Text
+          className="text-[32px] font-bold tracking-tight text-ink"
+          numberOfLines={1}
+        >
           {pokemon.name}
         </Text>
       </Animated.View>
@@ -218,7 +222,7 @@ export function HeroHeader({
           details,
         ]}
       >
-        <Text className="text-sm text-ink-muted">
+        <Text className="text-callout text-ink-muted">
           {pokemon.category} Pokémon
           {pokemon.formName ? ` · ${pokemon.formName}` : ""}
         </Text>
@@ -247,7 +251,7 @@ export function HeroHeader({
             flexDirection: "row",
             alignItems: "center",
             justifyContent: "space-between",
-            paddingHorizontal: 8,
+            paddingHorizontal: 12,
           },
           { top, height: BAR },
           pinned,
@@ -289,31 +293,23 @@ export function HeroHeader({
 
 function Fact({ label, value }: { label: string; value: string }) {
   return (
-    <View className="flex-1 items-center rounded-2xl bg-surface/70 py-2">
-      <Text className="text-[10px] font-extrabold uppercase tracking-widest text-ink-subtle">
-        {label}
+    <View className="flex-1 items-center rounded-tile bg-surface/70 py-2">
+      <Text className="text-headline font-bold text-ink" style={TABULAR}>
+        {value}
       </Text>
-      <Text className="text-base font-bold text-ink">{value}</Text>
+      <Label>{label}</Label>
     </View>
   );
 }
 
 function BackButton() {
-  const colors = useColors();
   return (
-    <Pressable
+    <IconButton
+      name={{ ios: "chevron.left", android: "arrow_back", web: "arrow_back" }}
+      label="Back"
       onPress={() => (router.canGoBack() ? router.back() : router.replace("/"))}
-      aria-label="Back"
-      role="button"
-      hitSlop={8}
-      className="h-10 w-10 items-center justify-center rounded-full bg-surface/60 active:opacity-70"
-    >
-      <SymbolView
-        name={{ ios: "chevron.left", android: "arrow_back", web: "arrow_back" }}
-        tintColor={colors.ink}
-        size={22}
-      />
-    </Pressable>
+      translucent
+    />
   );
 }
 
@@ -324,6 +320,7 @@ function ShinyToggle({
   shiny: boolean;
   onPress: () => void;
 }) {
+  const colors = useColors();
   return (
     <Pressable
       onPress={onPress}
@@ -333,12 +330,17 @@ function ShinyToggle({
       aria-checked={shiny}
       aria-label="Shiny"
       hitSlop={8}
-      className={`rounded-full px-3 py-1.5 ${shiny ? "bg-accent" : "bg-surface/70"}`}
+      className={`h-10 flex-row items-center gap-1.5 rounded-full pl-3 pr-3.5 active:opacity-60 ${shiny ? "bg-accent" : "bg-surface/70"}`}
     >
+      <SymbolView
+        name={{ ios: "sparkles", android: "auto_awesome", web: "auto_awesome" }}
+        tintColor={shiny ? colors["on-accent"] : colors.ink}
+        size={16}
+      />
       <Text
-        className={`text-xs font-bold ${shiny ? "text-on-accent" : "text-ink-muted"}`}
+        className={`text-callout font-semibold ${shiny ? "text-on-accent" : "text-ink"}`}
       >
-        ✦ Shiny
+        Shiny
       </Text>
     </Pressable>
   );
@@ -380,7 +382,7 @@ function TabBar({
         >
           <Text
             numberOfLines={1}
-            className={`text-sm font-extrabold ${i === index ? "text-ink" : "text-ink-subtle"}`}
+            className={`text-callout font-semibold ${i === index ? "text-ink" : "text-ink-subtle"}`}
           >
             {title}
           </Text>
@@ -392,11 +394,11 @@ function TabBar({
           {
             position: "absolute",
             bottom: 0,
-            height: 3,
-            borderRadius: 3,
+            height: 2,
+            borderRadius: 2,
             backgroundColor: colors.accent,
           },
-          { left: 8 + tabWidth * 0.2, width: tabWidth * 0.6 },
+          { left: 8 + tabWidth * 0.25, width: tabWidth * 0.5 },
           underline,
         ]}
       />

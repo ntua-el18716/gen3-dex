@@ -5,28 +5,6 @@ import type { PokemonType } from "@/db/schema";
 import { typeIcons } from "@/generated/type-icons";
 import { LIGHT_TYPES, typeColor } from "@/theme/colors";
 
-/** A faint wash of the type's colour, for backgrounds behind sprites. */
-export const TYPE_TINT: Record<PokemonType, string> = {
-  normal: "bg-type-normal/20",
-  fighting: "bg-type-fighting/20",
-  flying: "bg-type-flying/20",
-  poison: "bg-type-poison/20",
-  ground: "bg-type-ground/20",
-  rock: "bg-type-rock/20",
-  bug: "bg-type-bug/20",
-  ghost: "bg-type-ghost/20",
-  steel: "bg-type-steel/20",
-  "???": "bg-type-mystery/20",
-  fire: "bg-type-fire/20",
-  water: "bg-type-water/20",
-  grass: "bg-type-grass/20",
-  electric: "bg-type-electric/20",
-  psychic: "bg-type-psychic/20",
-  ice: "bg-type-ice/20",
-  dragon: "bg-type-dragon/20",
-  dark: "bg-type-dark/20",
-};
-
 /** Glyph colour on the type's colour: white, or dark on light types. */
 function glyphColor(type: PokemonType) {
   return LIGHT_TYPES.has(type) ? "#1F2937" : "#FFFFFF";
@@ -62,7 +40,7 @@ export function TypeBadge({
   const icon = small ? 16 : 18;
   return (
     <View
-      className={`flex-row items-center rounded-full ${small ? "w-[84px]" : "w-[96px]"}`}
+      className={`flex-row items-center rounded-full ${small ? "w-[82px]" : "w-[94px]"}`}
       style={{ backgroundColor: typeColor(type), padding: 2 }}
     >
       <View
@@ -72,7 +50,7 @@ export function TypeBadge({
         <TypeIcon type={type} size={icon - 2} />
       </View>
       <Text
-        className={`flex-1 pr-1 text-center font-extrabold uppercase tracking-wide ${small ? "text-[10px]" : "text-[11px]"}`}
+        className={`flex-1 pr-1 text-center font-bold capitalize ${small ? "text-micro" : "text-caption"}`}
         style={{ color: glyphColor(type) }}
         numberOfLines={1}
       >

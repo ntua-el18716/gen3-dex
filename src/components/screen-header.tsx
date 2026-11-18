@@ -23,14 +23,14 @@ export function ScreenHeader({
 }) {
   const insets = useSafeAreaInsets();
   return (
-    <View className="gap-3 px-4 pb-3" style={{ paddingTop: insets.top + 12 }}>
+    <View className="gap-4 px-4 pb-3" style={{ paddingTop: insets.top + 16 }}>
       <View className="flex-row items-center justify-between">
-        <View>
-          <Text className="text-3xl font-extrabold text-ink">{title}</Text>
+        <View className="flex-1">
+          <Text className="text-display font-bold tracking-tight text-ink">
+            {title}
+          </Text>
           {subtitle && (
-            <Text className="text-sm font-medium text-ink-subtle">
-              {subtitle}
-            </Text>
+            <Text className="text-callout text-ink-muted">{subtitle}</Text>
           )}
         </View>
         <View className="flex-row items-center gap-2">

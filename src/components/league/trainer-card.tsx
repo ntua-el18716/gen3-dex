@@ -7,6 +7,7 @@ import { Pressable, Text, View } from "react-native";
 import { MoveChip } from "@/components/move-chip";
 import { Sprite } from "@/components/sprite";
 import { TypeDot } from "@/components/type-badge";
+import { Segmented, TABULAR } from "@/components/ui";
 import type { TrainerTeam } from "@/db/league-queries";
 import type { LeagueSection, LeagueTrainer } from "@/lib/league";
 import { hexToRgb, mix, typeColor } from "@/theme/colors";
@@ -18,18 +19,15 @@ const CHAMPION_GOLD = "#E2B33C";
 /**
  * One League trainer: who, where, and their team as a sprite strip. Tap to
  * see each Pokémon's level, held item and moves. Rematch teams switch with
- * the chips under the name.
+ * the control under the name.
  */
 export function TrainerCard({
   entry,
   kind,
-  number,
   pick,
 }: {
   entry: LeagueTrainer;
   kind: LeagueSection["kind"];
-  /** Gym or Elite Four position, shown as a big faint numeral. */
-  number?: number;
   /** The team for a variant (rival battles: the one for your starter). */
   pick: (keys: string[]) => TrainerTeam | undefined;
 }) {
@@ -48,38 +46,30 @@ export function TrainerCard({
         : null;
   const gradient = tint
     ? ([
-        mix(hexToRgb(tint), surface, 0.24),
-        mix(hexToRgb(tint), surface, 0.06),
+        mix(hexToRgb(tint), surface, 0.2),
+        mix(hexToRgb(tint), surface, 0.04),
       ] as const)
     : ([colors.surface, colors.surface] as const);
 
   return (
-    <View className="overflow-hidden rounded-[20px] border border-line">
+    <View className="overflow-hidden rounded-card">
       <LinearGradient
         colors={gradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0.4 }}
         style={{ position: "absolute", inset: 0 }}
       />
-      {number !== undefined && (
-        <Text
-          className="absolute -top-3 right-3 text-[84px] font-black text-ink opacity-[0.07]"
-          pointerEvents="none"
-        >
-          {number}
-        </Text>
-      )}
       <Pressable
         onPress={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="gap-3 p-3.5"
+        className="gap-3.5 p-4"
       >
         <View className="flex-row items-center gap-3">
           {entry.type ? (
-            <TypeDot type={entry.type} size={38} />
+            <TypeDot type={entry.type} size={40} />
           ) : (
             <View
-              className="h-[38px] w-[38px] items-center justify-center rounded-full"
+              className="h-10 w-10 items-center justify-center rounded-full"
               style={{
                 backgroundColor:
                   kind === "champion" ? CHAMPION_GOLD : colors.accent,
@@ -97,13 +87,13 @@ export function TrainerCard({
             </View>
           )}
           <View className="flex-1">
-            <Text className="text-lg font-black text-ink" numberOfLines={1}>
-              {kind === "rival" && entry.detail ? entry.detail : trainer.name}
-            </Text>
             <Text
-              className="text-xs font-semibold text-ink-muted"
+              className="text-headline font-bold text-ink"
               numberOfLines={1}
             >
+              {kind === "rival" && entry.detail ? entry.detail : trainer.name}
+            </Text>
+            <Text className="text-callout text-ink-muted" numberOfLines={1}>
               {[entry.place, kind === "rival" ? null : entry.detail]
                 .filter(Boolean)
                 .join(" · ")}
@@ -122,32 +112,26 @@ export function TrainerCard({
         </View>
 
         {entry.variants.length > 1 && (
-          <View className="flex-row flex-wrap gap-1.5">
-            {entry.variants.map((v, i) => (
-              <Pressable
-                key={v.label}
-                onPress={() => setVariant(i)}
-                role="tab"
-                aria-selected={i === variant}
-                hitSlop={4}
-                className={`rounded-full px-2.5 py-1 ${i === variant ? "bg-accent" : "bg-surface/70"}`}
-              >
-                <Text
-                  className={`text-[11px] font-bold ${i === variant ? "text-on-accent" : "text-ink-muted"}`}
-                >
-                  {v.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
+          <Segmented
+            options={entry.variants.map((v, i) => ({
+              value: i,
+              label: v.label,
+            }))}
+            value={variant}
+            onChange={setVariant}
+            small
+          />
         )}
 
         {!open ? (
           <View className="flex-row flex-wrap gap-1">
             {trainer.team.map((m) => (
-              <View key={m.slot} className="w-[52px] items-center">
+              <View key={m.slot} className="w-[52px] items-center gap-0.5">
                 <Sprite id={m.pokemonId} size={48} />
-                <Text className="text-[11px] font-bold text-ink-muted">
+                <Text
+                  className="text-micro font-medium text-ink-muted"
+                  style={TABULAR}
+                >
                   Lv {m.level}
                 </Text>
               </View>
@@ -168,7 +152,7 @@ export function TrainerCard({
 /** A team member in full: sprite, types, level, item, moves. */
 function TeamMember({ mon }: { mon: TrainerTeam["team"][number] }) {
   return (
-    <View className="flex-row gap-3 rounded-2xl bg-surface/80 p-2.5">
+    <View className="flex-row gap-3 rounded-tile bg-surface/80 p-3">
       <Link
         href={{ pathname: "/pokemon/[id]", params: { id: mon.pokemonId } }}
         asChild
@@ -180,12 +164,12 @@ function TeamMember({ mon }: { mon: TrainerTeam["team"][number] }) {
       <View className="flex-1 gap-1.5">
         <View className="flex-row items-center gap-2">
           <Text
-            className="flex-shrink text-base font-black text-ink"
+            className="flex-shrink text-body font-bold text-ink"
             numberOfLines={1}
           >
             {mon.name}
           </Text>
-          <Text className="text-xs font-bold text-ink-subtle">
+          <Text className="text-caption font-medium text-ink-muted">
             Lv {mon.level}
           </Text>
           <View className="ml-auto flex-row gap-1">
@@ -194,8 +178,8 @@ function TeamMember({ mon }: { mon: TrainerTeam["team"][number] }) {
           </View>
         </View>
         {mon.item && (
-          <Text className="text-xs text-ink-muted">
-            Holds <Text className="font-bold text-ink">{mon.item}</Text>
+          <Text className="text-caption text-ink-muted">
+            Holds <Text className="font-semibold text-ink">{mon.item}</Text>
           </Text>
         )}
         <View className="flex-row flex-wrap gap-1">
@@ -208,8 +192,8 @@ function TeamMember({ mon }: { mon: TrainerTeam["team"][number] }) {
           ))}
         </View>
         {mon.movesComputed && (
-          <Text className="text-[10px] text-ink-subtle">
-            Moves: the game&apos;s default for its level
+          <Text className="text-micro text-ink-subtle">
+            The game&apos;s default moves for this level
           </Text>
         )}
       </View>

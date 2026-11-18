@@ -60,7 +60,7 @@ Stuck for more than ~20 minutes? Ask for a **hint**, not the answer: _"Give me a
 **Hints:**
 
 - State: `const [type, setType] = useState<PokemonType | null>(null)`.
-- Filtering is derived (no new state for the result): extend the `shown` computation in [index.tsx](../../src/app/index.tsx). `listPokemon` already returns `type1` and `type2`.
+- Filtering is derived (no new state for the result): extend the `shown` computation in [index.tsx](<../../src/app/(tabs)/index.tsx>). `listPokemon` already returns `type1` and `type2`.
 - Chips: `<ScrollView horizontal showsHorizontalScrollIndicator={false}>` with one `Pressable` per type. `TYPES` from the schema lists them; skip `"???"`.
 - Colour the selected chip with the type colour. Remember chapter 8: you need full class names. `TypeBadge` has a table you can export and reuse.
 - Put the chip row in the list header, next to the search box.
