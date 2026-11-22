@@ -2,14 +2,7 @@ import { SymbolView } from "expo-symbols";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
-import {
-  Divider,
-  Field,
-  Pills,
-  Segmented,
-  Stepper,
-  TABULAR,
-} from "@/components/ui";
+import { Divider, Field, Pills, Stepper, TABULAR } from "@/components/ui";
 import {
   MAX_STAGE,
   MIN_STAGE,
