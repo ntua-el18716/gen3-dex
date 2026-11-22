@@ -47,6 +47,12 @@ function ThemedStack() {
         name="teams/[id]/pick"
         options={{ presentation: "modal" }}
       />
+      <Stack.Screen
+        name="teams/[id]/export"
+        options={{ presentation: "modal" }}
+      />
+      <Stack.Screen name="teams/backup" options={{ presentation: "modal" }} />
+      <Stack.Screen name="teams/import" options={{ presentation: "modal" }} />
     </Stack>
   );
 }

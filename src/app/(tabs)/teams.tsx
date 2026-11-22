@@ -26,11 +26,22 @@ export default function TeamsScreen() {
         title="Teams"
         subtitle="Your teams for playthroughs and the Frontier"
         actions={
-          <IconButton
-            name={{ ios: "plus", android: "add", web: "add" }}
-            label="New team"
-            onPress={create}
-          />
+          <>
+            <IconButton
+              name={{
+                ios: "square.and.arrow.down",
+                android: "download",
+                web: "download",
+              }}
+              label="Import teams"
+              onPress={() => router.push("/teams/import")}
+            />
+            <IconButton
+              name={{ ios: "plus", android: "add", web: "add" }}
+              label="New team"
+              onPress={create}
+            />
+          </>
         }
       />
       {teams.length === 0 ? (
@@ -43,6 +54,15 @@ export default function TeamsScreen() {
             Save the teams you play with: every Pokémon’s moves, item, nature,
             EVs and IVs, with its real stats.
           </Text>
+          <Pressable
+            onPress={() => router.push("/teams/import")}
+            role="button"
+            className="h-11 justify-center active:opacity-60"
+          >
+            <Text className="text-body font-semibold text-accent">
+              Or import from text
+            </Text>
+          </Pressable>
           <Pressable
             onPress={create}
             role="button"
@@ -75,6 +95,15 @@ export default function TeamsScreen() {
               </View>
             );
           })}
+          <Pressable
+            onPress={() => router.push("/teams/backup")}
+            role="button"
+            className="h-11 items-center justify-center active:opacity-60"
+          >
+            <Text className="text-body font-semibold text-accent">
+              Back up all teams
+            </Text>
+          </Pressable>
         </View>
       )}
     </ScrollView>

@@ -1,6 +1,13 @@
 import { SymbolView, type SymbolViewProps } from "expo-symbols";
 import type { ReactNode } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import {
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 import { useColors } from "@/theme/theme";
 
@@ -194,6 +201,11 @@ export function Tag({ children }: { children: string }) {
     </View>
   );
 }
+
+/** Monospaced text, for pasted or copied team text. */
+export const MONO = {
+  fontFamily: Platform.select({ ios: "Menlo", default: "monospace" }),
+};
 
 /** Numbers that line up in columns. */
 export const TABULAR = { fontVariant: ["tabular-nums" as const] };

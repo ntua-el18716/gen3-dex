@@ -189,6 +189,31 @@ function TeamEditor({ team }: { team: Team }) {
         />
       </View>
 
+      {team.members.length > 0 && (
+        <Link
+          href={{ pathname: "/teams/[id]/export", params: { id: team.id } }}
+          asChild
+        >
+          <Pressable
+            role="button"
+            className="h-12 flex-row items-center justify-center gap-2 rounded-tile bg-surface active:opacity-60"
+          >
+            <SymbolView
+              name={{
+                ios: "square.and.arrow.up",
+                android: "share",
+                web: "share",
+              }}
+              tintColor={colors.ink}
+              size={20}
+            />
+            <Text className="text-body font-semibold text-ink">
+              Share as text
+            </Text>
+          </Pressable>
+        </Link>
+      )}
+
       <DeleteButton
         onDelete={() => {
           router.back();

@@ -30,6 +30,8 @@ type TeamsStore = {
   teams: Team[];
   /** Adds an empty team and returns its id. */
   createTeam: (game: Game, purpose?: TeamPurpose) => string;
+  /** Adds finished teams (from an import) and returns their new ids. */
+  addTeams: (teams: Omit<Team, "id" | "updatedAt">[]) => string[];
   /** Replaces a team with `change(team)`. */
   updateTeam: (id: string, change: (team: Team) => Team) => void;
   deleteTeam: (id: string) => void;
@@ -56,6 +58,17 @@ export function TeamsProvider({ children }: { children: ReactNode }) {
     setTeams((all) => [team, ...all]);
     return id;
   }, []);
+  const addTeams = useCallback((incoming: Omit<Team, "id" | "updatedAt">[]) => {
+    const now = Date.now();
+    // Later teams a millisecond older, so they list in the order given.
+    const added = incoming.map((t, i) => ({
+      ...t,
+      id: newId(),
+      updatedAt: now - i,
+    }));
+    setTeams((all) => [...added, ...all]);
+    return added.map((t) => t.id);
+  }, []);
   const updateTeam = useCallback((id: string, change: (team: Team) => Team) => {
     const now = Date.now();
     setTeams((all) =>
@@ -70,10 +83,11 @@ export function TeamsProvider({ children }: { children: ReactNode }) {
     () => ({
       teams: [...teams].sort((a, b) => b.updatedAt - a.updatedAt),
       createTeam,
+      addTeams,
       updateTeam,
       deleteTeam,
     }),
-    [teams, createTeam, updateTeam, deleteTeam],
+    [teams, createTeam, addTeams, updateTeam, deleteTeam],
   );
   return <TeamsContext value={value}>{children}</TeamsContext>;
 }
