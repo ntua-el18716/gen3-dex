@@ -274,6 +274,54 @@ export function pyramidWildLevels(
 // Battle Dome (battle_dome.c)
 // ---------------------------------------------------------------------------
 
+/**
+ * GetRandomScaledFrontierTrainerId (battle_tower.c): the trainer range a
+ * challenge number and battle number draw from. The game takes the
+ * challenge as a u8 (so it wraps after 255); after challenge 7 every battle
+ * uses range 7, and battle 6 (FRONTIER_STAGES_PER_CHALLENGE − 1) uses the
+ * harder table.
+ */
+export function scaledTrainerRange(
+  challengeNum: number,
+  battleNum: number,
+): { challenge: number; lastBattle: boolean } {
+  const challenge = challengeNum % 256;
+  if (challenge > LAST_RANGED_CHALLENGE)
+    return { challenge: LAST_RANGED_CHALLENGE, lastBattle: false };
+  return { challenge, lastBattle: battleNum === BATTLES_PER_CHALLENGE - 1 };
+}
+
+/** The Battle Pike's rooms with a trainer battle. */
+export const PIKE_TRAINER_ROOMS = ["single", "hard", "double"] as const;
+export type PikeTrainerRoom = (typeof PIKE_TRAINER_ROOMS)[number];
+
+/**
+ * Battle Pike trainer rooms (PrepareOneTrainer / PrepareTwoTrainers in
+ * battle_pike.c): the challenge is rooms cleared ÷ 14; a normal battle uses
+ * battle 1's range, the hard battle room the 7th battle's. The double
+ * battle room has two trainers from the normal range, one Pokémon each.
+ */
+export function pikeTrainerRange(roomsCleared: number, room: PikeTrainerRoom) {
+  return scaledTrainerRange(
+    Math.floor(roomsCleared / PIKE_ROOMS_PER_CHALLENGE),
+    room === "hard" ? BATTLES_PER_CHALLENGE - 1 : 1,
+  );
+}
+
+/**
+ * Battle Pyramid trainers (GetUniqueTrainerId in battle_pyramid.c): the
+ * challenge is floors cleared ÷ 7 and the floor is the battle number. So
+ * floors 1–5 use the challenge's normal range, floor 6 its harder one (a
+ * side effect of the floor standing in for the battle), and floor 7 the
+ * next challenge's normal range.
+ */
+export function pyramidTrainerRange(floorsCleared: number, floor: number) {
+  const challenge = Math.floor(floorsCleared / BATTLES_PER_CHALLENGE);
+  return floor === BATTLES_PER_CHALLENGE
+    ? scaledTrainerRange(challenge + 1, floor)
+    : scaledTrainerRange(challenge, floor);
+}
+
 /** Of the 15 tournament opponents, this many come from the next range up. */
 export const DOME_HARDER_OPPONENTS = 5;
 

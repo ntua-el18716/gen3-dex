@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 
 import {
   narrowBySeen,
+  pikeTrainerRange,
+  pyramidTrainerRange,
+  scaledTrainerRange,
   battlePosition,
   brainBattle,
   domeRangeChallenges,
@@ -219,6 +222,75 @@ describe("narrowBySeen", () => {
     expect(narrowBySeen(sets, [63, 124, 95, 1], ivOf)).toEqual({
       trainerIds: [],
       sets: [],
+    });
+  });
+});
+
+describe("scaledTrainerRange", () => {
+  it("uses the harder table for battle 6, then range 7 after challenge 7", () => {
+    expect(scaledTrainerRange(0, 1)).toEqual({
+      challenge: 0,
+      lastBattle: false,
+    });
+    expect(scaledTrainerRange(3, 6)).toEqual({
+      challenge: 3,
+      lastBattle: true,
+    });
+    expect(scaledTrainerRange(7, 6)).toEqual({
+      challenge: 7,
+      lastBattle: true,
+    });
+    expect(scaledTrainerRange(8, 6)).toEqual({
+      challenge: 7,
+      lastBattle: false,
+    });
+    // The challenge is a u8: 256 wraps back to 0.
+    expect(scaledTrainerRange(256, 1)).toEqual({
+      challenge: 0,
+      lastBattle: false,
+    });
+  });
+});
+
+describe("pikeTrainerRange", () => {
+  it("counts challenges of 14 rooms", () => {
+    expect(pikeTrainerRange(0, "single")).toEqual({
+      challenge: 0,
+      lastBattle: false,
+    });
+    expect(pikeTrainerRange(13, "single").challenge).toBe(0);
+    expect(pikeTrainerRange(14, "single").challenge).toBe(1);
+    expect(pikeTrainerRange(14, "double")).toEqual({
+      challenge: 1,
+      lastBattle: false,
+    });
+  });
+  it("draws the hard room from the 7th battle's range", () => {
+    expect(pikeTrainerRange(30, "hard")).toEqual({
+      challenge: 2,
+      lastBattle: true,
+    });
+  });
+});
+
+describe("pyramidTrainerRange", () => {
+  it("floors 1–5 normal, floor 6 harder, floor 7 the next challenge", () => {
+    for (const floor of [1, 2, 3, 4, 5])
+      expect(pyramidTrainerRange(7, floor)).toEqual({
+        challenge: 1,
+        lastBattle: false,
+      });
+    expect(pyramidTrainerRange(7, 6)).toEqual({
+      challenge: 1,
+      lastBattle: true,
+    });
+    expect(pyramidTrainerRange(7, 7)).toEqual({
+      challenge: 2,
+      lastBattle: false,
+    });
+    expect(pyramidTrainerRange(49, 7)).toEqual({
+      challenge: 7,
+      lastBattle: false,
     });
   });
 });

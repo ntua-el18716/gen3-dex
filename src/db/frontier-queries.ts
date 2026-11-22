@@ -8,8 +8,11 @@ import { alias } from "drizzle-orm/sqlite-core";
 import {
   battlePosition,
   domeRangeChallenges,
+  pikeTrainerRange,
   pikeWildTier,
   pyramidRound,
+  pyramidTrainerRange,
+  type PikeTrainerRoom,
   type FactoryIvRow,
   type LevelMode,
 } from "@/lib/frontier";
@@ -498,15 +501,15 @@ export function getPyramidWildMons(
   return { round, mons };
 }
 
-/** The trainers in a challenge's normal (not 7th-battle) trainer range. */
-function trainersInRange(db: Db, challenge: number) {
+/** The trainers in a challenge's normal (or 7th-battle) trainer range. */
+function trainersInRange(db: Db, challenge: number, lastBattle = false) {
   const range = db
     .select()
     .from(frontierTrainerRange)
     .where(
       and(
         eq(frontierTrainerRange.challenge, challenge),
-        eq(frontierTrainerRange.lastBattle, false),
+        eq(frontierTrainerRange.lastBattle, lastBattle),
       ),
     )
     .get();
@@ -563,4 +566,36 @@ export function getDomeSets(
     ...new Map([...regular, ...harder].map((t) => [t.id, t])).values(),
   ];
   return setsForTrainers(db, trainers, { levelMode, pokemonId, trainerId });
+}
+
+/**
+ * A Battle Pike trainer room's possible opponents and their sets
+ * (pikeTrainerRange). In the double battle room, two of these trainers
+ * send out one Pokémon each.
+ */
+export function getPikeTrainerSets(
+  db: Db,
+  {
+    roomsCleared,
+    room,
+    levelMode,
+  }: { roomsCleared: number; room: PikeTrainerRoom; levelMode: LevelMode },
+) {
+  const range = pikeTrainerRange(roomsCleared, room);
+  const trainers = trainersInRange(db, range.challenge, range.lastBattle);
+  return { trainers, sets: setsForTrainers(db, trainers, { levelMode }) };
+}
+
+/** A Battle Pyramid floor's possible trainers and their sets (pyramidTrainerRange). */
+export function getPyramidTrainerSets(
+  db: Db,
+  {
+    floorsCleared,
+    floor,
+    levelMode,
+  }: { floorsCleared: number; floor: number; levelMode: LevelMode },
+) {
+  const range = pyramidTrainerRange(floorsCleared, floor);
+  const trainers = trainersInRange(db, range.challenge, range.lastBattle);
+  return { trainers, sets: setsForTrainers(db, trainers, { levelMode }) };
 }

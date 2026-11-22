@@ -12,8 +12,10 @@ import {
   getFactoryIvTable,
   getFactorySets,
   getFrontierBrain,
+  getPikeTrainerSets,
   getPikeWildMons,
   getPossibleSets,
+  getPyramidTrainerSets,
   getPyramidWildMons,
   getSetDetails,
   getTrainersForBattle,
@@ -272,6 +274,54 @@ describe.skipIf(!existsSync(DB_PATH))("Battle Frontier queries", () => {
       expect(sets.length).toBeGreaterThan(0);
       expect(sets.every((s) => s.pokemonId === METAGROSS)).toBe(true);
       expect(sets.every((s) => s.possibleIvs.length > 0)).toBe(true);
+    });
+  });
+
+  describe("Pike and Pyramid trainers", () => {
+    const ids = (t: { id: number }[]) => t.map((x) => x.id);
+    const tower = (battle: number) =>
+      ids(getTrainersForBattle(db, battle).trainers);
+
+    it("Pike rooms draw from the Tower's ranges", () => {
+      const pike = (roomsCleared: number, room: "single" | "hard" | "double") =>
+        ids(
+          getPikeTrainerSets(db, { roomsCleared, room, levelMode: "50" })
+            .trainers,
+        );
+      expect(pike(0, "single")).toEqual(tower(1));
+      expect(pike(0, "double")).toEqual(tower(1));
+      expect(pike(0, "hard")).toEqual(tower(7));
+      // 14 rooms make a challenge: room 15 is like the Tower's battle 8.
+      expect(pike(14, "single")).toEqual(tower(8));
+      expect(pike(14, "hard")).toEqual(tower(14));
+    });
+
+    it("Pyramid floors 6 and 7 are harder", () => {
+      const pyramid = (floorsCleared: number, floor: number) =>
+        ids(
+          getPyramidTrainerSets(db, { floorsCleared, floor, levelMode: "50" })
+            .trainers,
+        );
+      expect(pyramid(0, 1)).toEqual(tower(1));
+      expect(pyramid(0, 6)).toEqual(tower(7));
+      expect(pyramid(0, 7)).toEqual(tower(8));
+    });
+
+    it("comes with the sets those trainers use", () => {
+      const { trainers, sets } = getPikeTrainerSets(db, {
+        roomsCleared: 0,
+        room: "single",
+        levelMode: "50",
+      });
+      expect(sets.length).toBeGreaterThan(0);
+      const allowed = new Set(ids(trainers));
+      expect(sets.every((s) => s.trainerIds.every((t) => allowed.has(t)))).toBe(
+        true,
+      );
+      // Same as the Tower's first battle.
+      expect(sets.map((s) => s.id)).toEqual(
+        getPossibleSets(db, { battle: 1, levelMode: "50" }).map((s) => s.id),
+      );
     });
   });
 });
