@@ -1,5 +1,7 @@
+import { Link } from "expo-router";
+import { SymbolView } from "expo-symbols";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { GamePicker } from "@/components/game-picker";
 import { TrainerCard } from "@/components/league/trainer-card";
@@ -13,6 +15,7 @@ import { GAME_INFO } from "@/lib/games";
 import { leagueFor, REGION, STARTERS, type Region } from "@/lib/league";
 import { readPreference, writePreference } from "@/lib/preferences";
 import { useCurrentGame } from "@/state/current-game";
+import { useColors } from "@/theme/theme";
 
 /** Your starter decides your rival's team; remembered per region. */
 function useStarter(region: Region) {
@@ -63,6 +66,7 @@ export default function LeagueScreen() {
       </ScreenHeader>
       <View className="gap-7 px-4 pt-2">
         <TeamsShortcut purpose="walkthrough" game={game} />
+        <PlacesLink />
         {sections.map((section) => (
           <View key={section.title} className="gap-2">
             <SectionTitle
@@ -122,5 +126,40 @@ function StarterPicker({
         );
       })}
     </View>
+  );
+}
+
+/** Opens the list of places with their wild Pokémon. */
+function PlacesLink() {
+  const colors = useColors();
+  return (
+    <Link href="/places" asChild>
+      <Pressable className="flex-row items-center gap-3 rounded-card bg-surface px-4 py-3.5 active:bg-sunken">
+        <View className="h-10 w-10 items-center justify-center rounded-tile bg-accent">
+          <SymbolView
+            name={{ ios: "map", android: "map", web: "map" }}
+            tintColor={colors["on-accent"]}
+            size={22}
+          />
+        </View>
+        <View className="flex-1">
+          <Text className="text-body font-semibold text-ink">
+            Wild Pokémon by place
+          </Text>
+          <Text className="text-caption text-ink-muted">
+            Routes, caves and towns, with levels and rates
+          </Text>
+        </View>
+        <SymbolView
+          name={{
+            ios: "chevron.right",
+            android: "chevron_right",
+            web: "chevron_right",
+          }}
+          tintColor={colors["ink-subtle"]}
+          size={18}
+        />
+      </Pressable>
+    </Link>
   );
 }

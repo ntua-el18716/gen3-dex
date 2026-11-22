@@ -1,44 +1,13 @@
-import { Text, View } from "react-native";
+import { Link } from "expo-router";
+import { SymbolView } from "expo-symbols";
+import { Pressable, Text, View } from "react-native";
 
 import type { LocationEntry, StaticEncounterEntry } from "@/db/queries";
 import { Card, Divider, SectionTitle, TABULAR, Tag } from "@/components/ui";
-import type { EncounterMethod, Game, StaticEncounterKind } from "@/db/schema";
+import type { Game } from "@/db/schema";
 import { GAME_INFO, gamesLabel } from "@/lib/games";
-
-const METHOD_LABELS: Record<EncounterMethod, string> = {
-  grass: "Walking",
-  surf: "Surfing",
-  "rock-smash": "Rock Smash",
-  "old-rod": "Old Rod",
-  "good-rod": "Good Rod",
-  "super-rod": "Super Rod",
-};
-
-const KIND_LABELS: Record<StaticEncounterKind, string> = {
-  starter: "Starter",
-  gift: "Gift",
-  egg: "Egg",
-  static: "One-time",
-  roaming: "Roaming",
-  trade: "Trade",
-  prize: "Prize",
-};
-
-/** "Lv 25 · Holds Mystic Water", "Trade for Ralts · Nicknamed Dots"… */
-function details(e: StaticEncounterEntry): string {
-  const parts: string[] = [];
-  if (e.kind === "trade") {
-    parts.push(`Trade for ${e.tradeFor}`);
-    if (e.nickname) parts.push(`Nicknamed ${e.nickname}`);
-  } else if (e.kind === "egg") {
-    parts.push(`Hatches at Lv ${e.level}`);
-  } else {
-    parts.push(`Lv ${e.level}`);
-  }
-  if (e.count > 1) parts.push(`${e.count} of them`);
-  if (e.heldItem) parts.push(`Holds ${e.heldItem}`);
-  return parts.join(" · ");
-}
+import { KIND_LABELS, METHOD_LABELS, staticDetails } from "@/lib/places";
+import { useColors } from "@/theme/theme";
 
 /** Where to get the Pokémon in the current game: gifts and one-time encounters, then the wild. */
 export function LocationsPage({
@@ -80,7 +49,7 @@ export function LocationsPage({
                 </Text>
                 <Tag>{KIND_LABELS[e.kind]}</Tag>
               </View>
-              <Text className="text-callout text-ink">{details(e)}</Text>
+              <Text className="text-callout text-ink">{staticDetails(e)}</Text>
               {e.note ? (
                 <Text className="text-callout text-ink-muted">{e.note}</Text>
               ) : null}
@@ -96,9 +65,7 @@ export function LocationsPage({
           </View>
           {places.map((place) => (
             <Card key={place.locationId}>
-              <Text className="px-4 pb-2 pt-3.5 text-body font-semibold text-ink">
-                {place.name}
-              </Text>
+              <PlaceLink id={place.locationId} name={place.name} />
               {place.encounters.map((e) => (
                 <View key={e.method}>
                   <Divider className="ml-4" />
@@ -132,5 +99,26 @@ export function LocationsPage({
         </Text>
       ) : null}
     </View>
+  );
+}
+
+/** A place's name, opening its page (every Pokémon found there). */
+function PlaceLink({ id, name }: { id: number; name: string }) {
+  const colors = useColors();
+  return (
+    <Link href={{ pathname: "/places/[id]", params: { id } }} asChild>
+      <Pressable className="flex-row items-center gap-1 px-4 pb-2 pt-3.5 active:opacity-60">
+        <Text className="flex-1 text-body font-semibold text-ink">{name}</Text>
+        <SymbolView
+          name={{
+            ios: "chevron.right",
+            android: "chevron_right",
+            web: "chevron_right",
+          }}
+          tintColor={colors["ink-subtle"]}
+          size={18}
+        />
+      </Pressable>
+    </Link>
   );
 }

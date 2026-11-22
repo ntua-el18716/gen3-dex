@@ -13,9 +13,11 @@ import {
   getLearnset,
   getLocations,
   getPokedexEntries,
+  getPlace,
   getPokemonDetail,
   getStaticEncounters,
   getWildGames,
+  listPlaces,
   listPokemon,
   type EvolutionNode,
 } from "./queries";
@@ -292,5 +294,70 @@ describe.skipIf(!existsSync(DB_PATH))("queries", () => {
     expect(rows.map((g) => [g.id, g.name, g.versionGroup])).toEqual(
       Object.entries(GAME_INFO).map(([id, g]) => [id, g.name, g.versionGroup]),
     );
+  });
+
+  describe("places", () => {
+    it("lists routes first, in natural order, then towns, then the rest", () => {
+      const places = listPlaces(db, "emerald");
+      const kinds = places.map((p) => p.kind);
+      expect(kinds.indexOf("town")).toBeGreaterThan(kinds.lastIndexOf("route"));
+      expect(kinds.indexOf("other")).toBeGreaterThan(kinds.lastIndexOf("town"));
+      const routes = places
+        .filter((p) => p.kind === "route")
+        .map((p) => p.name);
+      expect(routes.slice(0, 3)).toEqual([
+        "Route 101",
+        "Route 102",
+        "Route 103",
+      ]);
+      expect(routes.indexOf("Route 110")).toBeGreaterThan(
+        routes.indexOf("Route 109"),
+      );
+      // Emerald's unreachable Cave of Origin maps are left out.
+      expect(places.some((p) => p.name.includes("Unused"))).toBe(false);
+    });
+
+    it("counts one-time encounters too (the starters on Route 101)", () => {
+      const r101 = listPlaces(db, "emerald").find(
+        (p) => p.name === "Route 101",
+      )!;
+      expect(r101.pokemonIds).toEqual(
+        expect.arrayContaining([252, 255, 258, 261, 263, 265]),
+      );
+    });
+
+    it("adds up a species' slots per method", () => {
+      const r101 = listPlaces(db, "emerald").find(
+        (p) => p.name === "Route 101",
+      )!;
+      const place = getPlace(db, r101.id, "emerald")!;
+      expect(
+        place.methods.map((m) => [
+          m.method,
+          m.mons.map((x) => [x.name, x.minLevel, x.maxLevel, x.rate]),
+        ]),
+      ).toEqual([
+        [
+          "grass",
+          [
+            ["Poochyena", 2, 3, 45],
+            ["Wurmple", 2, 3, 45],
+            ["Zigzagoon", 2, 3, 10],
+          ],
+        ],
+      ]);
+      for (const m of place.methods)
+        expect(m.mons.reduce((sum, x) => sum + x.rate, 0)).toBe(100);
+    });
+
+    it("lists the place's one-time encounters", () => {
+      const r120 = listPlaces(db, "emerald").find(
+        (p) => p.name === "Route 120",
+      )!;
+      expect(getPlace(db, r120.id, "emerald")!.oneTime).toEqual([
+        expect.objectContaining({ name: "Kecleon", kind: "static", count: 6 }),
+      ]);
+      expect(getPlace(db, 99999, "emerald")).toBeNull();
+    });
   });
 });

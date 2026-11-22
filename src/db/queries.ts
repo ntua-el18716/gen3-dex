@@ -1,6 +1,13 @@
 import { and, asc, eq, inArray, max, min, or, sum } from "drizzle-orm";
 import { alias, type BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 
+import {
+  comparePlaceNames,
+  isUnusedMap,
+  placeKind,
+  type PlaceKind,
+} from "@/lib/places";
+
 import * as schema from "./schema";
 import {
   ability,
@@ -333,6 +340,7 @@ export function getLocations(db: Db, id: number, game: Game) {
   const rows = db
     .select({
       locationId: location.id,
+      key: location.key,
       name: location.name,
       method: encounter.method,
       minLevel: min(encounter.minLevel),
@@ -356,7 +364,16 @@ export function getLocations(db: Db, id: number, game: Game) {
       rate: number;
     }[];
   }[] = [];
-  for (const { locationId, name, method, minLevel, maxLevel, rate } of rows) {
+  for (const {
+    locationId,
+    key,
+    name,
+    method,
+    minLevel,
+    maxLevel,
+    rate,
+  } of rows) {
+    if (isUnusedMap(key)) continue;
     let place = places.find((p) => p.locationId === locationId);
     if (!place) {
       place = { locationId, name, encounters: [] };
@@ -442,3 +459,156 @@ export function getFoundGames(db: Db, id: number): Game[] {
   ]);
   return GAMES.filter((g) => games.has(g));
 }
+
+/**
+ * Every place with wild Pokémon or a one-time encounter in a game, sorted
+ * by kind (routes, towns, the rest) and then naturally by name, with the
+ * species found there (by National Dex number). Maps the game never uses
+ * are left out.
+ */
+export function listPlaces(db: Db, game: Game) {
+  const wild = db
+    .select({
+      id: location.id,
+      key: location.key,
+      name: location.name,
+      pokemonId: encounter.pokemonId,
+      method: encounter.method,
+      rate: sum(encounter.rate).mapWith(Number),
+    })
+    .from(encounter)
+    .innerJoin(location, eq(location.id, encounter.locationId))
+    .where(eq(encounter.game, game))
+    .groupBy(location.id, encounter.method, encounter.pokemonId)
+    .all();
+  const oneTime = db
+    .selectDistinct({
+      id: location.id,
+      key: location.key,
+      name: location.name,
+      pokemonId: staticEncounter.pokemonId,
+    })
+    .from(staticEncounter)
+    .innerJoin(location, eq(location.id, staticEncounter.locationId))
+    .where(eq(staticEncounter.game, game))
+    .all();
+  // How prominent a Pokémon is at a place, smaller first: one-time
+  // encounters, then by encounter method (grass before surfing before
+  // fishing), then the commoner.
+  const rank = (r: (typeof wild)[number] | (typeof oneTime)[number]) =>
+    "method" in r
+      ? (ENCOUNTER_METHODS.indexOf(r.method) + 1) * 1000 - r.rate
+      : 0;
+  const places = new Map<
+    number,
+    {
+      id: number;
+      name: string;
+      kind: PlaceKind;
+      ranks: Map<number, number>;
+    }
+  >();
+  for (const row of [...oneTime, ...wild]) {
+    if (isUnusedMap(row.key)) continue;
+    const place = places.get(row.id) ?? {
+      id: row.id,
+      name: row.name,
+      kind: placeKind(row.key, row.name),
+      ranks: new Map(),
+    };
+    const r = rank(row);
+    place.ranks.set(
+      row.pokemonId,
+      Math.min(r, place.ranks.get(row.pokemonId) ?? Infinity),
+    );
+    places.set(row.id, place);
+  }
+  const KIND_ORDER: PlaceKind[] = ["route", "town", "other"];
+  return [...places.values()]
+    .map(({ ranks, ...p }) => ({
+      ...p,
+      /** Most prominent first (see `rank`). */
+      pokemonIds: [...ranks]
+        .sort((a, b) => a[1] - b[1] || a[0] - b[0])
+        .map(([id]) => id),
+    }))
+    .sort(
+      (a, b) =>
+        KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind) ||
+        comparePlaceNames(a.name, b.name),
+    );
+}
+
+export type PlaceListItem = ReturnType<typeof listPlaces>[number];
+
+/**
+ * One place in one game: its wild Pokémon per encounter method (a species'
+ * slots added up, with its level range), most common first, and its
+ * one-time encounters. Null if there's no such place.
+ */
+export function getPlace(db: Db, id: number, game: Game) {
+  const place = db.select().from(location).where(eq(location.id, id)).get();
+  if (!place) return null;
+  const rows = db
+    .select({
+      method: encounter.method,
+      pokemonId: pokemon.id,
+      name: pokemon.name,
+      type1: pokemon.type1,
+      type2: pokemon.type2,
+      minLevel: min(encounter.minLevel),
+      maxLevel: max(encounter.maxLevel),
+      rate: sum(encounter.rate).mapWith(Number),
+    })
+    .from(encounter)
+    .innerJoin(pokemon, eq(pokemon.id, encounter.pokemonId))
+    .where(and(eq(encounter.locationId, id), eq(encounter.game, game)))
+    .groupBy(encounter.method, pokemon.id)
+    .all();
+  const methods = ENCOUNTER_METHODS.map((method) => ({
+    method,
+    mons: rows
+      .filter((r) => r.method === method)
+      .map(({ method: _, minLevel, maxLevel, ...r }) => ({
+        ...r,
+        minLevel: minLevel ?? 0,
+        maxLevel: maxLevel ?? 0,
+      }))
+      .sort((a, b) => b.rate - a.rate || a.pokemonId - b.pokemonId),
+  })).filter((m) => m.mons.length > 0);
+
+  const tradeFor = alias(pokemon, "trade_for");
+  const oneTime = db
+    .select({
+      id: staticEncounter.id,
+      kind: staticEncounter.kind,
+      pokemonId: pokemon.id,
+      name: pokemon.name,
+      type1: pokemon.type1,
+      type2: pokemon.type2,
+      level: staticEncounter.level,
+      count: staticEncounter.count,
+      heldItem: item.name,
+      tradeFor: tradeFor.name,
+      nickname: staticEncounter.nickname,
+      note: staticEncounter.note,
+    })
+    .from(staticEncounter)
+    .innerJoin(pokemon, eq(pokemon.id, staticEncounter.pokemonId))
+    .leftJoin(item, eq(item.id, staticEncounter.heldItemId))
+    .leftJoin(tradeFor, eq(tradeFor.id, staticEncounter.tradeForId))
+    .where(
+      and(eq(staticEncounter.locationId, id), eq(staticEncounter.game, game)),
+    )
+    .orderBy(asc(staticEncounter.id))
+    .all();
+  return {
+    id: place.id,
+    name: place.name,
+    region: place.region,
+    methods,
+    oneTime,
+  };
+}
+
+export type PlaceDetail = NonNullable<ReturnType<typeof getPlace>>;
