@@ -100,6 +100,7 @@ export default function PokemonScreen() {
             key: "where",
             content: (
               <LocationsPage
+                pokemonId={pokemon.id}
                 places={places}
                 oneTime={oneTime}
                 game={game}

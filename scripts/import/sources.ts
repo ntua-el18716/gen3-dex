@@ -42,6 +42,8 @@ export const SOURCES: SourceRepo[] = [
       "/graphics/pokemon/",
       // Trainer pictures, for the League page (npm run trainer-pics).
       "/graphics/trainers/front_pics/",
+      // The Town Map (npm run town-map).
+      "/graphics/pokenav/region_map/map.*",
     ],
   },
   {
@@ -59,6 +61,9 @@ export const SOURCES: SourceRepo[] = [
       "/graphics/pokemon/",
       "/graphics/trainers/front_pics/",
       "/graphics/trainers/palettes/",
+      "/graphics/region_map/region_map.*",
+      "/graphics/region_map/kanto.bin",
+      "/graphics/region_map/sevii_*.bin",
     ],
   },
   {
@@ -80,6 +85,8 @@ export const SOURCES: SourceRepo[] = [
       "/src/trade.c",
       "/graphics/trainers/*.png",
       "/graphics/trainers/*.pal",
+      "/graphics/pokenav/region_map.*",
+      "/graphics/pokenav/region_map_map.bin",
     ],
   },
 ];

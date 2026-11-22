@@ -24,7 +24,7 @@ import { Lookups, notes } from "./context";
 import { fetchSources } from "./fetch-sources";
 import { SOURCES } from "./sources";
 import * as core from "./stages/core";
-import { importEncounters } from "./stages/encounters";
+import { addMapSections, importEncounters } from "./stages/encounters";
 import { importFrontier } from "./stages/frontier";
 import { importLearnsets } from "./stages/learnsets";
 import * as pokemon from "./stages/pokemon";
@@ -77,6 +77,7 @@ function main() {
   const staticEncounters = time("gifts and one-time", () =>
     importStaticEncounters(lookups, locations),
   );
+  time("Town Map areas", () => addMapSections(locations));
   const { trainers, mons } = time("trainers", () => importTrainers(lookups));
   const frontier = time("Battle Frontier", () => importFrontier(lookups));
 
@@ -130,7 +131,7 @@ function main() {
     insert(schema.pyramidFloorRate, frontier.pyramidFloorRates);
     insert(schema.meta, [
       ...SOURCES.map((s) => ({ key: `source.${s.name}`, value: s.commit })),
-      { key: "schema", value: "gen3-companion/5" },
+      { key: "schema", value: "gen3-companion/6" },
     ]);
   });
 

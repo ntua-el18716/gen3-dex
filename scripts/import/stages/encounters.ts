@@ -7,6 +7,7 @@ import path from "node:path";
 import type { EncounterMethod, Game } from "../../../src/db/schema";
 import { Lookups, notes } from "../context";
 import { mapName } from "../lib/text";
+import { readMapSections } from "../lib/map-sections";
 import { DATA_SRC_DIR } from "../sources";
 import type { RepoName } from "../lib/source";
 
@@ -67,6 +68,8 @@ export type Location = {
   key: string;
   name: string;
   region: "hoenn" | "kanto";
+  /** Its Town Map area (pret MAPSEC_…), filled in by `addMapSections`. */
+  mapSection?: string | null;
 };
 
 export function importEncounters(lookups: Lookups) {
@@ -175,4 +178,27 @@ export function importEncounters(lookups: Lookups) {
   }
 
   return { locations: [...locations.values()], encounters };
+}
+
+/**
+ * Gives each place its Town Map area from the map's map.json (Hoenn:
+ * Emerald's maps, then Ruby's for maps only R/S have). Fails if a place
+ * has none, so a new map can't silently drop off the Town Map.
+ */
+export function addMapSections(locations: Location[]) {
+  const sections = {
+    hoenn: [
+      readMapSections(path.resolve(DATA_SRC_DIR, "pokeemerald")),
+      readMapSections(path.resolve(DATA_SRC_DIR, "pokeruby")),
+    ],
+    kanto: [readMapSections(path.resolve(DATA_SRC_DIR, "pokefirered"))],
+  };
+  const missing: string[] = [];
+  for (const l of locations) {
+    l.mapSection =
+      sections[l.region].map((s) => s.get(l.key)).find(Boolean) ?? null;
+    if (!l.mapSection) missing.push(`${l.region}:${l.key}`);
+  }
+  if (missing.length)
+    throw new Error(`No Town Map area for ${missing.join(", ")}`);
 }

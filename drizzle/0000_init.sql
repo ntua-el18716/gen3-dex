@@ -198,7 +198,8 @@ CREATE TABLE `location` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`key` text NOT NULL,
 	`name` text NOT NULL,
-	`region` text NOT NULL
+	`region` text NOT NULL,
+	`map_section` text NOT NULL
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `location_region_key_idx` ON `location` (`region`,`key`);--> statement-breakpoint

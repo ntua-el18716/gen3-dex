@@ -1,5 +1,5 @@
 import { Link } from "expo-router";
-import { SymbolView } from "expo-symbols";
+import { SymbolView, type AndroidSymbol, type SFSymbol } from "expo-symbols";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
@@ -8,7 +8,7 @@ import { TrainerCard } from "@/components/league/trainer-card";
 import { ScreenHeader } from "@/components/screen-header";
 import { Sprite } from "@/components/sprite";
 import { TeamsShortcut } from "@/components/teams/teams-shortcut";
-import { Label, SectionTitle } from "@/components/ui";
+import { Divider, Label, SectionTitle } from "@/components/ui";
 import { useDb } from "@/db";
 import { getTrainerTeams, pickForStarter } from "@/db/league-queries";
 import { GAME_INFO } from "@/lib/games";
@@ -129,26 +129,48 @@ function StarterPicker({
   );
 }
 
-/** Opens the list of places with their wild Pokémon. */
+/** Opens the Town Map and the list of places with their wild Pokémon. */
 function PlacesLink() {
+  return (
+    <View className="overflow-hidden rounded-card bg-surface">
+      <LinkRow
+        href="/map"
+        icon={{ ios: "map", android: "map", web: "map" }}
+        title="Town Map"
+        subtitle="Tap an area to see its Pokémon"
+      />
+      <Divider className="ml-[68px]" />
+      <LinkRow
+        href="/places"
+        icon={{ ios: "list.bullet", android: "list", web: "list" }}
+        title="Wild Pokémon by place"
+        subtitle="Routes, caves and towns, with levels and rates"
+      />
+    </View>
+  );
+}
+
+function LinkRow({
+  href,
+  icon,
+  title,
+  subtitle,
+}: {
+  href: "/map" | "/places";
+  icon: { ios: SFSymbol; android: AndroidSymbol; web: AndroidSymbol };
+  title: string;
+  subtitle: string;
+}) {
   const colors = useColors();
   return (
-    <Link href="/places" asChild>
-      <Pressable className="flex-row items-center gap-3 rounded-card bg-surface px-4 py-3.5 active:bg-sunken">
+    <Link href={href} asChild>
+      <Pressable className="flex-row items-center gap-3 px-4 py-3.5 active:bg-sunken">
         <View className="h-10 w-10 items-center justify-center rounded-tile bg-accent">
-          <SymbolView
-            name={{ ios: "map", android: "map", web: "map" }}
-            tintColor={colors["on-accent"]}
-            size={22}
-          />
+          <SymbolView name={icon} tintColor={colors["on-accent"]} size={22} />
         </View>
         <View className="flex-1">
-          <Text className="text-body font-semibold text-ink">
-            Wild Pokémon by place
-          </Text>
-          <Text className="text-caption text-ink-muted">
-            Routes, caves and towns, with levels and rates
-          </Text>
+          <Text className="text-body font-semibold text-ink">{title}</Text>
+          <Text className="text-caption text-ink-muted">{subtitle}</Text>
         </View>
         <SymbolView
           name={{

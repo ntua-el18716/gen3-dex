@@ -430,6 +430,12 @@ export const location = sqliteTable(
     key: text("key").notNull(),
     name: text("name").notNull(),
     region: text("region", { enum: ["hoenn", "kanto"] }).notNull(),
+    /**
+     * Its area on the Town Map (pret MAPSEC_…, from the map's map.json),
+     * e.g. MAPSEC_ROUTE_119 for Route 119 and its Weather Institute. The
+     * app's Town Map (src/generated/town-map.ts) says where each area is.
+     */
+    mapSection: text("map_section").notNull(),
   },
   (t) => [uniqueIndex("location_region_key_idx").on(t.region, t.key)],
 );

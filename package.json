@@ -69,6 +69,7 @@
     "icons": "tsx scripts/icons/build-type-icons.ts",
     "sprite-colors": "tsx scripts/sprites/build-sprite-colors.ts",
     "trainer-pics": "tsx scripts/trainers/build-trainer-pics.ts",
+    "town-map": "tsx scripts/town-map/build-town-map.ts",
     "apk": "tsx scripts/apk/build-apk.ts"
   },
   "private": true,

@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "da9541de-3b97-4932-9480-1ea424798c4d",
+  "id": "8b4ee16c-32ea-4add-b465-dab59f5eeda1",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "ability": {
@@ -1463,6 +1463,13 @@
         },
         "region": {
           "name": "region",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "map_section": {
+          "name": "map_section",
           "type": "text",
           "primaryKey": false,
           "notNull": true,

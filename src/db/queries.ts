@@ -472,6 +472,7 @@ export function listPlaces(db: Db, game: Game) {
       id: location.id,
       key: location.key,
       name: location.name,
+      mapSection: location.mapSection,
       pokemonId: encounter.pokemonId,
       method: encounter.method,
       rate: sum(encounter.rate).mapWith(Number),
@@ -486,6 +487,7 @@ export function listPlaces(db: Db, game: Game) {
       id: location.id,
       key: location.key,
       name: location.name,
+      mapSection: location.mapSection,
       pokemonId: staticEncounter.pokemonId,
     })
     .from(staticEncounter)
@@ -505,6 +507,8 @@ export function listPlaces(db: Db, game: Game) {
       id: number;
       name: string;
       kind: PlaceKind;
+      /** Its Town Map area (pret MAPSEC_…). */
+      mapSection: string;
       ranks: Map<number, number>;
     }
   >();
@@ -514,6 +518,7 @@ export function listPlaces(db: Db, game: Game) {
       id: row.id,
       name: row.name,
       kind: placeKind(row.key, row.name),
+      mapSection: row.mapSection,
       ranks: new Map(),
     };
     const r = rank(row);

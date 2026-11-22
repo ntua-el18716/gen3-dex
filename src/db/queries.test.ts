@@ -6,6 +6,8 @@ import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { GAME_INFO } from "@/lib/games";
+import { REGION } from "@/lib/league";
+import { areaFor } from "@/lib/town-map";
 
 import {
   getEvolutionChain,
@@ -22,6 +24,7 @@ import {
   type EvolutionNode,
 } from "./queries";
 import * as schema from "./schema";
+import { GAMES } from "./schema";
 
 const DB_PATH = path.resolve("assets/db/gen3.db");
 
@@ -315,6 +318,22 @@ describe.skipIf(!existsSync(DB_PATH))("queries", () => {
       );
       // Emerald's unreachable Cave of Origin maps are left out.
       expect(places.some((p) => p.name.includes("Unused"))).toBe(false);
+    });
+
+    it("puts every place on the Town Map but the few with no spot", () => {
+      const offMap = new Set<string>();
+      for (const game of GAMES)
+        for (const p of listPlaces(db, game))
+          if (!areaFor(REGION[game], p.mapSection)) offMap.add(p.name);
+      // Islands reached by ticket, and caves that move around.
+      expect([...offMap].sort()).toEqual([
+        "Birth Island Exterior",
+        "Faraway Island Interior",
+        "Marine Cave End",
+        "Navel Rock Bottom",
+        "Navel Rock Top",
+        "Terra Cave End",
+      ]);
     });
 
     it("counts one-time encounters too (the starters on Route 101)", () => {

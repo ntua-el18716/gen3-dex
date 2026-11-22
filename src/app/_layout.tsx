@@ -1,6 +1,7 @@
 import "../global.css";
 
 import { Stack } from "expo-router";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import { DatabaseProvider } from "@/db";
 import { CurrentGameProvider } from "@/state/current-game";
@@ -9,16 +10,19 @@ import { AppThemeProvider, useColors } from "@/theme/theme";
 
 export default function RootLayout() {
   return (
-    // The current game comes first: its colour is the theme's accent.
-    <CurrentGameProvider>
-      <AppThemeProvider>
-        <DatabaseProvider>
-          <TeamsProvider>
-            <ThemedStack />
-          </TeamsProvider>
-        </DatabaseProvider>
-      </AppThemeProvider>
-    </CurrentGameProvider>
+    // Gestures (the Town Map's pinch and drag) need a root view.
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      {/* The current game comes first: its colour is the theme's accent. */}
+      <CurrentGameProvider>
+        <AppThemeProvider>
+          <DatabaseProvider>
+            <TeamsProvider>
+              <ThemedStack />
+            </TeamsProvider>
+          </DatabaseProvider>
+        </AppThemeProvider>
+      </CurrentGameProvider>
+    </GestureHandlerRootView>
   );
 }
 
