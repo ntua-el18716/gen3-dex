@@ -8,6 +8,7 @@ import { Sprite } from "@/components/sprite";
 import { StatCells } from "@/components/stat-cells";
 import { Card, Label, Segmented, TABULAR } from "@/components/ui";
 import type { FrontierSetDetail } from "@/db/frontier-queries";
+import type { FrontierFacility, FrontierSymbol } from "@/db/schema";
 import { frontierStats } from "@/lib/frontier";
 import { DISPLAY_STATS, STAT_SHORT } from "@/lib/stat-labels";
 import { useColors } from "@/theme/theme";
@@ -22,6 +23,7 @@ export function SetCard({
   level,
   ivs,
   accent,
+  brain,
 }: {
   /** A Frontier set, or anything shaped like one (a Brain's Pokémon). */
   set: Omit<FrontierSetDetail, "id" | "openLevelOnly"> & { id?: number };
@@ -29,6 +31,8 @@ export function SetCard({
   ivs: number[];
   /** The facility's colour. */
   accent: string;
+  /** For a Frontier Brain's Pokémon: where it sits in their teams. */
+  brain?: { brain: FrontierFacility; symbol: FrontierSymbol; slot: number };
 }) {
   const colors = useColors();
   const options = ivs.length > 0 ? ivs : [0, 31];
@@ -118,12 +122,15 @@ export function SetCard({
         ) : null}
       </View>
 
-      {/* Only real sets have an id; a Brain's Pokémon doesn't. */}
-      {set.id !== undefined && (
+      {/* Real sets are found by id, a Brain's Pokémon by its team slot. */}
+      {(set.id !== undefined || brain) && (
         <Link
           href={{
             pathname: "/matchup",
-            params: { set: set.id, level, iv: shown },
+            params:
+              set.id !== undefined
+                ? { set: set.id, level, iv: shown }
+                : { ...brain!, level },
           }}
           asChild
         >

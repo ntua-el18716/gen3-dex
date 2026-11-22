@@ -195,7 +195,8 @@ Checked on web only (headless Chrome) — **not yet seen on Android**.
 - **Data:** `src/db/damage-queries.ts`: `getTypeChart` (ordered by rowid = pret's order), `getSetCombatant` (a Frontier set at a level and fixed IV), `getTeamCombatants` (a saved team). Tested on the real DB.
 - **Screen:** `src/app/matchup.tsx` (`/matchup?set=&level=&iv=`), opened from the "Damage against your team" button on a Frontier set card (not on Brain Pokémon, which have no set id). Opponent card, its ability (Frontier Pokémon get either at random, so the user picks), weather, normal/critical, a team picker, then per member: who moves first (raw Speed) and every move both ways with a min–max bar and "Knocks out in N turns". Words in `src/lib/damage-labels.ts` (tested).
 - **Narrowing:** `narrowBySeen` in `src/lib/frontier.ts` (tested): a trainer's Pokémon all come from that trainer's own sets, so marking a Pokémon "They sent this out" on the facility screen keeps only the trainers with a set for every seen species, their sets and their IVs (e.g. 100 trainers → 31 → 3). Tower/Palace/Arena/Dome only; the Factory has no trainer lists. Not applied: the no-repeated-item rule within a team.
-- **Next ideas:** Brain Pokémon in the Matchup screen; type matchups on the Pokémon page and team coverage (suggested for him to write: the type chart query exists now).
+- **Frontier Brains** (added 2026-11-22): `getBrainCombatant(db, facility, symbol, slot, level)`; Brain set cards link to `/matchup?brain=&symbol=&slot=&level=` (`SetCard` takes a `brain` prop). Like other Frontier Pokémon, their ability is random (`CreateFrontierBrainPokemon` picks a random personality matching the nature), so the ability picker applies.
+- **Next ideas:** type matchups on the Pokémon page and team coverage (suggested for him to write: the type chart query exists now).
 
 ## Cleanup 2026-11-16 (by Claude at his request, after an audit)
 

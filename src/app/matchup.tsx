@@ -22,6 +22,7 @@ import {
 } from "@/components/ui";
 import { useDb } from "@/db";
 import {
+  getBrainCombatant,
   getSetCombatant,
   getTeamCombatants,
   getTypeChart,
@@ -46,6 +47,8 @@ import {
   noDamageText,
   shareRange,
 } from "@/lib/damage-labels";
+import { FRONTIER_FACILITIES, FRONTIER_SYMBOLS } from "@/db/schema";
+import { facilityInfo } from "@/lib/frontier-facilities";
 import { useTeams } from "@/state/teams";
 
 /**
@@ -53,26 +56,45 @@ import { useTeams } from "@/state/teams";
  * Pokémon, what its moves do to the opponent and what the opponent's do to
  * it, with the game's exact damage formula (lib/damage.ts).
  *
- * Opened from a set card with ?set=<id>&level=<n>&iv=<n>.
+ * Opened from a set card with ?set=<id>&level=<n>&iv=<n>, or for a
+ * Frontier Brain's Pokémon with ?brain=<facility>&symbol=<silver|gold>
+ * &slot=<n>&level=<n> (their IVs are fixed).
  */
 export default function MatchupScreen() {
   const params = useLocalSearchParams<{
     set: string;
     level: string;
-    iv: string;
+    iv?: string;
     team?: string;
+    brain?: string;
+    symbol?: string;
+    slot?: string;
   }>();
   const db = useDb();
   const { teams, createTeam } = useTeams();
   const level = Number(params.level) || 50;
-  const iv = Number(params.iv) || 0;
   const setId = Number(params.set);
+  const facility = FRONTIER_FACILITIES.find((f) => f === params.brain);
+  const symbol = FRONTIER_SYMBOLS.find((s) => s === params.symbol);
+  const slot = Number(params.slot);
 
   const chart = useMemo(() => getTypeChart(db), [db]);
-  const foe = useMemo(
-    () => getSetCombatant(db, setId, level, iv),
-    [db, setId, level, iv],
-  );
+  const found = useMemo(() => {
+    if (facility && symbol) {
+      const mon = getBrainCombatant(db, facility, symbol, slot, level);
+      return mon && { foe: mon as Combatant, iv: mon.iv };
+    }
+    const iv = Number(params.iv) || 0;
+    const mon = getSetCombatant(db, setId, level, iv);
+    return mon && { foe: mon, iv };
+  }, [db, facility, symbol, slot, setId, level, params.iv]);
+  const foe = found?.foe ?? null;
+  const iv = found?.iv ?? 0;
+  const brainInfo = facility ? facilityInfo(facility) : undefined;
+  const subtitle =
+    facility && symbol
+      ? `${brainInfo?.name ?? "Frontier Brain"}, ${symbol === "silver" ? "Silver" : "Gold"} team`
+      : `Set ${setId}`;
   const usable = teams.filter((t) => t.members.length > 0);
   const [teamId, setTeamId] = useState(params.team ?? usable[0]?.id);
   const team = usable.find((t) => t.id === teamId) ?? usable[0];
@@ -107,7 +129,7 @@ export default function MatchupScreen() {
     <ScrollView contentContainerClassName="gap-6 px-4 pb-12 pt-2">
       <Stack.Screen options={{ title: "Matchup" }} />
 
-      <FoeCard foe={opponent} setId={setId} iv={iv} />
+      <FoeCard foe={opponent} subtitle={subtitle} iv={iv} />
 
       <Card className="gap-5 p-4">
         {foe.abilities.length > 1 && (
@@ -246,11 +268,12 @@ export default function MatchupScreen() {
 /** The opponent, tinted in its own colours. */
 function FoeCard({
   foe,
-  setId,
+  subtitle,
   iv,
 }: {
   foe: Combatant;
-  setId: number;
+  /** Where the opponent comes from: "Set 646", "Battle Tower, Gold team". */
+  subtitle: string;
   iv: number;
 }) {
   const { battler } = foe;
@@ -284,7 +307,7 @@ function FoeCard({
             </View>
           </View>
           <Text className="text-callout text-ink-muted" style={TABULAR}>
-            Set {setId} · Lv {battler.level} · every IV {iv}
+            {subtitle} · Lv {battler.level} · every IV {iv}
           </Text>
           <Text className="text-callout text-ink-muted">
             {foe.itemName ? (

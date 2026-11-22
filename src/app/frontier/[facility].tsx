@@ -613,6 +613,7 @@ function BrainCard({
               level={level}
               ivs={[m.fixedIv]}
               accent={info.color}
+              brain={{ brain: info.key, symbol, slot: m.slot }}
             />
           ))}
         </>

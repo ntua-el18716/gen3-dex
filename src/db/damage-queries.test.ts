@@ -10,11 +10,12 @@ import { uniformSpread } from "@/lib/stats";
 import { newMember } from "@/lib/teams";
 
 import {
+  getBrainCombatant,
   getSetCombatant,
   getTeamCombatants,
   getTypeChart,
 } from "./damage-queries";
-import { getSetDetails } from "./frontier-queries";
+import { getFrontierBrain, getSetDetails } from "./frontier-queries";
 import * as schema from "./schema";
 import { listHoldItems, listMoves, listNatures } from "./team-queries";
 
@@ -47,6 +48,21 @@ describe.skipIf(!existsSync(DB_PATH))("damage queries", () => {
       expect(c.battler.ivs).toEqual(uniformSpread(21));
     }
     expect(getSetCombatant(db, 99999, 50, 31)).toBeNull();
+  });
+
+  it("builds a Frontier Brain's Pokémon with its fixed IVs", () => {
+    const anabel = getFrontierBrain(db, "tower")!;
+    for (const symbol of ["silver", "gold"] as const) {
+      anabel[symbol].forEach((mon) => {
+        const c = getBrainCombatant(db, "tower", symbol, mon.slot, 50)!;
+        expect(c.name).toBe(mon.species);
+        expect(c.iv).toBe(mon.fixedIv);
+        expect(c.battler.stats).toEqual(frontierStats(mon, 50, mon.fixedIv));
+        expect(c.moves.map((m) => m.name)).toEqual(mon.moves);
+      });
+    }
+    // The Factory's Brain has no fixed team.
+    expect(getBrainCombatant(db, "factory", "silver", 0, 50)).toBeNull();
   });
 
   describe("a real matchup", () => {

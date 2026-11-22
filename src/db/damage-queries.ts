@@ -1,4 +1,4 @@
-import { eq, inArray, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import type { BattleMove, Battler, TypeMatchup } from "@/lib/damage";
 import { calculateStats, uniformSpread, type StatSpread } from "@/lib/stats";
@@ -7,12 +7,15 @@ import type { Team } from "@/lib/teams";
 import { baseStatsIn, type Db } from "./queries";
 import {
   ability,
+  frontierBrainMon,
   frontierSet,
   item,
   move,
   nature,
   pokemon,
   typeChart,
+  type FrontierFacility,
+  type FrontierSymbol,
   type Game,
 } from "./schema";
 
@@ -180,6 +183,50 @@ export function getSetCombatant(
     moveIds: [set.move1Id, set.move2Id, set.move3Id, set.move4Id],
     abilityId: null,
   });
+}
+
+/**
+ * One of a Frontier Brain's fixed Pokémon (Silver or Gold team, by slot)
+ * at `level`, with its own fixed IVs.
+ */
+export function getBrainCombatant(
+  db: Db,
+  facility: FrontierFacility,
+  symbol: FrontierSymbol,
+  slot: number,
+  level: number,
+): (Combatant & { iv: number }) | null {
+  const mon = db
+    .select()
+    .from(frontierBrainMon)
+    .where(
+      and(
+        eq(frontierBrainMon.facility, facility),
+        eq(frontierBrainMon.symbol, symbol),
+        eq(frontierBrainMon.slot, slot),
+      ),
+    )
+    .get();
+  if (!mon) return null;
+  const combatant = build(db, {
+    pokemonId: mon.pokemonId,
+    game: "emerald",
+    level,
+    ivs: uniformSpread(mon.fixedIv),
+    evs: {
+      hp: mon.evHp,
+      attack: mon.evAttack,
+      defense: mon.evDefense,
+      speed: mon.evSpeed,
+      spAttack: mon.evSpAttack,
+      spDefense: mon.evSpDefense,
+    },
+    natureId: mon.natureId,
+    itemId: mon.itemId,
+    moveIds: [mon.move1Id, mon.move2Id, mon.move3Id, mon.move4Id],
+    abilityId: null,
+  });
+  return combatant && { ...combatant, iv: mon.fixedIv };
 }
 
 /** A saved team's members as combatants (null where a Pokémon is unknown). */
