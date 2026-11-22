@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { SetCard } from "@/components/frontier/set-card";
+import { ThreatList } from "@/components/frontier/threats";
 import { MoveChip } from "@/components/move-chip";
 import { Sprite } from "@/components/sprite";
 import { TeamsShortcut } from "@/components/teams/teams-shortcut";
@@ -516,6 +517,11 @@ function SetsExplorer({
             </Text>
           )}
         </Card>
+      )}
+
+      {/* Rentals in the Factory: there's no team of yours to check. */}
+      {info.key !== "factory" && (
+        <ThreatList sets={narrowed.sets} level={level} facility={info.key} />
       )}
 
       {picked === null && (
