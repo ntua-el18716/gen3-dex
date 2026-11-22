@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import { FlatList, Text, useWindowDimensions, View } from "react-native";
 
@@ -55,9 +56,16 @@ export default function PokedexScreen() {
           title="Pokédex"
           subtitle={`${count} in ${GAME_INFO[game].name}`}
           actions={
-            columns === 1 && (
-              <LayoutToggle layout={layout} onChange={setLayout} />
-            )
+            <View className="flex-row gap-2">
+              <IconButton
+                name={{ ios: "book", android: "dictionary", web: "dictionary" }}
+                label="Moves, abilities and items"
+                onPress={() => router.push("/reference")}
+              />
+              {columns === 1 && (
+                <LayoutToggle layout={layout} onChange={setLayout} />
+              )}
+            </View>
           }
         >
           {/* Wide screens: search and game picker share a row. */}

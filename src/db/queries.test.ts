@@ -88,7 +88,7 @@ describe.skipIf(!existsSync(DB_PATH))("queries", () => {
 
     it("gives held items of the game's version group", () => {
       const names = (game: schema.Game) =>
-        getPokemonDetail(db, 25, game)!.heldItems;
+        getPokemonDetail(db, 25, game)!.heldItems.map(({ id: _, ...h }) => h);
       expect(names("emerald")).toEqual([
         { rarity: "common", name: "Oran Berry" },
         { rarity: "rare", name: "Light Ball" },

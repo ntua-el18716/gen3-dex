@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
 import { MoveChip } from "@/components/move-chip";
+import { ItemLink } from "@/components/reference/item-link";
 import { Sprite } from "@/components/sprite";
 import { StatCells } from "@/components/stat-cells";
 import { Card, Label, Segmented, TABULAR } from "@/components/ui";
@@ -76,7 +77,7 @@ export function SetCard({
           <Text className="text-callout text-ink-muted">
             {set.item ? (
               <>
-                Holds <Text className="font-semibold text-ink">{set.item}</Text>
+                Holds <ItemLink id={set.itemId} name={set.item} />
               </>
             ) : (
               "No item"
@@ -93,7 +94,13 @@ export function SetCard({
 
       <View className="flex-row flex-wrap gap-1.5">
         {set.moves.map((m, i) => (
-          <MoveChip key={`${m}-${i}`} name={m} type={set.moveTypes[i]} wide />
+          <MoveChip
+            key={`${m}-${i}`}
+            id={set.moveIds[i]}
+            name={m}
+            type={set.moveTypes[i]}
+            wide
+          />
         ))}
       </View>
 

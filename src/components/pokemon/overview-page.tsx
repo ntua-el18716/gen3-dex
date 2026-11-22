@@ -1,18 +1,22 @@
-import { useState, type ReactNode } from "react";
-import { Text, View } from "react-native";
+import { Fragment, useState, type ReactNode } from "react";
+import { Link } from "expo-router";
+import { Pressable, Text, View } from "react-native";
 
 import {
   Card,
+  Chevron,
   Divider,
   Label,
   SectionTitle,
   Segmented,
   TABULAR,
 } from "@/components/ui";
+import { ItemLink } from "@/components/reference/item-link";
 import type { PokedexEntry, PokemonDetail } from "@/db/queries";
 import type { Game, Stat } from "@/db/schema";
 import { captureChance } from "@/lib/catch-rate";
 import { gamesLabel } from "@/lib/games";
+import { HELD_CHANCE } from "@/lib/reference-labels";
 import { femaleShare, genderLabel, titleCase } from "@/lib/pokemon-format";
 import { DISPLAY_STATS, STAT_NAME } from "@/lib/stat-labels";
 import { statRange } from "@/lib/stats";
@@ -134,14 +138,22 @@ export function OverviewPage({
           {pokemon.abilities.map((a, i) => (
             <View key={a.id}>
               {i > 0 && <Divider className="ml-4" />}
-              <View className="gap-0.5 p-4">
-                <Text className="text-body font-semibold text-ink">
-                  {a.name}
-                </Text>
-                <Text className="text-callout text-ink-muted">
-                  {a.description}
-                </Text>
-              </View>
+              <Link
+                href={{ pathname: "/ability/[id]", params: { id: a.id } }}
+                asChild
+              >
+                <Pressable className="flex-row items-center gap-3 p-4 active:bg-sunken">
+                  <View className="flex-1 gap-0.5">
+                    <Text className="text-body font-semibold text-ink">
+                      {a.name}
+                    </Text>
+                    <Text className="text-callout text-ink-muted">
+                      {a.description}
+                    </Text>
+                  </View>
+                  <Chevron />
+                </Pressable>
+              </Link>
             </View>
           ))}
         </Card>
@@ -157,11 +169,19 @@ export function OverviewPage({
           <InfoRow
             label="Held in the wild"
             value={
-              pokemon.heldItems.length
-                ? pokemon.heldItems
-                    .map((h) => `${h.name} (${h.rarity})`)
-                    .join(", ")
-                : "Nothing"
+              pokemon.heldItems.length ? (
+                <>
+                  {pokemon.heldItems.map((h, i) => (
+                    <Fragment key={h.id}>
+                      {i > 0 && ", "}
+                      <ItemLink id={h.id} name={h.name} />
+                      {` (${HELD_CHANCE[h.rarity]}%)`}
+                    </Fragment>
+                  ))}
+                </>
+              ) : (
+                "Nothing"
+              )
             }
           />
         </Card>
@@ -278,7 +298,7 @@ function barColour(base: number): string {
   return "bg-emerald-500";
 }
 
-function InfoRow({ label, value }: { label: string; value: string | number }) {
+function InfoRow({ label, value }: { label: string; value: ReactNode }) {
   return (
     <View className="flex-row items-baseline gap-4 px-4 py-3">
       <Text className="text-body text-ink-muted">{label}</Text>

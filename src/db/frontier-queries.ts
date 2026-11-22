@@ -81,7 +81,10 @@ export type FrontierSetDetail = {
   moves: string[];
   /** Each move's type, in the same order as `moves`. */
   moveTypes: PokemonType[];
+  /** Each move's id, in the same order as `moves`. */
+  moveIds: number[];
   item: string | null;
+  itemId: number | null;
   nature: string;
   increasedStat: Stat | null;
   decreasedStat: Stat | null;
@@ -150,7 +153,14 @@ export function getSetDetails(db: Db, setIds: number[]): FrontierSetDetail[] {
     moveTypes: [r.type1, r.type2, r.type3, r.type4].filter(
       (t): t is PokemonType => t !== null,
     ),
+    moveIds: [
+      r.set.move1Id,
+      r.set.move2Id,
+      r.set.move3Id,
+      r.set.move4Id,
+    ].filter((m): m is number => m !== null),
     item: r.item,
+    itemId: r.set.itemId,
     nature: r.nature,
     // Neutral natures raise and lower the same stat; store them as null.
     increasedStat: r.increasedStat === r.decreasedStat ? null : r.increasedStat,
@@ -265,6 +275,7 @@ export function getFrontierBrain(db: Db, facility: FrontierFacility) {
       pokemonId: frontierBrainMon.pokemonId,
       species: pokemon.name,
       item: item.name,
+      itemId: frontierBrainMon.itemId,
       nature: nature.name,
       increasedStat: nature.increasedStat,
       decreasedStat: nature.decreasedStat,
@@ -289,6 +300,10 @@ export function getFrontierBrain(db: Db, facility: FrontierFacility) {
       type2: m2!.type,
       type3: m3!.type,
       type4: m4!.type,
+      moveId1: frontierBrainMon.move1Id,
+      moveId2: frontierBrainMon.move2Id,
+      moveId3: frontierBrainMon.move3Id,
+      moveId4: frontierBrainMon.move4Id,
     })
     .from(frontierBrainMon)
     .innerJoin(pokemon, eq(pokemon.id, frontierBrainMon.pokemonId))
@@ -310,6 +325,7 @@ export function getFrontierBrain(db: Db, facility: FrontierFacility) {
         pokemonId: r.pokemonId,
         species: r.species,
         item: r.item,
+        itemId: r.itemId,
         nature: r.nature,
         fixedIv: r.fixedIv,
         baseStats: {
@@ -338,6 +354,9 @@ export function getFrontierBrain(db: Db, facility: FrontierFacility) {
         ),
         moveTypes: [r.type1, r.type2, r.type3, r.type4].filter(
           (t): t is PokemonType => t !== null,
+        ),
+        moveIds: [r.moveId1, r.moveId2, r.moveId3, r.moveId4].filter(
+          (m): m is number => m !== null,
         ),
       }));
   return { ...brain, silver: team("silver"), gold: team("gold") };

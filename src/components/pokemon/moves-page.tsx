@@ -1,12 +1,13 @@
+import { Link } from "expo-router";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import Svg, { Circle, Path } from "react-native-svg";
 
+import { CategoryIcon } from "@/components/category-icon";
 import { TypeDot } from "@/components/type-badge";
 import { Card, Label, Segmented, TABULAR, Tag } from "@/components/ui";
 import type { LearnsetMove, LearnsetSection } from "@/db/queries";
 import type { Game, LearnMethod } from "@/db/schema";
-import { damageClass, type DamageClass } from "@/lib/damage-class";
+import { damageClass } from "@/lib/damage-class";
 import { GAME_INFO } from "@/lib/games";
 
 const METHOD_LABELS: Record<LearnMethod, string> = {
@@ -143,58 +144,20 @@ function MoveRow({
           <Text className="text-callout text-ink-muted">
             {move.description}
           </Text>
-          <View className="flex-row gap-1.5">
+          <View className="flex-row items-center gap-1.5">
             <Tag>{`PP ${move.pp}`}</Tag>
             <Tag>{cls[0]!.toUpperCase() + cls.slice(1)}</Tag>
             {move.makesContact && <Tag>Contact</Tag>}
+            <View className="flex-1" />
+            <Link
+              href={{ pathname: "/move/[id]", params: { id: move.moveId } }}
+              className="text-callout font-semibold text-accent"
+            >
+              Who learns it
+            </Link>
           </View>
         </View>
       )}
     </Pressable>
-  );
-}
-
-/** Physical (burst), special (rings) or status (half circle), like the mockup. */
-function CategoryIcon({ cls }: { cls: DamageClass }) {
-  return (
-    <Svg width={18} height={18} viewBox="0 0 24 24" aria-label={cls}>
-      {cls === "physical" ? (
-        <Path
-          fill="#E8553E"
-          d="M12 1l2.6 6.2L21 5l-2.2 6.4L23 14l-6.4.9L17 22l-5-4.3L7 22l.4-7.1L1 14l4.2-2.6L3 5l6.4 2.2z"
-        />
-      ) : cls === "special" ? (
-        <>
-          <Circle
-            cx={12}
-            cy={12}
-            r={9.5}
-            fill="none"
-            stroke="#4F7CF0"
-            strokeWidth={2.6}
-          />
-          <Circle
-            cx={12}
-            cy={12}
-            r={4.5}
-            fill="none"
-            stroke="#4F7CF0"
-            strokeWidth={2.6}
-          />
-        </>
-      ) : (
-        <>
-          <Circle
-            cx={12}
-            cy={12}
-            r={9.5}
-            fill="none"
-            stroke="#9CA3AF"
-            strokeWidth={2.6}
-          />
-          <Path d="M12 2.5a9.5 9.5 0 0 1 0 19z" fill="#9CA3AF" />
-        </>
-      )}
-    </Svg>
   );
 }

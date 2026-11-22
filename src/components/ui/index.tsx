@@ -425,3 +425,19 @@ function StepButton({
     </Pressable>
   );
 }
+
+/** The "opens a page" arrow at the end of a row. */
+export function Chevron() {
+  const colors = useColors();
+  return (
+    <SymbolView
+      name={{
+        ios: "chevron.right",
+        android: "chevron_right",
+        web: "chevron_right",
+      }}
+      tintColor={colors["ink-subtle"]}
+      size={18}
+    />
+  );
+}

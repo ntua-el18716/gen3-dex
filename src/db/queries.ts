@@ -124,7 +124,7 @@ export function getPokemonDetail(db: Db, id: number, game: Game) {
   const abilities = abilityIds.map((a) => abilityRows.find((r) => r.id === a)!);
 
   const heldItems = db
-    .select({ rarity: wildHeldItem.rarity, name: item.name })
+    .select({ rarity: wildHeldItem.rarity, id: item.id, name: item.name })
     .from(wildHeldItem)
     .innerJoin(item, eq(item.id, wildHeldItem.itemId))
     .innerJoin(gameTable, eq(gameTable.versionGroup, wildHeldItem.versionGroup))

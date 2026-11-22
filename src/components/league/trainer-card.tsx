@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
 import { MoveChip } from "@/components/move-chip";
+import { ItemLink } from "@/components/reference/item-link";
 import { Sprite } from "@/components/sprite";
 import { TrainerPic } from "@/components/trainer-pic";
 import { TypeDot } from "@/components/type-badge";
@@ -197,13 +198,14 @@ function TeamMember({ mon }: { mon: TrainerTeam["team"][number] }) {
         </View>
         {mon.item && (
           <Text className="text-caption text-ink-muted">
-            Holds <Text className="font-semibold text-ink">{mon.item}</Text>
+            Holds <ItemLink id={mon.itemId} name={mon.item} />
           </Text>
         )}
         <View className="flex-row flex-wrap gap-1">
           {mon.moves.map((name, i) => (
             <MoveChip
               key={`${name}-${i}`}
+              id={mon.moveIds[i]}
               name={name}
               type={mon.moveTypes[i]}
             />

@@ -38,6 +38,7 @@ export function getTrainerTeams(db: Db, game: Game, keys: string[]) {
       level: trainerMon.level,
       iv: trainerMon.iv,
       item: item.name,
+      itemId: trainerMon.heldItemId,
       movesComputed: trainerMon.movesComputed,
       move1: m1!.name,
       move2: m2!.name,
@@ -47,6 +48,10 @@ export function getTrainerTeams(db: Db, game: Game, keys: string[]) {
       moveType2: m2!.type,
       moveType3: m3!.type,
       moveType4: m4!.type,
+      moveId1: trainerMon.move1Id,
+      moveId2: trainerMon.move2Id,
+      moveId3: trainerMon.move3Id,
+      moveId4: trainerMon.move4Id,
     })
     .from(trainerMon)
     .innerJoin(pokemon, eq(pokemon.id, trainerMon.pokemonId))
@@ -92,6 +97,10 @@ export function getTrainerTeams(db: Db, game: Game, keys: string[]) {
               moveType2,
               moveType3,
               moveType4,
+              moveId1,
+              moveId2,
+              moveId3,
+              moveId4,
               trainerId: _,
               ...m
             }) => ({
@@ -101,6 +110,9 @@ export function getTrainerTeams(db: Db, game: Game, keys: string[]) {
               ),
               moveTypes: [moveType1, moveType2, moveType3, moveType4].filter(
                 (t): t is PokemonType => t !== null,
+              ),
+              moveIds: [moveId1, moveId2, moveId3, moveId4].filter(
+                (x): x is number => x !== null,
               ),
             }),
           ),
@@ -123,10 +135,13 @@ export type TrainerTeam = {
     level: number;
     iv: number;
     item: string | null;
+    itemId: number | null;
     movesComputed: boolean;
     moves: string[];
     /** Each move's type, in the same order as `moves`. */
     moveTypes: PokemonType[];
+    /** Each move's id, in the same order as `moves`. */
+    moveIds: number[];
   }[];
 };
 
