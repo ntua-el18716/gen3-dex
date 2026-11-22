@@ -10,6 +10,7 @@ import { TeamsShortcut } from "@/components/teams/teams-shortcut";
 import {
   Card,
   Field,
+  Pills,
   SearchField,
   SectionTitle,
   Segmented,
@@ -24,8 +25,10 @@ import {
   getFactoryIvTable,
   getFactorySets,
   getFrontierBrain,
+  getPikeTrainerSets,
   getPikeWildMons,
   getPossibleSets,
+  getPyramidTrainerSets,
   getPyramidWildMons,
   getTrainersForBattle,
   type FrontierSetDetail,
@@ -37,6 +40,7 @@ import {
   factoryOpponentIv,
   MIN_OPEN_LEVEL,
   narrowBySeen,
+  type PikeTrainerRoom,
   opponentLevel,
   pikeWildLevel,
   pyramidWildLevels,
@@ -74,6 +78,8 @@ function Facility({ info }: { info: FacilityInfo }) {
   const [towerWins, setTowerWins] = useState(0);
   const [cleared, setCleared] = useState(0);
   const [floor, setFloor] = useState(1);
+  /** Pike and Pyramid: wild Pokémon, or which kind of trainer battle. */
+  const [encounter, setEncounter] = useState<"wild" | PikeTrainerRoom>("wild");
   const [symbols, setSymbols] = useState<0 | 1 | 2>(0);
   const [partyLevel, setPartyLevel] = useState(MIN_OPEN_LEVEL);
   const level = opponentLevel(levelMode, partyLevel);
@@ -119,20 +125,52 @@ function Facility({ info }: { info: FacilityInfo }) {
               : `Any trainer · every IV ${iv}`,
         };
       }
-      case "pike":
+      case "pike": {
+        if (encounter === "wild")
+          return {
+            kind: "pike" as const,
+            ...getPikeWildMons(db, { levelMode, roomsCleared: cleared }),
+          };
+        const t = getPikeTrainerSets(db, {
+          roomsCleared: cleared,
+          room: encounter,
+          levelMode,
+        });
+        // In the double battle room, two different trainers send out one
+        // Pokémon each, so one Pokémon says nothing about the other's
+        // trainer: no narrowing there.
+        const double = encounter === "double";
         return {
-          kind: "pike" as const,
-          ...getPikeWildMons(db, { levelMode, roomsCleared: cleared }),
+          kind: "sets" as const,
+          sets: t.sets,
+          trainers: double ? undefined : t.trainers,
+          summary: double
+            ? `Two of ${t.trainers.length} trainers, one Pokémon each · IVs ${ivList(t.trainers)}`
+            : trainerSummary(t.trainers),
         };
-      case "pyramid":
+      }
+      case "pyramid": {
+        if (encounter === "wild")
+          return {
+            kind: "pyramid" as const,
+            ...getPyramidWildMons(db, {
+              levelMode,
+              floorsCleared: cleared,
+              floor,
+            }),
+          };
+        const t = getPyramidTrainerSets(db, {
+          floorsCleared: cleared,
+          floor,
+          levelMode,
+        });
         return {
-          kind: "pyramid" as const,
-          ...getPyramidWildMons(db, {
-            levelMode,
-            floorsCleared: cleared,
-            floor,
-          }),
+          kind: "sets" as const,
+          sets: t.sets,
+          trainers: t.trainers,
+          summary: trainerSummary(t.trainers),
         };
+      }
     }
   }, [
     db,
@@ -144,6 +182,7 @@ function Facility({ info }: { info: FacilityInfo }) {
     cleared,
     floor,
     ivTable,
+    encounter,
   ]);
 
   // Is this battle against the Frontier Brain?
@@ -208,6 +247,33 @@ function Facility({ info }: { info: FacilityInfo }) {
             note="A game bug: Factory opponents' IVs follow your Battle Tower Level 50 streak."
           />
         )}
+        {info.kind === "pike" && (
+          <Field label="Room">
+            <Pills
+              options={[
+                { value: "wild", label: "Wild Pokémon" },
+                { value: "single", label: "Trainer" },
+                { value: "hard", label: "Hard trainer" },
+                { value: "double", label: "Double battle" },
+              ]}
+              value={encounter}
+              onChange={setEncounter}
+            />
+          </Field>
+        )}
+        {info.kind === "pyramid" && (
+          <Field label="Opponents">
+            <Segmented
+              options={[
+                { value: "wild", label: "Wild Pokémon" },
+                { value: "single", label: "Trainers" },
+              ]}
+              value={encounter === "wild" ? "wild" : "single"}
+              onChange={setEncounter}
+              fill
+            />
+          </Field>
+        )}
         {info.kind === "pyramid" && (
           <Field label="Floor">
             <Segmented
@@ -268,7 +334,7 @@ function Facility({ info }: { info: FacilityInfo }) {
 
       {brainNow ? null : result.kind === "sets" ? (
         <SetsExplorer
-          key={`${battle}-${streak}-${levelMode}`}
+          key={`${battle}-${streak}-${levelMode}-${cleared}-${floor}-${encounter}`}
           sets={result.sets}
           trainers={result.trainers}
           summary={result.summary}
@@ -305,11 +371,14 @@ const UNITS: Record<FacilityInfo["kind"], string> = {
   pyramid: "floor",
 };
 
+function ivList(trainers: { fixedIv: number }[]) {
+  return [...new Set(trainers.map((t) => t.fixedIv))]
+    .sort((a, b) => a - b)
+    .join(", ");
+}
+
 function trainerSummary(trainers: { fixedIv: number }[]) {
-  const ivs = [...new Set(trainers.map((t) => t.fixedIv))].sort(
-    (a, b) => a - b,
-  );
-  return `${trainers.length} possible trainers · IVs ${ivs.join(", ")}`;
+  return `${trainers.length} possible trainers · IVs ${ivList(trainers)}`;
 }
 
 function battleNote(battle: number) {
