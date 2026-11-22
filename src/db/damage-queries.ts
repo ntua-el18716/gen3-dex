@@ -4,9 +4,10 @@ import type { BattleMove, Battler, TypeMatchup } from "@/lib/damage";
 import { calculateStats, uniformSpread, type StatSpread } from "@/lib/stats";
 import type { Team } from "@/lib/teams";
 
-import { baseStatsIn, type Db } from "./queries";
+import { baseStatsFrom, type Db } from "./queries";
 import {
   ability,
+  baseStatOverride,
   frontierBrainMon,
   frontierSet,
   item,
@@ -60,46 +61,55 @@ type Build = {
 };
 
 function build(db: Db, b: Build): Combatant | null {
-  const species = db
+  return buildMany(db, [b])[0] ?? null;
+}
+
+const unique = <T>(values: (T | null)[]) => [
+  ...new Set(values.filter((v): v is T => v !== null)),
+];
+
+/**
+ * Many combatants with a handful of queries (one per table), for screens
+ * that weigh a whole list of sets at once. Null where a Pokémon is unknown.
+ */
+function buildMany(db: Db, builds: Build[]): (Combatant | null)[] {
+  if (builds.length === 0) return [];
+  const speciesIds = unique(builds.map((b) => b.pokemonId));
+  const speciesRows = db
     .select()
     .from(pokemon)
-    .where(eq(pokemon.id, b.pokemonId))
-    .get();
-  if (!species) return null;
-  const { baseStats: base } = baseStatsIn(db, species, b.game);
-
-  const abilityIds = [species.ability1Id, species.ability2Id].filter(
-    (a): a is number => a !== null,
-  );
+    .where(inArray(pokemon.id, speciesIds))
+    .all();
+  const overrides = db
+    .select()
+    .from(baseStatOverride)
+    .where(inArray(baseStatOverride.pokemonId, speciesIds))
+    .all();
   const abilityRows = db
     .select({ id: ability.id, key: ability.key, name: ability.name })
     .from(ability)
-    .where(inArray(ability.id, abilityIds))
+    .where(
+      inArray(
+        ability.id,
+        unique(speciesRows.flatMap((s) => [s.ability1Id, s.ability2Id])),
+      ),
+    )
     .all();
-  const abilities = abilityIds
-    .map((id) => abilityRows.find((a) => a.id === id))
-    .filter((a) => a !== undefined);
-  const chosen =
-    abilities.find((a) => a.id === b.abilityId) ?? abilities[0] ?? null;
-
-  const natureRow = db
-    .select()
-    .from(nature)
-    .where(eq(nature.id, b.natureId))
-    .get();
-  const held =
-    b.itemId === null
-      ? undefined
-      : db
-          .select({
-            key: item.key,
-            holdEffect: item.holdEffect,
-            name: item.name,
-          })
-          .from(item)
-          .where(eq(item.id, b.itemId))
-          .get();
-  const moveIds = b.moveIds.filter((m): m is number => m !== null);
+  const natures = db.select().from(nature).all();
+  const itemIds = unique(builds.map((b) => b.itemId));
+  const items = itemIds.length
+    ? db
+        .select({
+          id: item.id,
+          key: item.key,
+          holdEffect: item.holdEffect,
+          name: item.name,
+        })
+        .from(item)
+        .where(inArray(item.id, itemIds))
+        .all()
+    : [];
+  const moveIds = unique(builds.flatMap((b) => b.moveIds));
   const moveRows = moveIds.length
     ? db
         .select({
@@ -115,37 +125,107 @@ function build(db: Db, b: Build): Combatant | null {
         .all()
     : [];
 
-  return {
-    name: species.name,
-    battler: {
-      pokemonId: species.id,
-      level: b.level,
-      type1: species.type1,
-      type2: species.type2,
-      stats: calculateStats({
-        base,
+  return builds.map((b) => {
+    const species = speciesRows.find((s) => s.id === b.pokemonId);
+    if (!species) return null;
+    const { baseStats: base } = baseStatsFrom(
+      species,
+      overrides.find((o) => o.pokemonId === species.id && o.game === b.game),
+    );
+    const abilities = [species.ability1Id, species.ability2Id]
+      .map((id) => abilityRows.find((a) => a.id === id))
+      .filter((a) => a !== undefined);
+    const chosen =
+      abilities.find((a) => a.id === b.abilityId) ?? abilities[0] ?? null;
+    const natureRow = natures.find((n) => n.id === b.natureId);
+    const held = items.find((i) => i.id === b.itemId);
+    return {
+      name: species.name,
+      battler: {
+        pokemonId: species.id,
         level: b.level,
+        type1: species.type1,
+        type2: species.type2,
+        stats: calculateStats({
+          base,
+          level: b.level,
+          ivs: b.ivs,
+          evs: b.evs,
+          nature: {
+            increasedStat: natureRow?.increasedStat ?? null,
+            decreasedStat: natureRow?.decreasedStat ?? null,
+          },
+        }),
         ivs: b.ivs,
-        evs: b.evs,
-        nature: {
-          increasedStat: natureRow?.increasedStat ?? null,
-          decreasedStat: natureRow?.decreasedStat ?? null,
-        },
-      }),
-      ivs: b.ivs,
-      ability: chosen?.key ?? null,
-      item: held ? { key: held.key, holdEffect: held.holdEffect } : null,
-      weightHg: species.weightHg,
+        ability: chosen?.key ?? null,
+        item: held ? { key: held.key, holdEffect: held.holdEffect } : null,
+        weightHg: species.weightHg,
+      },
+      // In the order they were chosen.
+      moves: b.moveIds
+        .filter((m): m is number => m !== null)
+        .map((id) => moveRows.find((m) => m.id === id))
+        .filter((m) => m !== undefined),
+      itemName: held?.name ?? null,
+      abilities,
+      nature: natureRow ?? null,
+      baseStats: base,
+    };
+  });
+}
+
+/** What a Frontier set row turns into, at a level and one IV for all stats. */
+function setBuild(
+  set: typeof frontierSet.$inferSelect,
+  level: number,
+  iv: number,
+): Build {
+  return {
+    pokemonId: set.pokemonId,
+    game: "emerald",
+    level,
+    ivs: uniformSpread(iv),
+    evs: {
+      hp: set.evHp,
+      attack: set.evAttack,
+      defense: set.evDefense,
+      speed: set.evSpeed,
+      spAttack: set.evSpAttack,
+      spDefense: set.evSpDefense,
     },
-    // In the order they were chosen.
-    moves: moveIds
-      .map((id) => moveRows.find((m) => m.id === id))
-      .filter((m) => m !== undefined),
-    itemName: held?.name ?? null,
-    abilities,
-    nature: natureRow ?? null,
-    baseStats: base,
+    natureId: set.natureId,
+    itemId: set.itemId,
+    moveIds: [set.move1Id, set.move2Id, set.move3Id, set.move4Id],
+    abilityId: null,
   };
+}
+
+/**
+ * Many Frontier sets as they battle at `level`, each with its own IV
+ * (`ivOf`), by set id. For lists such as the threat list.
+ */
+export function getSetCombatants(
+  db: Db,
+  setIds: number[],
+  level: number,
+  ivOf: (setId: number) => number,
+): Map<number, Combatant> {
+  if (setIds.length === 0) return new Map();
+  const sets = db
+    .select()
+    .from(frontierSet)
+    .where(inArray(frontierSet.id, setIds))
+    .all();
+  const built = buildMany(
+    db,
+    sets.map((s) => setBuild(s, level, ivOf(s.id))),
+  );
+  const out = new Map<number, Combatant>();
+  sets.forEach((s, i) => {
+    const c = built[i];
+    if (c) out.set(s.id, c);
+  });
+  return out;
 }
 
 /**
@@ -164,25 +244,7 @@ export function getSetCombatant(
     .from(frontierSet)
     .where(eq(frontierSet.id, setId))
     .get();
-  if (!set) return null;
-  return build(db, {
-    pokemonId: set.pokemonId,
-    game: "emerald",
-    level,
-    ivs: uniformSpread(iv),
-    evs: {
-      hp: set.evHp,
-      attack: set.evAttack,
-      defense: set.evDefense,
-      speed: set.evSpeed,
-      spAttack: set.evSpAttack,
-      spDefense: set.evSpDefense,
-    },
-    natureId: set.natureId,
-    itemId: set.itemId,
-    moveIds: [set.move1Id, set.move2Id, set.move3Id, set.move4Id],
-    abilityId: null,
-  });
+  return set ? build(db, setBuild(set, level, iv)) : null;
 }
 
 /**

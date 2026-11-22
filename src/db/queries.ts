@@ -73,6 +73,14 @@ export function baseStatsIn(
       ),
     )
     .get();
+  return baseStatsFrom(species, override);
+}
+
+/** The base stats from a species row and the game's override row, if any. */
+export function baseStatsFrom(
+  species: typeof pokemon.$inferSelect,
+  override: typeof baseStatOverride.$inferSelect | undefined,
+) {
   const source = override ?? species;
   return {
     baseStats: Object.fromEntries(STATS.map((s) => [s, source[s]])) as Record<
