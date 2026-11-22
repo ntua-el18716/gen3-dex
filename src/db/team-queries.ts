@@ -1,10 +1,12 @@
 import { and, asc, eq, inArray } from "drizzle-orm";
 
+import type { NameIndex } from "@/lib/showdown";
 import type { Team } from "@/lib/teams";
 
 import { getTeamCombatants } from "./damage-queries";
 import type { Db } from "./queries";
 import {
+  ability,
   evolution,
   item,
   learnset,
@@ -179,3 +181,30 @@ export function getTeamDetails(db: Db, team: Pick<Team, "game" | "members">) {
 export type TeamMemberDetail = NonNullable<
   ReturnType<typeof getTeamDetails>[number]
 >;
+
+/** Every name a Showdown set can mention, for reading and writing them. */
+export function getNameIndex(db: Db): NameIndex {
+  return {
+    species: db
+      .select({
+        id: pokemon.id,
+        name: pokemon.name,
+        ability1Id: pokemon.ability1Id,
+        ability2Id: pokemon.ability2Id,
+      })
+      .from(pokemon)
+      .all()
+      .map(({ id, name, ability1Id, ability2Id }) => ({
+        id,
+        name,
+        abilityIds: [ability1Id, ability2Id].filter((a) => a !== null),
+      })),
+    moves: db.select({ id: move.id, name: move.name }).from(move).all(),
+    items: db.select({ id: item.id, name: item.name }).from(item).all(),
+    abilities: db
+      .select({ id: ability.id, name: ability.name })
+      .from(ability)
+      .all(),
+    natures: db.select({ id: nature.id, name: nature.name }).from(nature).all(),
+  };
+}

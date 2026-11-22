@@ -5,10 +5,12 @@ import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 
 import { uniformSpread } from "@/lib/stats";
+import { formatTeam, parseShowdown } from "@/lib/showdown";
 import { newMember } from "@/lib/teams";
 
 import * as schema from "./schema";
 import {
+  getNameIndex,
   getTeachableMoves,
   getTeamDetails,
   listHoldItems,
@@ -133,6 +135,58 @@ describe.skipIf(!existsSync(DB_PATH))("team queries", () => {
       expect(details[0]).toBeNull();
       expect(details[1]!.name).toBe("Pikachu");
       expect(getTeamDetails(db, { game: "emerald", members: [] })).toEqual([]);
+    });
+  });
+
+  describe("Showdown text with the real names", () => {
+    const index = getNameIndex(db);
+
+    it("finds every species, move, item and ability by its own name", () => {
+      const all = (list: { id: number; name: string }[]) =>
+        list.map((x) => x.name).join("\n\n");
+      const { teams } = parseShowdown(all(index.species), index, 50);
+      expect(teams[0]!.members).toHaveLength(6);
+      // Each name, one team per species, matched back to the same id.
+      for (const sp of index.species) {
+        const { teams: t } = parseShowdown(sp.name, index, 50);
+        expect(t[0]!.members[0]!.pokemonId).toBe(sp.id);
+      }
+      for (const mv of index.moves) {
+        const { teams: t } = parseShowdown(`Mew\n- ${mv.name}`, index, 50);
+        expect(t[0]!.members[0]!.moveIds).toEqual([mv.id]);
+      }
+    });
+
+    it("round-trips a team", () => {
+      const members = [
+        {
+          ...newMember(373, 22, 50),
+          natureId: listNatures(db).find((n) => n.name === "Adamant")!.id,
+          itemId: itemId("Choice Band"),
+          moveIds: [moveId("Earthquake"), moveId("Dragon Claw")],
+          evs: { ...uniformSpread(0), attack: 252, speed: 252, hp: 4 },
+        },
+        { ...newMember(65, 28, 100), moveIds: [moveId("ThunderPunch")] },
+      ];
+      const text = formatTeam({ name: "Test", members }, index);
+      expect(parseShowdown(text, index, 50)).toEqual({
+        teams: [{ name: "Test", members }],
+        warnings: [],
+      });
+    });
+
+    it("reads a Smogon Gen 3 set", () => {
+      const text = `Metagross @ Choice Band
+Ability: Clear Body
+EVs: 252 HP / 252 Atk / 4 Def
+Adamant Nature
+- Meteor Mash
+- Earthquake
+- Explosion
+- Rock Slide`;
+      const { teams, warnings } = parseShowdown(text, index, 50);
+      expect(warnings).toEqual([]);
+      expect(teams[0]!.members[0]).toMatchObject({ pokemonId: 376, level: 50 });
     });
   });
 });
