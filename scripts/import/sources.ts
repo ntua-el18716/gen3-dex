@@ -40,6 +40,8 @@ export const SOURCES: SourceRepo[] = [
       "/src/roamer.c",
       "/src/pokemon.c",
       "/graphics/pokemon/",
+      // Trainer pictures, for the League page (npm run trainer-pics).
+      "/graphics/trainers/front_pics/",
     ],
   },
   {
@@ -55,6 +57,8 @@ export const SOURCES: SourceRepo[] = [
       "/data/scripts/",
       "/src/roamer.c",
       "/graphics/pokemon/",
+      "/graphics/trainers/front_pics/",
+      "/graphics/trainers/palettes/",
     ],
   },
   {
@@ -74,6 +78,8 @@ export const SOURCES: SourceRepo[] = [
       "/src/roamer.c",
       // In-game trades.
       "/src/trade.c",
+      "/graphics/trainers/*.png",
+      "/graphics/trainers/*.pal",
     ],
   },
 ];

@@ -6,11 +6,13 @@ import { Pressable, Text, View } from "react-native";
 
 import { MoveChip } from "@/components/move-chip";
 import { Sprite } from "@/components/sprite";
+import { TrainerPic } from "@/components/trainer-pic";
 import { TypeDot } from "@/components/type-badge";
 import { Segmented, TABULAR } from "@/components/ui";
 import type { TrainerTeam } from "@/db/league-queries";
 import type { LeagueSection, LeagueTrainer } from "@/lib/league";
 import { hexToRgb, mix, typeColor } from "@/theme/colors";
+import { useCurrentGame } from "@/state/current-game";
 import { useColors, usePalette } from "@/theme/theme";
 
 /** The Champion's card is gold, whatever their type. */
@@ -33,6 +35,7 @@ export function TrainerCard({
 }) {
   const colors = useColors();
   const { surface } = usePalette();
+  const { game } = useCurrentGame();
   const [variant, setVariant] = useState(0);
   const [open, setOpen] = useState(false);
   const trainer = pick(entry.variants[variant]?.keys ?? []);
@@ -65,27 +68,42 @@ export function TrainerCard({
         className="gap-3.5 p-4"
       >
         <View className="flex-row items-center gap-3">
-          {entry.type ? (
-            <TypeDot type={entry.type} size={40} />
-          ) : (
+          {/* The trainer as the game draws them, with their speciality. */}
+          <View className="h-20 w-20 items-center justify-center">
             <View
-              className="h-10 w-10 items-center justify-center rounded-full"
+              className="absolute h-16 w-16 rounded-full"
               style={{
-                backgroundColor:
-                  kind === "champion" ? CHAMPION_GOLD : colors.accent,
+                backgroundColor: tint
+                  ? mix(hexToRgb(tint), surface, 0.3)
+                  : colors.sunken,
               }}
-            >
-              <SymbolView
-                name={{
-                  ios: kind === "champion" ? "crown.fill" : "person.fill",
-                  android: kind === "champion" ? "workspace_premium" : "person",
-                  web: kind === "champion" ? "workspace_premium" : "person",
-                }}
-                tintColor="#FFFFFF"
-                size={20}
-              />
+            />
+            <TrainerPic game={game} trainerKey={trainer.key} size={80} />
+            <View className="absolute bottom-0 right-0">
+              {entry.type ? (
+                <TypeDot type={entry.type} size={24} />
+              ) : (
+                <View
+                  className="h-6 w-6 items-center justify-center rounded-full"
+                  style={{
+                    backgroundColor:
+                      kind === "champion" ? CHAMPION_GOLD : colors.accent,
+                  }}
+                >
+                  <SymbolView
+                    name={{
+                      ios: kind === "champion" ? "crown.fill" : "person.fill",
+                      android:
+                        kind === "champion" ? "workspace_premium" : "person",
+                      web: kind === "champion" ? "workspace_premium" : "person",
+                    }}
+                    tintColor="#FFFFFF"
+                    size={14}
+                  />
+                </View>
+              )}
             </View>
-          )}
+          </View>
           <View className="flex-1">
             <Text
               className="text-headline font-bold text-ink"
@@ -93,7 +111,7 @@ export function TrainerCard({
             >
               {kind === "rival" && entry.detail ? entry.detail : trainer.name}
             </Text>
-            <Text className="text-callout text-ink-muted" numberOfLines={1}>
+            <Text className="text-callout text-ink-muted" numberOfLines={2}>
               {[entry.place, kind === "rival" ? null : entry.detail]
                 .filter(Boolean)
                 .join(" · ")}
