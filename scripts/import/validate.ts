@@ -88,8 +88,10 @@ const CHECKS: Check[] = [
     expect: 0,
   },
   {
+    // Except Feebas's spots: its rate is a chance per bite, the rest being
+    // the rod's own table.
     name: "every encounter table sums to 100%",
-    sql: "SELECT count(*) FROM (SELECT sum(rate) s FROM encounter GROUP BY game, location_id, method) WHERE s <> 100",
+    sql: "SELECT count(*) FROM (SELECT sum(rate) s FROM encounter WHERE method <> 'feebas-spots' GROUP BY game, location_id, method) WHERE s <> 100",
     expect: 0,
   },
   {
@@ -232,6 +234,14 @@ const CHECKS: Check[] = [
     sql: `SELECT group_concat(l.key) FROM static_encounter s JOIN location l ON l.id = s.location_id
           JOIN pokemon p ON p.id = s.pokemon_id WHERE s.game = 'ruby' AND p.name = 'Electrode'`,
     expect: "MAP_MAGMA_HIDEOUT_B1F",
+  },
+  {
+    name: "Feebas on Route 119's spots in R/S/E: Lv 20–25, half the bites",
+    sql: `SELECT COUNT(*) FROM encounter e JOIN location l ON l.id = e.location_id JOIN pokemon p ON p.id = e.pokemon_id
+          WHERE e.method = 'feebas-spots' AND l.key = 'MAP_ROUTE119' AND p.name = 'Feebas'
+            AND e.min_level = 20 AND e.max_level = 25 AND e.rate = 50
+            AND e.game IN ('ruby', 'sapphire', 'emerald')`,
+    expect: 3,
   },
   {
     name: "Emerald Route 120 has six Kecleon",

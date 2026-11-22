@@ -177,7 +177,68 @@ export function importEncounters(lookups: Lookups) {
     }
   }
 
+  // Feebas isn't in the tables: R/S/E pick it in code (see parseFeebas).
+  for (const { repo, region, games } of FEEBAS_REPOS) {
+    const feebas = parseFeebas(
+      readFileSync(
+        path.resolve(DATA_SRC_DIR, repo, "src/wild_encounter.c"),
+        "utf8",
+      ),
+    );
+    const location = locations.get(`${region}:${feebas.map}`);
+    if (!location) throw new Error(`Feebas: no place ${feebas.map}`);
+    for (const game of games)
+      encounters.push({
+        game,
+        locationId: location.id,
+        method: "feebas-spots",
+        slot: 0,
+        pokemonId: lookups.pokemon(feebas.species, game),
+        minLevel: feebas.minLevel,
+        maxLevel: feebas.maxLevel,
+        rate: feebas.chance,
+      });
+  }
+
   return { locations: [...locations.values()], encounters };
+}
+
+const FEEBAS_REPOS: { repo: RepoName; region: "hoenn"; games: Game[] }[] = [
+  { repo: "pokeemerald", region: "hoenn", games: ["emerald"] },
+  { repo: "pokeruby", region: "hoenn", games: ["ruby", "sapphire"] },
+];
+
+/**
+ * R/S/E's Feebas rule from wild_encounter.c: `CheckFeebas` runs when you
+ * fish on its map (MAP_ROUTE119) on one of six spots, and lets through
+ * `Random() % 100 > N` → not Feebas, so the chance is N + 1 percent; the
+ * Pokémon is a `{min, max, SPECIES_…}` WildPokemon (sWildFeebas in
+ * pokeemerald, gWildFeebasRoute119Data in pokeruby). Fails loudly if the
+ * code no longer looks like that.
+ */
+export function parseFeebas(source: string) {
+  const mon =
+    /(?:sWildFeebas|gWildFeebasRoute119Data)\s*=\s*\{\s*(\d+)\s*,\s*(\d+)\s*,\s*(SPECIES_\w+)\s*\}/.exec(
+      source,
+    );
+  const check = /bool8 CheckFeebas\(void\)\s*\{([\s\S]*?)\n\}/.exec(
+    source,
+  )?.[1];
+  const map = check && /MAP_GROUP\((MAP_\w+)\)/.exec(check)?.[1];
+  const chance =
+    check &&
+    /Random\(\) % 100 > (\d+)\)(?:\s*\/\/[^\n]*)?\s*return FALSE/.exec(
+      check,
+    )?.[1];
+  if (!mon || !map || !chance)
+    throw new Error("wild_encounter.c: Feebas rule not found");
+  return {
+    species: mon[3]!,
+    minLevel: Number(mon[1]),
+    maxLevel: Number(mon[2]),
+    map,
+    chance: Number(chance) + 1,
+  };
 }
 
 /**

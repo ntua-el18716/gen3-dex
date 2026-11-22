@@ -336,6 +336,28 @@ describe.skipIf(!existsSync(DB_PATH))("queries", () => {
       ]);
     });
 
+    it("has Feebas on Route 119's fishing spots in R/S/E only", () => {
+      for (const game of GAMES) {
+        const r119 = listPlaces(db, game).find((p) => p.name === "Route 119");
+        const feebas = r119
+          ? getPlace(db, r119.id, game)!.methods.find(
+              (m) => m.method === "feebas-spots",
+            )
+          : undefined;
+        if (game === "firered" || game === "leafgreen")
+          expect(feebas).toBeUndefined();
+        else
+          expect(feebas?.mons).toEqual([
+            expect.objectContaining({
+              name: "Feebas",
+              minLevel: 20,
+              maxLevel: 25,
+              rate: 50,
+            }),
+          ]);
+      }
+    });
+
     it("counts one-time encounters too (the starters on Route 101)", () => {
       const r101 = listPlaces(db, "emerald").find(
         (p) => p.name === "Route 101",

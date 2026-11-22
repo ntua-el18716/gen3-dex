@@ -9,6 +9,13 @@ export const METHOD_LABELS: Record<EncounterMethod, string> = {
   "old-rod": "Old Rod",
   "good-rod": "Good Rod",
   "super-rod": "Super Rod",
+  "feebas-spots": "Fishing on Feebas spots",
+};
+
+/** What a method's rates mean, where the label alone doesn't say. */
+export const METHOD_NOTES: Partial<Record<EncounterMethod, string>> = {
+  "feebas-spots":
+    "Six hidden water tiles on the route. With any rod, half the bites there are Feebas; the rest are the rod's usual Pokémon. The tiles move when the trend in Dewford Town changes.",
 };
 
 export const KIND_LABELS: Record<StaticEncounterKind, string> = {

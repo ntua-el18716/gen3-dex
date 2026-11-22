@@ -125,6 +125,12 @@ export const ENCOUNTER_METHODS = [
   "old-rod",
   "good-rod",
   "super-rod",
+  /**
+   * R/S/E's Feebas: on six hidden water tiles of Route 119, half the bites
+   * with any rod are Feebas (decided in code, wild_encounter.c), so it
+   * isn't in the rod tables. `rate` is that chance per bite on those tiles.
+   */
+  "feebas-spots",
 ] as const;
 export type EncounterMethod = (typeof ENCOUNTER_METHODS)[number];
 

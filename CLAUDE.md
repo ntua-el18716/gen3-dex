@@ -47,6 +47,7 @@ PokeAPI serves current-gen data, so everything comes from the pret decompilation
   - Wild held items differ by version group (Pikachu holds a Light Ball only in R/S/E).
   - 203 Pokémon have different Pokédex text in Ruby and Sapphire.
   - FireRed keeps unused Hoenn trainer slots filled with DUMMY_TRAINER_MON; skipped.
+  - Feebas isn't in R/S/E's encounter tables: `CheckFeebas` (wild_encounter.c, now in the sparse paths) makes half the bites on six hidden Route 119 tiles Feebas Lv 20–25, any rod; the tiles are re-picked from the Dewford trend's seed. Imported as method `feebas-spots` (rate = 50, chance per bite, not a table share; `parseFeebas` reads it from the C and fails if it changes shape; exempt from the "sums to 100%" check). `METHOD_NOTES` in `src/lib/places.ts` explains it on the Where tab and the place page.
 - Known gaps / later:
   - Ruby and Sapphire share one trainer table, so both villain teams' trainers are in both games' data. The playthrough guide needs curated per-game trainer lists (story order, locations), which live in map scripts, not data files.
   - Battle Frontier: the Tower/Palace/Arena, Dome, Factory and Pike/Pyramid wild Pokémon rules are imported (see "Battle Frontier data" below). Not yet: the Dome's tournament seeding/bracket, the Pike's room odds and status/healing rooms, Battle Tents, special opponents (record-mixed players, e-Reader, Apprentice).
@@ -211,7 +212,6 @@ Checked on web only (headless Chrome, light + dark) — **not yet seen on Androi
 - `/places` (`src/app/places/index.tsx`): every place with Pokémon in the current game, in sections Routes / Towns and cities / Caves, forests and more (`placeKind` in `src/lib/places.ts`), each row with a strip of its Pokémon (most prominent first: one-time encounters, then by method, then commonest). The search matches a place's name **or a Pokémon's** ("feebas" → where it lives). Opened from "Wild Pokémon by place" on the League tab.
 - `/places/[id]` (`src/app/places/[id].tsx`): gifts and one-time encounters, then one card per method with each species' summed slot rate (bar), level range; rows open the Pokémon page. Place names on the Pokémon page's Where tab link here.
 - Queries `listPlaces`, `getPlace` in `src/db/queries.ts` (tested); labels and `staticDetails` moved from the Where tab to `src/lib/places.ts`. Emerald's unreachable `…UNUSED…` maps are hidden here and on the Where tab (`isUnusedMap`).
-- **Known data gap:** Feebas (Route 119's special fishing tiles, chosen in `wild_encounter.c`, not the tables) isn't imported, so the app says it can't be caught in R/S/E.
 - Note: NativeWind's `contentContainerClassName` didn't apply to a `SectionList` on web → `contentContainerStyle` there.
 
 ## Town Map (built 2026-11-22, by Claude at his request)

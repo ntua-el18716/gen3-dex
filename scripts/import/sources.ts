@@ -39,6 +39,8 @@ export const SOURCES: SourceRepo[] = [
       "/src/battle_setup.c",
       "/src/roamer.c",
       "/src/pokemon.c",
+      // Feebas's fishing spots on Route 119 (decided in code).
+      "/src/wild_encounter.c",
       "/graphics/pokemon/",
       // Trainer pictures, for the League page (npm run trainer-pics).
       "/graphics/trainers/front_pics/",
@@ -83,6 +85,7 @@ export const SOURCES: SourceRepo[] = [
       "/src/roamer.c",
       // In-game trades.
       "/src/trade.c",
+      "/src/wild_encounter.c",
       "/graphics/trainers/*.png",
       "/graphics/trainers/*.pal",
       "/graphics/pokenav/region_map.*",

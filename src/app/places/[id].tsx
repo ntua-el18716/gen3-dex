@@ -11,7 +11,12 @@ import { getPlace } from "@/db/queries";
 import type { PokemonType } from "@/db/schema";
 import { GAME_INFO } from "@/lib/games";
 import { REGION } from "@/lib/league";
-import { KIND_LABELS, METHOD_LABELS, staticDetails } from "@/lib/places";
+import {
+  KIND_LABELS,
+  METHOD_LABELS,
+  METHOD_NOTES,
+  staticDetails,
+} from "@/lib/places";
 import { useCurrentGame } from "@/state/current-game";
 
 /** One place in the current game: its wild Pokémon and one-time encounters. */
@@ -78,6 +83,11 @@ export default function PlaceScreen() {
       {place.methods.map((m) => (
         <View key={m.method} className="gap-2">
           <SectionTitle>{METHOD_LABELS[m.method]}</SectionTitle>
+          {METHOD_NOTES[m.method] && (
+            <Text className="px-1 text-callout text-ink-muted">
+              {METHOD_NOTES[m.method]}
+            </Text>
+          )}
           <Card>
             {m.mons.map((mon, i) => (
               <View key={mon.pokemonId}>

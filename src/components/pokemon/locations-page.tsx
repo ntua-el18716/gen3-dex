@@ -6,7 +6,12 @@ import type { LocationEntry, StaticEncounterEntry } from "@/db/queries";
 import { Card, Divider, SectionTitle, TABULAR, Tag } from "@/components/ui";
 import type { Game } from "@/db/schema";
 import { GAME_INFO, gamesLabel } from "@/lib/games";
-import { KIND_LABELS, METHOD_LABELS, staticDetails } from "@/lib/places";
+import {
+  KIND_LABELS,
+  METHOD_LABELS,
+  METHOD_NOTES,
+  staticDetails,
+} from "@/lib/places";
 import { useColors } from "@/theme/theme";
 
 /** Where to get the Pokémon in the current game: gifts and one-time encounters, then the wild. */
@@ -93,6 +98,11 @@ export function LocationsPage({
                       {e.rate}%
                     </Text>
                   </View>
+                  {METHOD_NOTES[e.method] && (
+                    <Text className="-mt-1 px-4 pb-2.5 text-caption text-ink-subtle">
+                      {METHOD_NOTES[e.method]}
+                    </Text>
+                  )}
                 </View>
               ))}
             </Card>
