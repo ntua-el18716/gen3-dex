@@ -104,6 +104,25 @@ describe.skipIf(!existsSync(DB_PATH))("queries", () => {
   });
 
   describe("getLearnset", () => {
+    it("gives evolved Pokémon their earlier stages' egg moves", () => {
+      const egg = (id: number, game: "emerald" | "firered" = "emerald") =>
+        getLearnset(db, id, game).find((s) => s.method === "egg")?.data ?? [];
+      // Charizard's come from Charmander, named as such.
+      const charizard = egg(6);
+      expect(charizard.map((m) => m.name)).toEqual(egg(4).map((m) => m.name));
+      expect(charizard.every((m) => m.from === "Charmander")).toBe(true);
+      expect(charizard.map((m) => m.name)).toContain("Dragon Dance");
+      // A first stage's own egg moves aren't marked.
+      expect(egg(4).every((m) => m.from === null)).toBe(true);
+      // Pikachu's come from Pichu; each move only once.
+      const pikachu = egg(25);
+      expect(pikachu.length).toBeGreaterThan(0);
+      expect(new Set(pikachu.map((m) => m.moveId)).size).toBe(pikachu.length);
+      expect(pikachu.every((m) => m.from === "Pichu")).toBe(true);
+      // Pokémon that don't breed have none.
+      expect(egg(150)).toEqual([]);
+    });
+
     it("groups moves by method in the games' order", () => {
       const sections = getLearnset(db, 1, "emerald");
       expect(sections.map((s) => [s.method, s.data.length])).toEqual([

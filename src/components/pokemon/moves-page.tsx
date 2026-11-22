@@ -109,9 +109,15 @@ function MoveRow({
             {label}
           </Text>
         )}
-        <Text className="flex-1 text-body font-semibold text-ink">
-          {move.name}
-        </Text>
+        <View className="flex-1">
+          <Text className="text-body font-semibold text-ink">{move.name}</Text>
+          {/* An earlier stage's egg move, which this Pokémon keeps. */}
+          {move.from && (
+            <Text className="text-caption text-ink-subtle">
+              From {move.from}
+            </Text>
+          )}
+        </View>
         <TypeDot type={move.type} size={22} />
         <CategoryIcon cls={cls} />
         <Text

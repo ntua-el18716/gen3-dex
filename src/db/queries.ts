@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, max, min, sum } from "drizzle-orm";
+import { and, asc, eq, inArray, max, min, or, sum } from "drizzle-orm";
 import { alias, type BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 
 import * as schema from "./schema";
@@ -160,14 +160,35 @@ export function getPokedexEntries(db: Db, id: number) {
 
 export type PokedexEntry = ReturnType<typeof getPokedexEntries>[number];
 
+/** A Pokémon and everything it evolved from, itself first. */
+export function withAncestors(db: Db, pokemonId: number): number[] {
+  const line = [pokemonId];
+  for (let i = 0; i < line.length; i++) {
+    const parents = db
+      .select({ id: evolution.fromPokemonId })
+      .from(evolution)
+      .where(eq(evolution.toPokemonId, line[i]!))
+      .all();
+    for (const p of parents) if (!line.includes(p.id)) line.push(p.id);
+  }
+  return line;
+}
+
 /**
  * The moves a Pokémon learns in one game, as one section per learn method
  * (in LEARN_METHODS order, empty methods left out). Level-up moves are in the
  * game's order, TMs/HMs by number, tutor and egg moves by name.
+ *
+ * Egg moves include its earlier stages' (`from` names the stage): the games
+ * list them under the first stage only, but the Pokémon keeps them when it
+ * evolves, so a Charizard can know Charmander's Dragon Dance.
  */
 export function getLearnset(db: Db, id: number, game: Game) {
+  const line = withAncestors(db, id);
   const rows = db
     .select({
+      pokemonId: learnset.pokemonId,
+      species: pokemon.name,
       method: learnset.method,
       level: learnset.level,
       sortOrder: learnset.sortOrder,
@@ -184,12 +205,34 @@ export function getLearnset(db: Db, id: number, game: Game) {
     })
     .from(learnset)
     .innerJoin(move, eq(move.id, learnset.moveId))
+    .innerJoin(pokemon, eq(pokemon.id, learnset.pokemonId))
     .leftJoin(
       machine,
       and(eq(learnset.method, "machine"), eq(machine.moveId, learnset.moveId)),
     )
-    .where(and(eq(learnset.pokemonId, id), eq(learnset.game, game)))
-    .all();
+    .where(
+      and(
+        // Its own moves, and its earlier stages' egg moves.
+        or(
+          eq(learnset.pokemonId, id),
+          and(inArray(learnset.pokemonId, line), eq(learnset.method, "egg")),
+        ),
+        eq(learnset.game, game),
+      ),
+    )
+    .all()
+    // Each egg move once, from the nearest stage (its own first).
+    .sort((a, b) => line.indexOf(a.pokemonId) - line.indexOf(b.pokemonId))
+    .filter(
+      (r, i, all) =>
+        r.method !== "egg" ||
+        all.findIndex((o) => o.method === "egg" && o.moveId === r.moveId) === i,
+    )
+    .map(({ pokemonId, species, ...r }) => ({
+      ...r,
+      /** For an earlier stage's egg move: that stage's name. */
+      from: pokemonId === id ? null : species,
+    }));
 
   type Row = (typeof rows)[number];
   const order: Record<LearnMethod, (a: Row, b: Row) => number> = {

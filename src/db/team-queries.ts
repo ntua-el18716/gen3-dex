@@ -4,10 +4,9 @@ import type { NameIndex } from "@/lib/showdown";
 import type { Team } from "@/lib/teams";
 
 import { getTeamCombatants } from "./damage-queries";
-import type { Db } from "./queries";
+import { withAncestors, type Db } from "./queries";
 import {
   ability,
-  evolution,
   item,
   learnset,
   machine,
@@ -16,20 +15,6 @@ import {
   pokemon,
   type Game,
 } from "./schema";
-
-/** A Pokémon and everything it evolved from, itself first. */
-function withAncestors(db: Db, pokemonId: number): number[] {
-  const line = [pokemonId];
-  for (let i = 0; i < line.length; i++) {
-    const parents = db
-      .select({ id: evolution.fromPokemonId })
-      .from(evolution)
-      .where(eq(evolution.toPokemonId, line[i]!))
-      .all();
-    for (const p of parents) if (!line.includes(p.id)) line.push(p.id);
-  }
-  return line;
-}
 
 /**
  * Every move a Pokémon can know in one game, by name, each with how it gets
