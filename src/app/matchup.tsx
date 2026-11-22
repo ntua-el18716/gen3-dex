@@ -3,6 +3,7 @@ import { Link, router, Stack, useLocalSearchParams } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
+import { SideConditionsPanel } from "@/components/battle/side-conditions";
 import { PokeballMark } from "@/components/pokeball-mark";
 import { useTypeGradient } from "@/components/pokemon-row";
 import { Sprite } from "@/components/sprite";
@@ -27,9 +28,15 @@ import {
   type Combatant,
 } from "@/db/damage-queries";
 import {
+  afterIntimidate,
+  battleSpeed,
   calculateDamage,
+  FRESH_SIDE,
   summarize,
+  withConditions,
+  type Battler,
   type DamageOptions,
+  type SideConditions,
   type TypeMatchup,
   type Weather,
 } from "@/lib/damage";
@@ -74,6 +81,9 @@ export default function MatchupScreen() {
   const [abilityKey, setAbilityKey] = useState<string | null>(null);
   const [weather, setWeather] = useState<Weather>("clear");
   const [critical, setCritical] = useState(false);
+  const [theirSide, setTheirSide] = useState<SideConditions>(FRESH_SIDE);
+  const [yourSide, setYourSide] = useState<SideConditions>(FRESH_SIDE);
+  const [intimidate, setIntimidate] = useState(true);
 
   if (!foe) {
     return (
@@ -86,7 +96,10 @@ export default function MatchupScreen() {
   // Frontier Pokémon have either of their abilities; the user says which.
   const opponent: Combatant = {
     ...foe,
-    battler: { ...foe.battler, ability: abilityKey ?? foe.battler.ability },
+    battler: withConditions(
+      { ...foe.battler, ability: abilityKey ?? foe.battler.ability },
+      theirSide,
+    ),
   };
   const options: DamageOptions = { weather, critical, frontier: true };
 
@@ -136,6 +149,34 @@ export default function MatchupScreen() {
             fill
           />
         </Field>
+        <Field
+          label="Intimidate"
+          note="Lowers the other side's Attack by one stage on entry."
+        >
+          <Segmented
+            options={[
+              { value: 1, label: "Apply" },
+              { value: 0, label: "Ignore" },
+            ]}
+            value={intimidate ? 1 : 0}
+            onChange={(v) => setIntimidate(v === 1)}
+            fill
+          />
+        </Field>
+      </Card>
+
+      <Card>
+        <SideConditionsPanel
+          title={`Their ${foe.name}`}
+          side={theirSide}
+          onChange={setTheirSide}
+        />
+        <Divider className="ml-4" />
+        <SideConditionsPanel
+          title="Your Pokémon"
+          side={yourSide}
+          onChange={setYourSide}
+        />
       </Card>
 
       {usable.length === 0 ? (
@@ -185,12 +226,16 @@ export default function MatchupScreen() {
                   foe={opponent}
                   chart={chart}
                   options={options}
+                  yourSide={yourSide}
+                  theirSide={theirSide}
+                  intimidate={intimidate}
                 />
               ) : null,
             )}
           <Text className="px-1 text-caption text-ink-subtle">
-            From full HP, with no status conditions, stat changes or screens.
-            The game rolls 85–100% of the damage each hit, hence the ranges.
+            Shares are of the HP left. The game rolls 85–100% of the damage each
+            hit, hence the ranges. Single battles; Quick Claw and other chances
+            aren’t counted.
           </Text>
         </View>
       )}
@@ -248,7 +293,12 @@ function FoeCard({
               "No item"
             )}
             {"  "}
-            <Text style={TABULAR}>{battler.stats.hp} HP</Text>
+            <Text style={TABULAR}>
+              {battler.currentHp !== undefined &&
+              battler.currentHp < battler.stats.hp
+                ? `${battler.currentHp} / ${battler.stats.hp} HP`
+                : `${battler.stats.hp} HP`}
+            </Text>
           </Text>
         </View>
       </View>
@@ -264,6 +314,9 @@ function MemberMatchup({
   foe,
   chart,
   options,
+  yourSide,
+  theirSide,
+  intimidate,
 }: {
   teamId: string;
   slot: number;
@@ -271,9 +324,26 @@ function MemberMatchup({
   foe: Combatant;
   chart: TypeMatchup[];
   options: DamageOptions;
+  yourSide: SideConditions;
+  theirSide: SideConditions;
+  intimidate: boolean;
 }) {
-  const mySpeed = member.battler.stats.speed;
-  const theirSpeed = foe.battler.stats.speed;
+  // Each side's Intimidate hits the other on entry.
+  let mine: Battler = withConditions(member.battler, yourSide);
+  let theirs: Battler = foe.battler;
+  const notes: string[] = [];
+  if (intimidate) {
+    const before = { mine, theirs };
+    theirs = afterIntimidate(before.mine, before.theirs);
+    mine = afterIntimidate(before.theirs, before.mine);
+    if (theirs !== before.theirs)
+      notes.push(`Intimidate: ${foe.name}’s Attack −1`);
+    if (mine !== before.mine) notes.push(`${foe.name}’s Intimidate: Attack −1`);
+  }
+  const me = { ...member, battler: mine };
+  const them = { ...foe, battler: theirs };
+  const mySpeed = battleSpeed(mine, options.weather);
+  const theirSpeed = battleSpeed(theirs, options.weather);
   return (
     <Card>
       <Link
@@ -308,24 +378,37 @@ function MemberMatchup({
                   : "Moves second"}
               {`  ·  ${mySpeed} vs ${theirSpeed} Speed`}
             </Text>
+            {notes.map((n) => (
+              <Text key={n} className="text-caption text-ink-subtle">
+                {n}
+              </Text>
+            ))}
           </View>
         </Pressable>
       </Link>
       <MoveList
         title={`${member.name} attacks`}
-        attacker={member}
-        defender={foe}
+        attacker={me}
+        defender={them}
         chart={chart}
-        options={options}
+        options={{
+          ...options,
+          reflect: theirSide.reflect,
+          lightScreen: theirSide.lightScreen,
+        }}
         tone="good"
       />
       <Divider className="ml-4" />
       <MoveList
         title={`${foe.name} attacks`}
-        attacker={foe}
-        defender={member}
+        attacker={them}
+        defender={me}
         chart={chart}
-        options={options}
+        options={{
+          ...options,
+          reflect: yourSide.reflect,
+          lightScreen: yourSide.lightScreen,
+        }}
         tone="bad"
       />
     </Card>
@@ -364,7 +447,10 @@ function MoveList({
         );
         const summary =
           result.kind === "damage"
-            ? summarize(result, defender.battler.stats.hp)
+            ? summarize(
+                result,
+                defender.battler.currentHp ?? defender.battler.stats.hp,
+              )
             : null;
         const effective =
           result.kind === "damage"

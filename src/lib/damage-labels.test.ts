@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import type { DamageSummary } from "./damage";
+import { FRESH_SIDE, type DamageSummary } from "./damage";
 import {
+  describeSide,
   effectivenessLabel,
+  stageLabel,
   koText,
   noDamageText,
   shareRange,
@@ -69,5 +71,23 @@ describe("damage labels", () => {
     expect(noDamageText({ kind: "varies", why: "one-hit-ko" })).toBe(
       "Knocks out if it lands",
     );
+  });
+});
+
+describe("battle condition labels", () => {
+  it("signs stages", () => {
+    expect([2, 0, -1].map(stageLabel)).toEqual(["+2", "0", "−1"]);
+  });
+  it("sums up a side in one line", () => {
+    expect(describeSide(FRESH_SIDE)).toBe("Full HP, healthy, no stat changes");
+    expect(
+      describeSide({
+        ...FRESH_SIDE,
+        hpPercent: 50,
+        status: "burn",
+        stages: { attack: 2, speed: -1, defense: 0 },
+        reflect: true,
+      }),
+    ).toBe("50% HP · Burned · Atk +2 · Spe −1 · Reflect");
   });
 });

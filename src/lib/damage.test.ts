@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  afterIntimidate,
+  applyStage,
+  battleSpeed,
   calculateDamage,
+  FRESH_SIDE,
   hiddenPower,
   summarize,
+  withConditions,
   type BattleMove,
   type Battler,
   type DamageResult,
@@ -463,5 +468,215 @@ describe("summarize", () => {
     expect(double.koChance).toBeCloseTo(120 / 256);
     const blast = summarize(result(sixteen, [2, 5]), 300);
     expect([blast.min, blast.max, blast.koChance]).toEqual([170, 500, null]);
+  });
+});
+
+describe("battle conditions", () => {
+  it("scales stats by stage like gStatStageRatios", () => {
+    expect([-6, -1, 0, 1, 2, 6].map((s) => applyStage(100, s))).toEqual([
+      25, 66, 100, 150, 200, 400,
+    ]);
+    expect(applyStage(100, 9)).toBe(400);
+  });
+
+  it("applies Attack and Defense stages", () => {
+    const plus2 = { ...strong, stages: { attack: 2 } };
+    // 300 Atk: 300 × 100 × 22 / 100 / 50 + 2 = 134
+    expect(max(calculateDamage(plus2, mon(), move(), CHART))).toBe(134);
+    const wall = mon({ stages: { defense: 1 } });
+    // 100 Def → 150: 330,000 / 150 / 50 + 2 = 46
+    expect(max(calculateDamage(strong, wall, move(), CHART))).toBe(46);
+  });
+
+  it("ignores bad stages for the attacker on a critical hit", () => {
+    const crit = { critical: true };
+    const minus = { ...strong, stages: { attack: -2 } };
+    const walled = mon({ stages: { defense: 2 } });
+    const plain = max(calculateDamage(strong, mon(), move(), CHART, crit));
+    expect(max(calculateDamage(minus, mon(), move(), CHART, crit))).toBe(plain);
+    expect(max(calculateDamage(strong, walled, move(), CHART, crit))).toBe(
+      plain,
+    );
+    // Good stages still count.
+    const plus = { ...strong, stages: { attack: 2 } };
+    expect(
+      max(calculateDamage(plus, mon(), move(), CHART, crit)),
+    ).toBeGreaterThan(plain);
+  });
+
+  it("halves physical damage when burned, unless the attacker has Guts", () => {
+    const burned = { ...strong, status: "burn" as const };
+    // (330,000 / 100 / 50 = 66) / 2 = 33, + 2
+    expect(max(calculateDamage(burned, mon(), move(), CHART))).toBe(35);
+    const guts = { ...burned, ability: "ABILITY_GUTS" };
+    // Guts: 1.5× Attack and no burn penalty: 225 Atk → 99 + 2
+    expect(max(calculateDamage(guts, mon(), move(), CHART))).toBe(101);
+    // Burn doesn't touch special moves.
+    const sp = mon({
+      stats: { ...uniformSpread(100), spAttack: 150 },
+      status: "burn",
+    });
+    expect(max(calculateDamage(sp, mon(), move({ type: "dark" }), CHART))).toBe(
+      68,
+    );
+  });
+
+  it("Marvel Scale raises Defense with a status condition", () => {
+    const scale = mon({ ability: "ABILITY_MARVEL_SCALE" });
+    expect(max(calculateDamage(strong, scale, move(), CHART))).toBe(68);
+    const poisoned = { ...scale, status: "poison" as const };
+    expect(max(calculateDamage(strong, poisoned, move(), CHART))).toBe(46);
+  });
+
+  it("Reflect and Light Screen halve damage, but not critical hits", () => {
+    expect(
+      max(calculateDamage(strong, mon(), move(), CHART, { reflect: true })),
+    ).toBe(35);
+    const sp = mon({ stats: { ...uniformSpread(100), spAttack: 150 } });
+    const dark = move({ type: "dark" });
+    expect(
+      max(calculateDamage(sp, mon(), dark, CHART, { lightScreen: true })),
+    ).toBe(35);
+    // Reflect does nothing to special moves.
+    expect(
+      max(calculateDamage(sp, mon(), dark, CHART, { reflect: true })),
+    ).toBe(68);
+    expect(
+      max(
+        calculateDamage(strong, mon(), move(), CHART, {
+          reflect: true,
+          critical: true,
+        }),
+      ),
+    ).toBe(136);
+  });
+
+  it("Facade doubles with burn, poison or paralysis", () => {
+    const facade = move({ type: "normal", power: 70, effect: "EFFECT_FACADE" });
+    const base = max(calculateDamage(strong, mon(), facade, CHART));
+    const para = { ...strong, status: "paralysis" as const };
+    expect(max(calculateDamage(para, mon(), facade, CHART))).toBe(2 * base);
+    const asleep = { ...strong, status: "sleep" as const };
+    expect(max(calculateDamage(asleep, mon(), facade, CHART))).toBe(base);
+  });
+
+  it("pinch abilities boost their type at a third of HP", () => {
+    const blaze = mon({
+      type1: "fire",
+      ability: "ABILITY_BLAZE",
+      stats: { ...uniformSpread(100), hp: 150, spAttack: 150 },
+    });
+    const ember = move({ type: "fire" });
+    const full = max(calculateDamage(blaze, mon(), ember, CHART));
+    expect(
+      max(calculateDamage({ ...blaze, currentHp: 51 }, mon(), ember, CHART)),
+    ).toBe(full);
+    expect(
+      max(calculateDamage({ ...blaze, currentHp: 50 }, mon(), ember, CHART)),
+    ).toBeGreaterThan(full);
+  });
+
+  it("Flail, Reversal, Eruption and Super Fang follow the HP left", () => {
+    const flail = move({ type: "normal", power: 1, effect: "EFFECT_FLAIL" });
+    const at = (hp: number, p: number) =>
+      expect(
+        max(calculateDamage({ ...strong, currentHp: hp }, mon(), flail, CHART)),
+      ).toBe(
+        max(
+          calculateDamage(
+            strong,
+            mon(),
+            move({ type: "normal", power: p }),
+            CHART,
+          ),
+        ),
+      );
+    // 100 max HP: HP left in 48ths → 200 / 150 / 100 / 80 / 40 / 20.
+    at(2, 200);
+    at(8, 150);
+    at(18, 100);
+    at(33, 80);
+    at(66, 40);
+    at(100, 20);
+    const spout = move({
+      type: "water",
+      power: 150,
+      effect: "EFFECT_ERUPTION",
+    });
+    const sp = mon({
+      stats: { ...uniformSpread(100), hp: 150, spAttack: 150 },
+    });
+    const plain = (p: number) =>
+      max(calculateDamage(sp, mon(), move({ type: "water", power: p }), CHART));
+    expect(
+      max(calculateDamage({ ...sp, currentHp: 75 }, mon(), spout, CHART)),
+    ).toBe(plain(75));
+    expect(
+      max(calculateDamage({ ...sp, currentHp: 1 }, mon(), spout, CHART)),
+    ).toBe(plain(1));
+    const fang = move({
+      type: "normal",
+      power: 1,
+      effect: "EFFECT_SUPER_FANG",
+    });
+    expect(
+      max(calculateDamage(strong, mon({ currentHp: 61 }), fang, CHART)),
+    ).toBe(30);
+  });
+
+  it("Intimidate lowers Attack unless an ability stops it", () => {
+    const gyarados = mon({ ability: "ABILITY_INTIMIDATE" });
+    expect(afterIntimidate(gyarados, strong).stages).toEqual({ attack: -1 });
+    expect(afterIntimidate(mon(), strong)).toBe(strong);
+    const metagross = mon({ ability: "ABILITY_CLEAR_BODY" });
+    expect(afterIntimidate(gyarados, metagross)).toBe(metagross);
+    const floored = mon({ stages: { attack: -6 } });
+    expect(afterIntimidate(gyarados, floored).stages?.attack).toBe(-6);
+  });
+
+  it("works out battle Speed like the game", () => {
+    const fast = mon({ stats: { ...uniformSpread(100), speed: 101 } });
+    expect(battleSpeed(fast)).toBe(101);
+    expect(battleSpeed({ ...fast, stages: { speed: 1 } })).toBe(151);
+    expect(battleSpeed({ ...fast, status: "paralysis" })).toBe(25);
+    const swim = { ...fast, ability: "ABILITY_SWIFT_SWIM" };
+    expect(battleSpeed(swim, "rain")).toBe(202);
+    expect(battleSpeed(swim, "sun")).toBe(101);
+    const brace = {
+      ...fast,
+      item: { key: "ITEM_MACHO_BRACE", holdEffect: "HOLD_EFFECT_MACHO_BRACE" },
+    };
+    expect(battleSpeed(brace)).toBe(50);
+  });
+});
+
+describe("summarize from part HP", () => {
+  it("measures against the HP left", () => {
+    const rolls = Array.from({ length: 16 }, (_, i) => 85 + i);
+    const s = summarize(
+      { kind: "damage", rolls, hits: [1, 1], effectiveness: 1 },
+      90,
+    );
+    expect(s.koChance).toBe(11 / 16);
+  });
+});
+
+describe("withConditions", () => {
+  it("puts a battler in a side's conditions", () => {
+    const b = withConditions(mon(), {
+      ...FRESH_SIDE,
+      hpPercent: 33,
+      status: "poison",
+      stages: { speed: 2 },
+    });
+    expect(b).toMatchObject({
+      currentHp: 49,
+      status: "poison",
+      stages: { speed: 2 },
+    });
+    expect(
+      withConditions(mon(), { ...FRESH_SIDE, hpPercent: 0 }).currentHp,
+    ).toBe(1);
+    expect(withConditions(mon(), FRESH_SIDE).currentHp).toBe(150);
   });
 });

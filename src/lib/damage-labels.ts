@@ -1,4 +1,11 @@
-import type { DamageResult, DamageSummary } from "./damage";
+import {
+  STAGE_STATS,
+  type DamageResult,
+  type DamageSummary,
+  type SideConditions,
+  type Status,
+} from "./damage";
+import { STAT_SHORT } from "./stat-labels";
 
 /** The words the Matchup screen uses for the numbers in lib/damage.ts. */
 
@@ -60,4 +67,34 @@ export function noDamageText(
           ? "Depends on the battle"
           : "Power varies";
   }
+}
+
+export const STATUS_LABELS: Record<Status, string> = {
+  none: "Healthy",
+  burn: "Burned",
+  poison: "Poisoned",
+  paralysis: "Paralysed",
+  sleep: "Asleep",
+  freeze: "Frozen",
+};
+
+/** "+2" / "−1" / "0". */
+export function stageLabel(stage: number): string {
+  return stage > 0 ? `+${stage}` : stage < 0 ? `−${-stage}` : "0";
+}
+
+/** One line for a side's conditions, e.g. "50% HP · Burned · Atk +2". */
+export function describeSide(side: SideConditions): string {
+  const parts: string[] = [];
+  if (side.hpPercent < 100) parts.push(`${side.hpPercent}% HP`);
+  if (side.status !== "none") parts.push(STATUS_LABELS[side.status]);
+  for (const stat of STAGE_STATS) {
+    const stage = side.stages[stat] ?? 0;
+    if (stage !== 0) parts.push(`${STAT_SHORT[stat]} ${stageLabel(stage)}`);
+  }
+  if (side.reflect) parts.push("Reflect");
+  if (side.lightScreen) parts.push("Light Screen");
+  return parts.length > 0
+    ? parts.join(" · ")
+    : "Full HP, healthy, no stat changes";
 }
